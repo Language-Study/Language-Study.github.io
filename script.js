@@ -1,35 +1,59 @@
-// Firebase Auth State Observer
+// Initialize Firebase Auth
 const auth = firebase.auth();
 
+// Auth state observer
 auth.onAuthStateChanged((user) => {
+    const userEmailElement = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
     if (user) {
-        // Update user email display
-        const userEmailElement = document.getElementById('userEmail');
+        // User is signed in
         if (userEmailElement) {
             userEmailElement.textContent = user.email;
         }
     } else {
+        // No user is signed in, redirect to login
         window.location.href = 'login.html';
     }
 });
 
 // Logout functionality
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    auth.signOut()
-        .then(() => {
-            window.location.href = 'login.html';
-        })
-        .catch((error) => {
-            console.error('Error signing out:', error);
-        });
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+        // Disable the logout button to prevent multiple clicks
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.disabled = true;
+        logoutBtn.textContent = 'Logging out...';
+        
+        // Sign out from Firebase
+        await auth.signOut();
+        
+        // Redirect to login page
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Error signing out:', error);
+        alert('Failed to log out. Please try again.');
+        
+        // Re-enable the logout button if there's an error
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = 'Logout';
+    }
 });
 
-// Constants and initial state
-const PROGRESS_STATUS = {
-    NOT_STARTED: 'not_started',
-    IN_PROGRESS: 'in_progress',
-    MASTERED: 'mastered'
-};
+// Update your localStorage data clearing function
+function clearUserData() {
+    localStorage.removeItem('vocabularyList');
+    localStorage.removeItem('skills');
+    localStorage.removeItem('categories');
+}
+
+// Add this event listener to clear data when user logs out
+window.addEventListener('beforeunload', () => {
+    if (!auth.currentUser) {
+        clearUserData();
+    }
+});
 
 // Initialize data from localStorage
 let vocabularyList = JSON.parse(localStorage.getItem('vocabularyList')) || [];
