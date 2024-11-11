@@ -1,7 +1,27 @@
+// Firebase Auth State Observer
+const auth = firebase.auth();
+
 auth.onAuthStateChanged((user) => {
-    if (!user) {
+    if (user) {
+        // Update user email display
+        const userEmailElement = document.getElementById('userEmail');
+        if (userEmailElement) {
+            userEmailElement.textContent = user.email;
+        }
+    } else {
         window.location.href = 'login.html';
     }
+});
+
+// Logout functionality
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    auth.signOut()
+        .then(() => {
+            window.location.href = 'login.html';
+        })
+        .catch((error) => {
+            console.error('Error signing out:', error);
+        });
 });
 
 // Constants and initial state
@@ -104,6 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
             newCategoryName.value = '';
             saveData();
         }
+    });
+
+    // Cancel new category
+    document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+        newCategoryInput.classList.add('hidden');
+        newCategoryName.value = '';
+        categorySelect.value = categories[0];
     });
 
     // Add vocabulary
