@@ -1,3 +1,9 @@
+auth.onAuthStateChanged((user) => {
+    if (!user) {
+        window.location.href = 'login.html';
+    }
+});
+
 // Constants and initial state
 const PROGRESS_STATUS = {
     NOT_STARTED: 'not_started',
