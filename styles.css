@@ -1,0 +1,44 @@
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.category-content {
+    display: none;
+}
+
+.category-content.expanded {
+    display: block;
+}
+
+.min-h-40 {
+    min-height: 40px;
+}
+
+.category-header svg {
+    transition: transform 0.2s ease;
+}
+
+.category-header:hover {
+    background-color: #f3f4f6;
+}
+
+.progress-button {
+    transition: transform 0.2s ease;
+}
+
+.progress-button:hover {
+    transform: scale(1.1);
+}
+
+.delete-button {
+    transition: all 0.2s ease;
+}
+
+.delete-button:hover {
+    background-color: #fee2e2;
+    transform: scale(1.1);
+}
