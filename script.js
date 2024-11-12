@@ -23,13 +23,6 @@ const PROGRESS_STATUS = {
     IN_PROGRESS: 'in_progress',
     MASTERED: 'mastered'
 };
-const THEMES = {
-    UVU: 'uvu-theme',
-    BYU: 'byu-theme',
-    SUU: 'suu-theme',
-    THANKSGIVING: 'thanksgiving-theme',
-    CHRISTMAS: 'christmas-theme'
-};
 
 // State variables
 let vocabularyList = [];
@@ -77,16 +70,6 @@ async function loadUserData() {
             id: doc.id,
             ...doc.data()
         }));
-
-        // Load theme preference
-        const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        if (userDoc.exists && userDoc.data().theme) {
-            setTheme(userDoc.data().theme);
-            document.getElementById('themeSelect').value = userDoc.data().theme;
-        } else {
-            setTheme(THEMES.UVU); // Default theme
-            document.getElementById('themeSelect').value = THEMES.UVU;
-        }
 
         // Update UI
         updateCategorySelect();
@@ -199,41 +182,6 @@ async function deleteItem(id, isVocab) {
     }
 }
 
-function setTheme(theme) {
-    // Remove all theme classes
-    Object.values(THEMES).forEach(themeClass => {
-        document.body.classList.remove(themeClass);
-    });
-
-    // Add selected theme class
-    document.body.classList.add(theme);
-}
-
-async function saveThemePreference(theme) {
-    try {
-        // Check if user document exists
-        const userRef = db.collection('users').doc(currentUser.uid);
-        const userDoc = await userRef.get();
-
-        if (userDoc.exists) {
-            // Update theme preference if document exists
-            await userRef.update({
-                theme: theme
-            });
-        } else {
-            // If document doesn't exist, create it and set theme
-            await userRef.set({
-                theme: theme,
-                email: currentUser.email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-        }
-        console.log('Theme saved successfully:', theme);
-    } catch (error) {
-        console.error("Error saving theme preference:", error);
-    }
-}
-
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     // Tab switching
@@ -326,14 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (deleteButton && itemId) {
             deleteItem(itemId, false);
         }
-    });
-
-    // Theme selector
-    const themeSelect = document.getElementById('themeSelect');
-    themeSelect?.addEventListener('change', (e) => {
-        const selectedTheme = e.target.value;
-        setTheme(selectedTheme);
-        saveThemePreference(selectedTheme);
     });
 });
 
