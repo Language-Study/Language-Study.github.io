@@ -23,6 +23,13 @@ const PROGRESS_STATUS = {
     IN_PROGRESS: 'in_progress',
     MASTERED: 'mastered'
 };
+const THEMES = {
+    UVU: 'uvu-theme',
+    BYU: 'byu-theme',
+    SUU: 'suu-theme',
+    THANKSGIVING: 'thanksgiving-theme',
+    CHRISTMAS: 'christmas-theme'
+};
 
 // State variables
 let vocabularyList = [];
@@ -70,6 +77,16 @@ async function loadUserData() {
             id: doc.id,
             ...doc.data()
         }));
+
+        // Load theme preference
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        if (userDoc.exists && userDoc.data().theme) {
+            setTheme(userDoc.data().theme);
+            document.getElementById('themeSelect').value = userDoc.data().theme;
+        } else {
+            setTheme(THEMES.UVU); // Default theme
+            document.getElementById('themeSelect').value = THEMES.UVU;
+        }
 
         // Update UI
         updateCategorySelect();
@@ -182,6 +199,41 @@ async function deleteItem(id, isVocab) {
     }
 }
 
+function setTheme(theme) {
+    // Remove all theme classes
+    Object.values(THEMES).forEach(themeClass => {
+        document.body.classList.remove(themeClass);
+    });
+
+    // Add selected theme class
+    document.body.classList.add(theme);
+}
+
+async function saveThemePreference(theme) {
+    try {
+        // Check if user document exists
+        const userRef = db.collection('users').doc(currentUser.uid);
+        const userDoc = await userRef.get();
+
+        if (userDoc.exists) {
+            // Update theme preference if document exists
+            await userRef.update({
+                theme: theme
+            });
+        } else {
+            // If document doesn't exist, create it and set theme
+            await userRef.set({
+                theme: theme,
+                email: currentUser.email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+        console.log('Theme saved successfully:', theme);
+    } catch (error) {
+        console.error("Error saving theme preference:", error);
+    }
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     // Tab switching
@@ -275,6 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteItem(itemId, false);
         }
     });
+
+    // Theme selector
+    const themeSelect = document.getElementById('themeSelect');
+    themeSelect?.addEventListener('change', (e) => {
+        const selectedTheme = e.target.value;
+        setTheme(selectedTheme);
+        saveThemePreference(selectedTheme);
+    });
 });
 
 // Update category select options
@@ -286,23 +346,14 @@ function updateCategorySelect() {
 
 // Status Icons HTML
 const statusIcons = {
-    [PROGRESS_STATUS.NOT_STARTED]: `
-        <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" stroke-width="2"/>
-        </svg>
-    `,
-    [PROGRESS_STATUS.IN_PROGRESS]: `
-        <svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" stroke-width="2"/>
-            <path d="M12 6v6l4 4" stroke-width="2"/>
-        </svg>
-    `,
-    [PROGRESS_STATUS.MASTERED]: `
-        <svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/>
-            <path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
-        </svg>
-    `
+     [PROGRESS_STATUS.NOT_STARTED]: `<svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/>
+        </svg>`,
+
+    [PROGRESS_STATUS.IN_PROGRESS]: `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 6v6l4 4" stroke-width="2"/>
+        </svg>`,
+
+    [PROGRESS_STATUS.MASTERED]: `<svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
+        </svg>`
 };
 
 // Render functions remain largely the same, just using the new data structure

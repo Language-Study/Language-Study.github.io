@@ -6,6 +6,21 @@
     display: block;
 }
 
+.tab-button {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    outline: none;
+}
+
+.tab-button:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.tab-button.active {
+    font-weight: 500;
+}
+
 .category-content {
     display: none;
 }
@@ -41,4 +56,177 @@
 .delete-button:hover {
     background-color: #fee2e2;
     transform: scale(1.1);
+}
+
+/* Themes */
+/* UVU Theme */
+.uvu-theme nav {
+    background-color: #046A38;
+}
+
+.uvu-theme nav h1,
+.uvu-theme #userEmail {
+    color: white;
+}
+
+.uvu-theme .tab-button.active,
+.uvu-theme #addVocabBtn,
+.uvu-theme #addSkillBtn,
+.uvu-theme #addCategoryBtn {
+    background-color: #046A38;
+    color: white;
+}
+
+.uvu-theme .tab-button:not(.active) {
+    background-color: #e2e8f0;
+    color: #046A38;
+}
+
+.uvu-theme #logoutBtn {
+    background-color: #034425;
+}
+
+.uvu-theme #logoutBtn:hover {
+    background-color: #023319;
+}
+
+/* BYU Theme */
+.byu-theme nav {
+    background-color: #002E5D;
+}
+
+.byu-theme nav h1,
+.byu-theme #userEmail {
+    color: white;
+}
+
+.byu-theme .tab-button.active,
+.byu-theme #addVocabBtn,
+.byu-theme #addSkillBtn,
+.byu-theme #addCategoryBtn {
+    background-color: #002E5D;
+    color: white;
+}
+
+.byu-theme .tab-button:not(.active) {
+    background-color: #e2e8f0;
+    color: #002E5D;
+}
+
+.byu-theme #logoutBtn {
+    background-color: #001F3F;
+}
+
+.byu-theme #logoutBtn:hover {
+    background-color: #001429;
+}
+
+/* SUU Theme */
+.suu-theme nav {
+    background-color: #C60C30;
+}
+
+.suu-theme nav h1,
+.suu-theme #userEmail {
+    color: white;
+}
+
+.suu-theme .tab-button.active,
+.suu-theme #addVocabBtn,
+.suu-theme #addSkillBtn,
+.suu-theme #addCategoryBtn {
+    background-color: #C60C30;
+    color: white;
+}
+
+.suu-theme .tab-button:not(.active) {
+    background-color: #e2e8f0;
+    color: #C60C30;
+}
+
+.suu-theme #logoutBtn {
+    background-color: #A00926;
+}
+
+.suu-theme #logoutBtn:hover {
+    background-color: #8A081F;
+}
+
+/* Thanksgiving Theme */
+.thanksgiving-theme nav {
+    background-color: #a04500;
+    /* Warm pumpkin orange */
+}
+
+.thanksgiving-theme nav h1,
+.thanksgiving-theme #userEmail {
+    color: white;
+}
+
+.thanksgiving-theme .tab-button.active,
+.thanksgiving-theme #addVocabBtn,
+.thanksgiving-theme #addSkillBtn,
+.thanksgiving-theme #addCategoryBtn {
+    background-color: #790000;
+    color: white;
+}
+
+.thanksgiving-theme .tab-button:not(.active) {
+    background-color: #790000;
+    color: white;
+}
+
+.thanksgiving-theme #logoutBtn {
+    background-color: #9E3D2B;
+    /* Deep autumn red */
+}
+
+.thanksgiving-theme #logoutBtn:hover {
+    background-color: #7C2C1E;
+    /* Darker red */
+}
+
+/* Christmas Theme */
+.christmas-theme nav {
+    background-color: #006400;
+    /* Forest Green */
+}
+
+.christmas-theme nav h1,
+.christmas-theme #userEmail {
+    color: white;
+}
+
+.christmas-theme .tab-button.active,
+.christmas-theme #addVocabBtn,
+.christmas-theme #addSkillBtn,
+.christmas-theme #addCategoryBtn {
+    background-color: #006400;
+    /* Forest Green */
+    color: white;
+}
+
+.christmas-theme .tab-button:not(.active) {
+    background-color: #FFFAF0;
+    /* Snow White */
+    color: #006400;
+    /* Forest Green */
+}
+
+.christmas-theme #logoutBtn {
+    background-color: #B22222;
+    /* Firebrick Red */
+}
+
+.christmas-theme #logoutBtn:hover {
+    background-color: #8B1A1A;
+    /* Dark Red */
+}
+
+/* Common hover states for action buttons */
+.tab-button:hover,
+#addVocabBtn:hover,
+#addSkillBtn:hover,
+#addCategoryBtn:hover {
+    opacity: 0.9;
 }
