@@ -11,42 +11,129 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
 
-// Get DOM elements
-const userEmail = document.getElementById("userEmail");
-const logoutBtn = document.getElementById("logoutBtn");
+// Initialize Firestore only if we're on the main app page
+const db = window.location.pathname.includes('index.html') ? firebase.firestore() : null;
 
-// Constants
-const PROGRESS_STATUS = {
-    NOT_STARTED: 'not_started',
-    IN_PROGRESS: 'in_progress',
-    MASTERED: 'mastered'
+// Auth error messages
+const AUTH_ERROR_MESSAGES = {
+    'auth/invalid-credential': 'Incorrect email or password. Please try again.',
+    'auth/user-not-found': 'No account found with this email address.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/user-disabled': 'This account has been disabled. Please contact support.',
+    'auth/email-already-in-use': 'An account with this email already exists.',
+    'auth/operation-not-allowed': 'Email/password sign in is not enabled. Please contact support.',
+    'auth/weak-password': 'Password should be at least 6 characters.',
+    'auth/too-many-requests': 'Too many failed login attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Please check your internet connection.',
+    'default': 'An error occurred during authentication. Please try again.'
 };
 
-// State variables
-let vocabularyList = [];
-let skills = [];
-let categories = [];
-let currentUser = null;
+// Get DOM elements
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const errorMessage = document.getElementById('errorMessage');
+const registerErrorMessage = document.getElementById('registerErrorMessage');
 
-// DOM Elements
-const categorySelect = document.getElementById('categorySelect');
-const newCategoryInput = document.getElementById('newCategoryInput');
-const newCategoryName = document.getElementById('newCategoryName');
-const vocabularyInput = document.getElementById('vocabularyInput');
-const skillsInput = document.getElementById('skillsInput');
-const vocabularyListEl = document.getElementById('vocabularyList');
-const skillsList = document.getElementById('skillsList');
+// Show error message function
+function showError(message, isRegister = false) {
+    const errorElement = isRegister ? registerErrorMessage : errorMessage;
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
 
-// Firebase Authentication Logic
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        currentUser = user;
-        userEmail.textContent = `Logged in as: ${user.email}`;
-        await loadUserData();
-    } else {
-        window.location.href = 'login.html';
+// Hide error message function
+function hideError(isRegister = false) {
+    const errorElement = isRegister ? registerErrorMessage : errorMessage;
+    errorElement.classList.add('hidden');
+}
+
+// Show/Hide Forms
+document.getElementById('showRegisterBtn')?.addEventListener('click', () => {
+    loginForm.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+    hideError();
+    hideError(true);
+});
+
+document.getElementById('showLoginBtn')?.addEventListener('click', () => {
+    registerForm.classList.add('hidden');
+    loginForm.classList.remove('hidden');
+    hideError();
+    hideError(true);
+});
+
+// Email/Password Login
+document.getElementById('loginBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    // Clear any existing error messages
+    hideError();
+
+    // Basic validation
+    if (!email || !password) {
+        showError('Please fill in both email and password fields.');
+        return;
+    }
+
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = 'index.html';
+    } catch (error) {
+        const errorText = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default;
+        showError(errorText);
+        console.error('Login error:', error.code);
+    }
+});
+
+// Registration
+document.getElementById('registerBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // Clear any existing error messages
+    hideError(true);
+
+    // Client-side validation
+    if (!email || !password || !confirmPassword) {
+        showError('Please fill in all fields.', true);
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showError('Passwords do not match.', true);
+        return;
+    }
+
+    if (password.length < 6) {
+        showError('Password should be at least 6 characters.', true);
+        return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showError('Please enter a valid email address.', true);
+        return;
+    }
+
+    try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        window.location.href = 'index.html';
+    } catch (error) {
+        const errorText = AUTH_ERROR_MESSAGES[error.code] || AUTH_ERROR_MESSAGES.default;
+        showError(errorText, true);
+        console.error('Registration error:', error.code);
+    }
+});
+
+// Check auth state
+auth.onAuthStateChanged((user) => {
+    if (user && !window.location.pathname.includes('index.html')) {
+        window.location.href = 'index.html';
     }
 });
 
