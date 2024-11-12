@@ -129,43 +129,92 @@
 
     <!-- Firebase Authentication Logic -->
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c",
-            authDomain: "language-study-tracker.firebaseapp.com",
-            projectId: "language-study-tracker",
-            storageBucket: "language-study-tracker.firebasestorage.app",
-            messagingSenderId: "47054764584",
-            appId: "1:47054764584:web:7c0b6597bc42aaf961131d"
-        };
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c",
+        authDomain: "language-study-tracker.firebaseapp.com",
+        projectId: "language-study-tracker",
+        storageBucket: "language-study-tracker.firebasestorage.app",
+        messagingSenderId: "47054764584",
+        appId: "1:47054764584:web:7c0b6597bc42aaf961131d"
+    };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-        // Get DOM elements
-        const userEmail = document.getElementById("userEmail");
-        const logoutBtn = document.getElementById("logoutBtn");
+    // Get DOM elements
+    const userEmail = document.getElementById("userEmail");
+    const logoutBtn = document.getElementById("logoutBtn");
 
-        // Check if user is logged in
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                userEmail.textContent = `Logged in as: ${user.email}`;
-            } else {
-                window.location.href = 'login.html'; // Redirect to login page if not authenticated
-            }
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            // Hide all tabs
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('bg-blue-500');
+                btn.classList.add('bg-gray-200');
+            });
+
+            // Show the clicked tab
+            const tabId = event.target.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+
+            // Highlight the active button
+            event.target.classList.remove('bg-gray-200');
+            event.target.classList.add('bg-blue-500');
         });
+    });
 
-        // Logout functionality
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await auth.signOut();
-                window.location.href = 'login.html'; // Redirect to login page after logout
-            } catch (error) {
-                console.error("Logout error: ", error.message);
-            }
-        });
-    </script>
+    // Skills functionality
+    const addSkillBtn = document.getElementById("addSkillBtn");
+    const skillsInput = document.getElementById("skillsInput");
+    const skillsList = document.getElementById("skillsList");
+
+    addSkillBtn.addEventListener('click', () => {
+        const skillText = skillsInput.value.trim();
+        if (skillText) {
+            // Create skill item
+            const skillItem = document.createElement('div');
+            skillItem.classList.add('p-2', 'bg-gray-100', 'rounded', 'flex', 'justify-between', 'items-center', 'mb-2');
+            skillItem.innerHTML = `
+                <span>${skillText}</span>
+                <span class="text-green-500 font-semibold">Mastered</span>
+            `;
+            skillsList.appendChild(skillItem);
+
+            // Clear input after adding
+            skillsInput.value = '';
+        }
+    });
+
+    // Firebase Authentication Logic
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            userEmail.textContent = `Logged in as: ${user.email}`;
+        } else {
+            window.location.href = 'login.html'; // Redirect to login page if not authenticated
+        }
+    });
+
+    // Logout functionality
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await auth.signOut();
+            window.location.href = 'login.html'; // Redirect to login page after logout
+        } catch (error) {
+            console.error("Logout error: ", error.message);
+        }
+    });
+</script>
 </body>
 
 </html>
