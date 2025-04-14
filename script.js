@@ -1,6 +1,6 @@
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c",
+    apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c", // Replace with your actual config if necessary
     authDomain: "language-study-tracker.firebaseapp.com",
     projectId: "language-study-tracker",
     storageBucket: "language-study-tracker.firebasestorage.app",
@@ -38,6 +38,7 @@ const vocabularyInput = document.getElementById('vocabularyInput');
 const skillsInput = document.getElementById('skillsInput');
 const vocabularyListEl = document.getElementById('vocabularyList');
 const skillsList = document.getElementById('skillsList');
+const deleteCategoryBtn = document.getElementById('deleteCategoryBtn'); // <<< ADDED THIS
 
 // Firebase Authentication Logic
 auth.onAuthStateChanged(async (user) => {
@@ -55,7 +56,13 @@ async function loadUserData() {
     try {
         // Load categories
         const categoriesDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').get();
-        categories = categoriesDoc.exists ? categoriesDoc.data().list : ['General', 'Food', 'Jobs', 'Family'];
+        // Ensure 'General' category exists if categories are empty or just loaded
+        let loadedCategories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
+        if (!loadedCategories.includes('General')) {
+             loadedCategories.unshift('General'); // Add 'General' if missing
+        }
+        categories = loadedCategories;
+
 
         // Load vocabulary
         const vocabularySnapshot = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
@@ -72,7 +79,7 @@ async function loadUserData() {
         }));
 
         // Update UI
-        updateCategorySelect();
+        updateCategorySelect(); // This now handles the delete button state too
         renderVocabularyList();
         renderSkillsList();
     } catch (error) {
@@ -83,6 +90,10 @@ async function loadUserData() {
 // Save categories to Firestore
 async function saveCategories() {
     try {
+        // Ensure 'General' category is always present before saving
+        if (!categories.includes('General')) {
+            categories.unshift('General');
+        }
         await db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').set({
             list: categories
         });
@@ -101,7 +112,7 @@ async function addVocabularyWords() {
 
             const newItems = words.map(word => ({
                 word: word.trim(),
-                category: categorySelect.value,
+                category: categorySelect.value === 'new' ? 'General' : categorySelect.value, // Default to General if 'new' somehow selected
                 status: PROGRESS_STATUS.NOT_STARTED,
                 dateAdded: firebase.firestore.FieldValue.serverTimestamp()
             }));
@@ -113,7 +124,7 @@ async function addVocabularyWords() {
 
             await batch.commit();
             vocabularyInput.value = '';
-            await loadUserData();
+            await loadUserData(); // Reload data to show new items
         } catch (error) {
             console.error("Error adding vocabulary:", error);
         }
@@ -122,13 +133,13 @@ async function addVocabularyWords() {
 
 // Add skills
 async function addSkills() {
-    const skillsList = skillsInput.value.trim().split('\n').filter(skill => skill.trim());
-    if (skillsList.length > 0) {
+    const skillsToAdd = skillsInput.value.trim().split('\n').filter(skill => skill.trim());
+    if (skillsToAdd.length > 0) {
         try {
             const batch = db.batch();
             const skillsRef = db.collection('users').doc(currentUser.uid).collection('skills');
 
-            const newItems = skillsList.map(skill => ({
+            const newItems = skillsToAdd.map(skill => ({
                 name: skill.trim(),
                 status: PROGRESS_STATUS.NOT_STARTED,
                 dateAdded: firebase.firestore.FieldValue.serverTimestamp()
@@ -141,7 +152,7 @@ async function addSkills() {
 
             await batch.commit();
             skillsInput.value = '';
-            await loadUserData();
+            await loadUserData(); // Reload data to show new items
         } catch (error) {
             console.error("Error adding skills:", error);
         }
@@ -164,23 +175,80 @@ async function updateStatus(id, isVocab) {
             await docRef.update({
                 status: newStatus
             });
-            await loadUserData();
+            await loadUserData(); // Reload data to update UI
         }
     } catch (error) {
         console.error("Error updating status:", error);
     }
 }
 
-// Delete item
+// Delete item (Vocabulary or Skill)
 async function deleteItem(id, isVocab) {
-    try {
-        const collection = isVocab ? 'vocabulary' : 'skills';
-        await db.collection('users').doc(currentUser.uid).collection(collection).doc(id).delete();
-        await loadUserData();
-    } catch (error) {
-        console.error("Error deleting item:", error);
+    // Added confirmation for deleting individual items
+    const itemType = isVocab ? 'vocabulary word' : 'skill';
+    const confirmation = confirm(`Are you sure you want to delete this ${itemType}?`);
+
+    if (confirmation) {
+        try {
+            const collection = isVocab ? 'vocabulary' : 'skills';
+            await db.collection('users').doc(currentUser.uid).collection(collection).doc(id).delete();
+            await loadUserData(); // Reload data to update UI
+        } catch (error) {
+            console.error(`Error deleting ${itemType}:`, error);
+            alert(`Failed to delete ${itemType}. Please try again.`);
+        }
     }
 }
+
+// --- ADDED: New Function to Delete Category ---
+async function deleteCategory() {
+    const categoryToDelete = categorySelect.value;
+    const protectedCategories = ['General']; // 'General' cannot be deleted
+
+    if (!categoryToDelete || categoryToDelete === 'new' || protectedCategories.includes(categoryToDelete)) {
+        alert("This category cannot be deleted.");
+        return;
+    }
+
+    // Confirmation Dialog with Warning
+    const confirmation = confirm(`Are you sure you want to delete the category "${categoryToDelete}"? This will also delete ALL vocabulary items within this category.`);
+
+    if (confirmation) {
+        try {
+            // 1. Filter out the category locally
+            categories = categories.filter(cat => cat !== categoryToDelete);
+
+            // 2. Save updated categories list to Firestore
+            await saveCategories(); // This now ensures 'General' persists if needed
+
+            // 3. Find and delete vocabulary items associated with this category
+            const itemsToDelete = vocabularyList.filter(item => item.category === categoryToDelete);
+            const batch = db.batch();
+            const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
+
+            itemsToDelete.forEach(item => {
+                batch.delete(vocabRef.doc(item.id));
+            });
+            await batch.commit(); // Commit the batch delete
+
+            // 4. Refresh user data (which includes re-rendering lists)
+            await loadUserData();
+
+            // 5. Reset selection and disable button explicitly after load
+            categorySelect.value = 'General'; // Reset to default
+            deleteCategoryBtn.disabled = true;
+
+            console.log(`Category "${categoryToDelete}" and its items deleted successfully.`);
+
+        } catch (error) {
+            console.error("Error deleting category:", error);
+            alert("Failed to delete category. Please try again.");
+            // Optionally reload data to revert UI changes if the Firestore operation failed
+            await loadUserData();
+        }
+    }
+}
+
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -201,12 +269,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Category select change
+    // --- MODIFIED: Category select change ---
     categorySelect.addEventListener('change', (e) => {
-        if (e.target.value === 'new') {
+        const selectedValue = e.target.value;
+        if (selectedValue === 'new') {
             newCategoryInput.classList.remove('hidden');
+            deleteCategoryBtn.disabled = true; // Disable delete when adding new
         } else {
             newCategoryInput.classList.add('hidden');
+            // Enable delete button only if it's not 'General'
+            const protectedCategories = ['General'];
+            if (protectedCategories.includes(selectedValue)) {
+                deleteCategoryBtn.disabled = true;
+            } else {
+                deleteCategoryBtn.disabled = false;
+            }
         }
     });
 
@@ -216,10 +293,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (newCategory && !categories.includes(newCategory)) {
             categories.push(newCategory);
             await saveCategories();
-            updateCategorySelect();
-            categorySelect.value = newCategory;
+            updateCategorySelect(); // Refresh dropdown
+            categorySelect.value = newCategory; // Select the newly added category
             newCategoryInput.classList.add('hidden');
             newCategoryName.value = '';
+            deleteCategoryBtn.disabled = false; // Enable delete for the new category
+        } else if (!newCategory) {
+             alert("Please enter a category name.");
+        } else {
+            alert("Category already exists.");
+        }
+    });
+
+     // Cancel Add New Category
+     document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+        newCategoryInput.classList.add('hidden');
+        newCategoryName.value = '';
+        // Re-enable delete button based on current selection if needed
+        const protectedCategories = ['General'];
+        if (categorySelect.value !== 'new' && !protectedCategories.includes(categorySelect.value)) {
+            deleteCategoryBtn.disabled = false;
+        } else {
+            deleteCategoryBtn.disabled = true;
         }
     });
 
@@ -241,6 +336,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- ADDED: Event Listener for Delete Button ---
+    deleteCategoryBtn.addEventListener('click', deleteCategory);
+
     // Logout functionality
     logoutBtn.addEventListener('click', async () => {
         try {
@@ -260,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusButton && itemId) {
             updateStatus(itemId, true);
         } else if (deleteButton && itemId) {
-            deleteItem(itemId, true);
+            deleteItem(itemId, true); // This now includes confirmation
         }
     });
 
@@ -272,19 +370,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusButton && itemId) {
             updateStatus(itemId, false);
         } else if (deleteButton && itemId) {
-            deleteItem(itemId, false);
+            deleteItem(itemId, false); // This now includes confirmation
         }
     });
 });
 
-// Update category select options
+// --- MODIFIED: Update category select options ---
 function updateCategorySelect() {
+    const currentSelection = categorySelect.value; // Store current selection
+
+    // Ensure 'General' is always first if it exists
+    const generalIndex = categories.indexOf('General');
+    if (generalIndex > 0) {
+        categories.splice(generalIndex, 1);
+        categories.unshift('General');
+    } else if (generalIndex === -1) {
+         categories.unshift('General'); // Add if missing entirely
+    }
+
     categorySelect.innerHTML = categories
         .map(cat => `<option value="${cat}">${cat}</option>`)
         .join('') + '<option value="new">+ New Category</option>';
+
+    // Restore selection or default to 'General'
+    if (categories.includes(currentSelection) && currentSelection !== 'new') {
+        categorySelect.value = currentSelection;
+    } else {
+        categorySelect.value = 'General'; // Default if previous selection was deleted or invalid
+    }
+
+    // Update delete button state after options are rebuilt
+    const protectedCategories = ['General'];
+    if (categorySelect.value === 'new' || protectedCategories.includes(categorySelect.value)) {
+        deleteCategoryBtn.disabled = true;
+    } else {
+        deleteCategoryBtn.disabled = false;
+    }
 }
 
-// Status Icons HTML
+
+// Status Icons HTML (no changes needed)
 const statusIcons = {
      [PROGRESS_STATUS.NOT_STARTED]: `<svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/>
         </svg>`,
@@ -296,60 +421,62 @@ const statusIcons = {
         </svg>`
 };
 
-// Render functions remain largely the same, just using the new data structure
+// Render vocabulary list (no changes needed to logic, but benefits from clean data)
 function renderVocabularyList() {
     const expandedCategories = new Set(
-        Array.from(document.querySelectorAll('.category-content'))
+        Array.from(document.querySelectorAll('#vocabularyList .category-content')) // Scope query
         .filter(content => content.classList.contains('expanded'))
-        .map(content => content.closest('.mb-4').querySelector('.category-header').textContent.trim().split(' (')[0])
+        .map(content => content.closest('.category-container').querySelector('.category-header').dataset.categoryName) // Use data attribute
     );
 
     const groupedVocab = categories.reduce((acc, category) => {
+        // Ensure category exists in the accumulator
         acc[category] = vocabularyList.filter(item => item.category === category);
         return acc;
     }, {});
 
-    vocabularyListEl.innerHTML = Object.entries(groupedVocab)
-        .filter(([_, items]) => items.length > 0)
-        .map(([category, items]) => {
+
+    vocabularyListEl.innerHTML = categories // Iterate through the official categories list
+        .map(category => {
+            const items = groupedVocab[category] || []; // Get items for this category
+             if (items.length === 0) return ''; // Don't render empty categories unless needed
+
             const isExpanded = expandedCategories.has(category);
             return `
-                <div class="mb-4">
-                    <div class="flex items-center justify-between p-2 bg-gray-100 rounded cursor-pointer category-header">
-                        <h3 class="font-bold">${category} (${items.length})</h3>
-                        <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}" 
+                <div class="mb-4 category-container"> <div class="flex items-center justify-between p-2 bg-gray-100 rounded cursor-pointer category-header hover:bg-gray-200" data-category-name="${category}"> <h3 class="font-bold">${category} (${items.length})</h3>
+                        <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </div>
-                    <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}">
-                        ${items.map(item => renderVocabItem(item)).join('')}
+                    <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}" style="${isExpanded ? '' : 'display: none;'}"> ${items.map(item => renderVocabItem(item)).join('')}
                     </div>
                 </div>
             `;
         }).join('');
 
-    document.querySelectorAll('.category-header').forEach(header => {
+    // Re-attach listeners for category headers
+    document.querySelectorAll('#vocabularyList .category-header').forEach(header => {
         header.addEventListener('click', () => {
             const content = header.nextElementSibling;
+            const isExpanding = !content.classList.contains('expanded');
             content.classList.toggle('expanded');
+            content.style.display = isExpanding ? 'block' : 'none'; // Toggle display
             const arrow = header.querySelector('svg');
-            arrow.style.transform = content.classList.contains('expanded') ? 'rotate(180deg)' : '';
+            arrow.style.transform = isExpanding ? 'rotate(180deg)' : '';
         });
     });
 }
 
+// Render skills list (no changes needed)
 function renderSkillsList() {
     skillsList.innerHTML = skills
         .map(skill => `
-            <div class="skill-item flex items-center justify-between p-2 border rounded" data-id="${skill.id}">
-                <div class="font-medium">${skill.name}</div>
+            <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}"> <div class="font-medium">${skill.name}</div>
                 <div class="flex items-center gap-2">
-                    <button class="status-button p-2 rounded-full hover:bg-gray-100">
-                        ${statusIcons[skill.status]}
+                    <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[skill.status]}
                     </button>
-                    <button class="delete-button p-2 text-red-500 hover:bg-red-50 rounded-full">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
@@ -358,16 +485,14 @@ function renderSkillsList() {
         `).join('');
 }
 
+// Render individual vocabulary item (no changes needed)
 function renderVocabItem(item) {
     return `
-        <div class="vocab-item flex items-center justify-between p-2 border rounded" data-id="${item.id}">
-            <div class="font-medium">${item.word}</div>
+        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}"> <div class="font-medium">${item.word}</div>
             <div class="flex items-center gap-2">
-                <button class="status-button p-2 rounded-full hover:bg-gray-100">
-                    ${statusIcons[item.status]}
+                 <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
                 </button>
-                <button class="delete-button p-2 text-red-500 hover:bg-red-50 rounded-full">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
