@@ -38,7 +38,7 @@ const vocabularyInput = document.getElementById('vocabularyInput');
 const skillsInput = document.getElementById('skillsInput');
 const vocabularyListEl = document.getElementById('vocabularyList');
 const skillsList = document.getElementById('skillsList');
-const deleteCategoryBtn = document.getElementById('deleteCategoryBtn'); // <<< ADDED THIS
+const deleteCategoryBtn = document.getElementById('deleteCategoryBtn');
 
 // Firebase Authentication Logic
 auth.onAuthStateChanged(async (user) => {
@@ -182,13 +182,34 @@ async function updateStatus(id, isVocab) {
     }
 }
 
-// Delete item (Vocabulary or Skill)
+// --- MODIFIED: Delete item (Vocabulary or Skill) ---
 async function deleteItem(id, isVocab) {
-    // Added confirmation for deleting individual items
-    const itemType = isVocab ? 'vocabulary word' : 'skill';
-    const confirmation = confirm(`Are you sure you want to delete this ${itemType}?`);
+    // Get the name/word for the confirmation message
+    let itemName = '';
+    let itemType = '';
+    try {
+        if (isVocab) {
+            itemType = 'vocabulary word';
+            // Find the item in the local list to get its name/word
+            const item = vocabularyList.find(v => v.id === id);
+            itemName = item ? `"${item.word}"` : 'this item';
+        } else {
+            itemType = 'skill';
+            // Find the item in the local list to get its name
+            const item = skills.find(s => s.id === id);
+            itemName = item ? `"${item.name}"` : 'this item';
+        }
+    } catch (e) {
+        // Fallback if item lookup fails for some reason
+        itemName = 'this item';
+        itemType = isVocab ? 'vocabulary word' : 'skill';
+        console.warn("Could not find item name for delete confirmation.", e);
+    }
 
-    if (confirmation) {
+    // <<< ADDED Confirmation >>>
+    const confirmation = confirm(`Are you sure you want to delete the ${itemType} ${itemName}?`);
+
+    if (confirmation) { // <<< Only proceed if confirmed
         try {
             const collection = isVocab ? 'vocabulary' : 'skills';
             await db.collection('users').doc(currentUser.uid).collection(collection).doc(id).delete();
@@ -197,10 +218,10 @@ async function deleteItem(id, isVocab) {
             console.error(`Error deleting ${itemType}:`, error);
             alert(`Failed to delete ${itemType}. Please try again.`);
         }
-    }
+    } // <<< End confirmation check
 }
 
-// --- ADDED: New Function to Delete Category ---
+// --- Delete Category Function (no changes needed here) ---
 async function deleteCategory() {
     const categoryToDelete = categorySelect.value;
     const protectedCategories = ['General']; // 'General' cannot be deleted
@@ -269,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- MODIFIED: Category select change ---
+    // Category select change
     categorySelect.addEventListener('change', (e) => {
         const selectedValue = e.target.value;
         if (selectedValue === 'new') {
@@ -336,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- ADDED: Event Listener for Delete Button ---
+    // Event Listener for Delete Category Button
     deleteCategoryBtn.addEventListener('click', deleteCategory);
 
     // Logout functionality
@@ -358,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusButton && itemId) {
             updateStatus(itemId, true);
         } else if (deleteButton && itemId) {
-            deleteItem(itemId, true); // This now includes confirmation
+            deleteItem(itemId, true); // Now includes confirmation
         }
     });
 
@@ -370,12 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusButton && itemId) {
             updateStatus(itemId, false);
         } else if (deleteButton && itemId) {
-            deleteItem(itemId, false); // This now includes confirmation
+            deleteItem(itemId, false); // Now includes confirmation
         }
     });
 });
 
-// --- MODIFIED: Update category select options ---
+// Update category select options (no changes needed here)
 function updateCategorySelect() {
     const currentSelection = categorySelect.value; // Store current selection
 
@@ -421,7 +442,7 @@ const statusIcons = {
         </svg>`
 };
 
-// Render vocabulary list (no changes needed to logic, but benefits from clean data)
+// Render vocabulary list (no changes needed here)
 function renderVocabularyList() {
     const expandedCategories = new Set(
         Array.from(document.querySelectorAll('#vocabularyList .category-content')) // Scope query
@@ -439,7 +460,7 @@ function renderVocabularyList() {
     vocabularyListEl.innerHTML = categories // Iterate through the official categories list
         .map(category => {
             const items = groupedVocab[category] || []; // Get items for this category
-             if (items.length === 0) return ''; // Don't render empty categories unless needed
+             if (items.length === 0 && category !== 'General') return ''; // Don't render empty categories unless it's General (or keep based on preference)
 
             const isExpanded = expandedCategories.has(category);
             return `
@@ -450,6 +471,7 @@ function renderVocabularyList() {
                         </svg>
                     </div>
                     <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}" style="${isExpanded ? '' : 'display: none;'}"> ${items.map(item => renderVocabItem(item)).join('')}
+                        ${items.length === 0 ? '<p class="text-xs text-gray-500 pl-2">No items in this category yet.</p>' : ''}
                     </div>
                 </div>
             `;
@@ -468,9 +490,9 @@ function renderVocabularyList() {
     });
 }
 
-// Render skills list (no changes needed)
+// Render skills list (no changes needed here)
 function renderSkillsList() {
-    skillsList.innerHTML = skills
+    skillsList.innerHTML = skills.length > 0 ? skills
         .map(skill => `
             <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}"> <div class="font-medium">${skill.name}</div>
                 <div class="flex items-center gap-2">
@@ -482,10 +504,10 @@ function renderSkillsList() {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `).join('') : '<p class="text-sm text-gray-500">No skills added yet.</p>'; // Message if empty
 }
 
-// Render individual vocabulary item (no changes needed)
+// Render individual vocabulary item (no changes needed here)
 function renderVocabItem(item) {
     return `
         <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}"> <div class="font-medium">${item.word}</div>
