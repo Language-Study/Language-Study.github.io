@@ -118,6 +118,7 @@ auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         userEmail.textContent = `Logged in as: ${user.email}`;
         await loadUserData();
+        await updateAchievementsVisibility();
     } else {
         window.location.href = 'login.html';
     }
@@ -172,17 +173,27 @@ function showToast(message) {
     }, 2500);
 }
 
-function renderBadges() {
+async function renderBadges() {
     const badgesContainer = document.getElementById('badgesContainer');
     if (!badgesContainer) return;
-    const previouslyEarned = [...earnedBadges];
-    earnedBadges = BADGES.filter(badge => badge.check()).map(b => b.id);
-    // Show toast for any newly earned badge
+    // Fetch previously earned badges from Firestore
+    let previouslyEarned = [];
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (doc.exists && Array.isArray(doc.data().earnedBadges)) {
+            previouslyEarned = doc.data().earnedBadges;
+        }
+    } catch (e) { }
+    const currentlyEarned = BADGES.filter(badge => badge.check()).map(b => b.id);
+    // Show toast only for newly earned badges (not on every page load)
     BADGES.forEach(badge => {
         if (badge.check() && !previouslyEarned.includes(badge.id)) {
             showToast(`Badge earned: ${badge.name}!`);
         }
     });
+    // Update Firestore with the latest earned badges
+    await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ earnedBadges: currentlyEarned }, { merge: true });
+    earnedBadges = currentlyEarned;
     badgesContainer.innerHTML = BADGES.map(badge => `
         <div class="flex flex-col items-center p-2 rounded border ${earnedBadges.includes(badge.id) ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-200'} w-32">
             <div class="text-3xl mb-1">${badge.icon}</div>
@@ -379,7 +390,41 @@ async function deleteCategory() {
 }
 
 
-// Event Listeners
+// Achievements toggle state (default ON, persisted in Firestore per user)
+async function getAchievementsEnabled() {
+    if (!currentUser) return true;
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (doc.exists && typeof doc.data().achievementsEnabled === 'boolean') {
+            return doc.data().achievementsEnabled;
+        }
+    } catch (e) { }
+    return true;
+}
+async function setAchievementsEnabled(val) {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ achievementsEnabled: val }, { merge: true });
+}
+
+// Show/hide achievements section and toasts based on setting
+async function updateAchievementsVisibility() {
+    const section = document.getElementById('achievementsSection');
+    const toggle = document.getElementById('toggleAchievements');
+    const enabled = await getAchievementsEnabled();
+    if (section) section.style.display = enabled ? '' : 'none';
+    if (toggle) toggle.checked = enabled;
+    window.achievementsEnabledCache = enabled;
+}
+
+// Patch showToast to respect achievements toggle (now async-aware)
+const _showToast = showToast;
+showToast = async function (message) {
+    if (window.achievementsEnabledCache === undefined) {
+        window.achievementsEnabledCache = await getAchievementsEnabled();
+    }
+    if (window.achievementsEnabledCache) _showToast(message);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -534,6 +579,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Achievements toggle logic
+    const toggle = document.getElementById('toggleAchievements');
+    if (toggle) {
+        toggle.addEventListener('change', async (e) => {
+            await setAchievementsEnabled(e.target.checked);
+            await updateAchievementsVisibility();
+        });
+    }
 });
 
 // Update category select options (no changes needed here)

@@ -34,8 +34,17 @@
     </nav>
 
     <div class="max-w-4xl mx-auto p-4">
-        <!-- Achievements Section -->
+        <!-- Settings Section -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Settings</h2>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="toggleAchievements" class="form-checkbox h-5 w-5 text-blue-600" checked>
+                <label for="toggleAchievements" class="text-gray-700">Show Achievements</label>
+            </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div id="achievementsSection" class="bg-white rounded-lg shadow p-6 mb-6">
             <h2 class="text-xl font-bold mb-4">Achievements</h2>
             <div id="badgesContainer" class="flex flex-wrap gap-4"></div>
         </div>
