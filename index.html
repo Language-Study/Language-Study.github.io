@@ -61,9 +61,15 @@
         <div id="progressMetrics" class="flex flex-wrap gap-4 mb-4"></div>
 
         <!-- Search Bar -->
-        <div class="flex justify-end mb-4">
+        <div class="flex justify-end mb-4 relative">
             <input id="searchInput" type="text" placeholder="Search vocabulary or skills..."
-                class="p-2 border rounded w-full max-w-xs" />
+                class="p-2 border rounded w-full max-w-xs pr-10" />
+            <button id="clearSearchBtn" type="button" title="Clear search"
+                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 focus:outline-none hidden">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-4">
@@ -165,6 +171,22 @@
         </div>
     </div>
     <script src="script.js"></script>
+    <script>
+        // Show/hide clear button and clear search input
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        if (searchInput && clearBtn) {
+            searchInput.addEventListener('input', () => {
+                clearBtn.style.display = searchInput.value ? 'block' : 'none';
+            });
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                clearBtn.style.display = 'none';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            });
+        }
+    </script>
 </body>
 
 </html>
