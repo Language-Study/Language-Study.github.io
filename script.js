@@ -389,17 +389,24 @@ async function deleteCategory() {
     }
 }
 
+// Show/hide settings modal
+function openSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('hidden');
+}
+function closeSettingsModal() {
+    document.getElementById('settingsModal').classList.add('hidden');
+}
 
-// Achievements toggle state (default ON, persisted in Firestore per user)
+// Achievements toggle state (default OFF, persisted in Firestore per user)
 async function getAchievementsEnabled() {
-    if (!currentUser) return true;
+    if (!currentUser) return false;
     try {
         const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (doc.exists && typeof doc.data().achievementsEnabled === 'boolean') {
             return doc.data().achievementsEnabled;
         }
     } catch (e) { }
-    return true;
+    return false;
 }
 async function setAchievementsEnabled(val) {
     if (!currentUser) return;
@@ -580,6 +587,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Settings modal logic
+    document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
+    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
+    document.getElementById('settingsModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('settingsModal')) closeSettingsModal();
+    });
     // Achievements toggle logic
     const toggle = document.getElementById('toggleAchievements');
     if (toggle) {
@@ -587,6 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await setAchievementsEnabled(e.target.checked);
             await updateAchievementsVisibility();
         });
+        updateAchievementsVisibility();
     }
 });
 
