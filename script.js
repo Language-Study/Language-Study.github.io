@@ -156,6 +156,7 @@ async function loadUserData() {
         renderVocabularyList();
         renderSkillsList();
         renderBadges(); // Call badge rendering after loading user data
+        renderProgressMetrics(); // <<< ADDED: Render progress metrics after data load
     } catch (error) {
         console.error("Error loading data:", error);
     }
@@ -204,6 +205,199 @@ async function renderBadges() {
             </div>
         </div>
     `).join('');
+}
+
+// --- PROGRESS METRICS ---
+function renderProgressMetrics() {
+    if (window.progressEnabledCache === false) {
+        const metricsEl = document.getElementById('progressMetrics');
+        if (metricsEl) metricsEl.innerHTML = '';
+        return;
+    }
+    const metricsEl = document.getElementById('progressMetrics');
+    if (!metricsEl) return;
+    // Vocabulary metrics
+    const totalVocab = vocabularyList.length;
+    const masteredVocab = vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length;
+    const inProgressVocab = vocabularyList.filter(w => w.status === PROGRESS_STATUS.IN_PROGRESS).length;
+    // Skills metrics
+    const totalSkills = skills.length;
+    const masteredSkills = skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length;
+    const inProgressSkills = skills.filter(s => s.status === PROGRESS_STATUS.IN_PROGRESS).length;
+    metricsEl.innerHTML = `
+        <div class="flex flex-col items-center bg-gray-100 rounded p-3 min-w-[120px]">
+            <div class="font-bold text-blue-700">Vocabulary</div>
+            <div class="text-sm">${masteredVocab} / ${totalVocab} Mastered</div>
+            <div class="text-xs text-gray-500">${inProgressVocab} In Progress</div>
+        </div>
+        <div class="flex flex-col items-center bg-gray-100 rounded p-3 min-w-[120px]">
+            <div class="font-bold text-green-700">Skills</div>
+            <div class="text-sm">${masteredSkills} / ${totalSkills} Mastered</div>
+            <div class="text-xs text-gray-500">${inProgressSkills} In Progress</div>
+        </div>
+    `;
+}
+
+// --- PROGRESS METRICS TOGGLE LOGIC ---
+async function getProgressEnabled() {
+    if (!currentUser) return true; // Default ON
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (doc.exists && typeof doc.data().progressEnabled === 'boolean') {
+            return doc.data().progressEnabled;
+        }
+    } catch (e) { }
+    return true;
+}
+async function setProgressEnabled(val) {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ progressEnabled: val }, { merge: true });
+}
+async function updateProgressVisibility() {
+    const section = document.getElementById('progressMetrics');
+    const toggle = document.getElementById('toggleProgress');
+    const enabled = await getProgressEnabled();
+    if (section) section.style.display = enabled ? '' : 'none';
+    if (toggle) toggle.checked = enabled;
+    window.progressEnabledCache = enabled;
+}
+// Patch renderProgressMetrics to respect toggle
+const _renderProgressMetrics = renderProgressMetrics;
+renderProgressMetrics = function () {
+    if (window.progressEnabledCache === undefined) {
+        getProgressEnabled().then(enabled => {
+            window.progressEnabledCache = enabled;
+            if (enabled) _renderProgressMetrics();
+            else {
+                const metricsEl = document.getElementById('progressMetrics');
+                if (metricsEl) metricsEl.innerHTML = '';
+            }
+        });
+    } else if (window.progressEnabledCache) {
+        _renderProgressMetrics();
+    } else {
+        const metricsEl = document.getElementById('progressMetrics');
+        if (metricsEl) metricsEl.innerHTML = '';
+    }
+};
+
+// Load user data from Firestore
+async function loadUserData() {
+    try {
+        // Load categories
+        const categoriesDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').get();
+        // Ensure 'General' category exists if categories are empty or just loaded
+        let loadedCategories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
+        if (!loadedCategories.includes('General')) {
+            loadedCategories.unshift('General'); // Add 'General' if missing
+        }
+        categories = loadedCategories;
+
+
+        // Load vocabulary
+        const vocabularySnapshot = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+        vocabularyList = vocabularySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Load skills
+        const skillsSnapshot = await db.collection('users').doc(currentUser.uid).collection('skills').get();
+        skills = skillsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Update UI
+        updateCategorySelect(); // This now handles the delete button state too
+        renderVocabularyList();
+        renderSkillsList();
+        renderBadges(); // Call badge rendering after loading user data
+        renderProgressMetrics();
+        await updateProgressVisibility();
+    } catch (error) {
+        console.error("Error loading data:", error);
+    }
+}
+
+function renderVocabularyList() {
+    const expandedCategories = new Set(
+        Array.from(document.querySelectorAll('#vocabularyList .category-content')) // Scope query
+            .filter(content => content.classList.contains('expanded'))
+            .map(content => content.closest('.category-container').querySelector('.category-header').dataset.categoryName) // Use data attribute
+    );
+
+    const groupedVocab = categories.reduce((acc, category) => {
+        // Ensure category exists in the accumulator
+        acc[category] = vocabularyList.filter(item => item.category === category);
+        return acc;
+    }, {});
+
+
+    vocabularyListEl.innerHTML = categories // Iterate through the official categories list
+        .map(category => {
+            const items = groupedVocab[category] || []; // Get items for this category
+            if (items.length === 0 && category !== 'General') return ''; // Don't render empty categories unless it's General (or keep based on preference)
+
+            const isExpanded = expandedCategories.has(category);
+            return `
+                <div class="mb-4 category-container"> <div class="flex items-center justify-between p-2 bg-gray-100 rounded cursor-pointer category-header hover:bg-gray-200" data-category-name="${category}"> <h3 class="font-bold">${category} (${items.length})</h3>
+                        <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}" style="${isExpanded ? '' : 'display: none;'}"> ${items.map(item => renderVocabItem(item)).join('')}
+                        ${items.length === 0 ? '<p class="text-xs text-gray-500 pl-2">No items in this category yet.</p>' : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    // Re-attach listeners for category headers
+    document.querySelectorAll('#vocabularyList .category-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const isExpanding = !content.classList.contains('expanded');
+            content.classList.toggle('expanded');
+            content.style.display = isExpanding ? 'block' : 'none'; // Toggle display
+            const arrow = header.querySelector('svg');
+            arrow.style.transform = isExpanding ? 'rotate(180deg)' : '';
+        });
+    });
+}
+
+// Render skills list (no changes needed here)
+function renderSkillsList() {
+    skillsList.innerHTML = skills.length > 0 ? skills
+        .map(skill => `
+            <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}"> <div class="font-medium">${skill.name}</div>
+                <div class="flex items-center gap-2">
+                    <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[skill.status]}
+                    </button>
+                    <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('') : '<p class="text-sm text-gray-500">No skills added yet.</p>'; // Message if empty
+}
+
+// Render individual vocabulary item (no changes needed here)
+function renderVocabItem(item) {
+    return `
+        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}"> <div class="font-medium">${item.word}</div>
+            <div class="flex items-center gap-2">
+                 <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
+                </button>
+                <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 // Save categories to Firestore
@@ -602,6 +796,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateAchievementsVisibility();
     }
+    // Progress metrics toggle logic
+    const toggleProgress = document.getElementById('toggleProgress');
+    if (toggleProgress) {
+        toggleProgress.addEventListener('change', async (e) => {
+            await setProgressEnabled(e.target.checked);
+            await updateProgressVisibility();
+            renderProgressMetrics();
+        });
+        updateProgressVisibility();
+    }
+
+    // --- SEARCH FEATURE ---
+    const searchInput = document.getElementById('searchInput');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            filterVocabulary(query);
+            filterSkills(query);
+        });
+    }
+
+    function filterVocabulary(query) {
+        if (!query) {
+            renderVocabularyList();
+            return;
+        }
+        const filtered = vocabularyList.filter(item =>
+            item.word.toLowerCase().includes(query) ||
+            (item.category && item.category.toLowerCase().includes(query))
+        );
+        // Group by category for display
+        const grouped = categories.reduce((acc, category) => {
+            acc[category] = filtered.filter(item => item.category === category);
+            return acc;
+        }, {});
+        // If no results at all, show a single message
+        const totalResults = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
+        if (totalResults === 0) {
+            vocabularyListEl.innerHTML = '<p class="text-sm text-gray-500">No vocabulary results found.</p>';
+            return;
+        }
+        vocabularyListEl.innerHTML = categories
+            .map(category => {
+                const items = grouped[category] || [];
+                if (items.length === 0) return '';
+                return `
+                    <div class="mb-4 category-container">
+                        <div class="flex items-center justify-between p-2 bg-gray-100 rounded category-header">
+                            <h3 class="font-bold">${category} (${items.length})</h3>
+                        </div>
+                        <div class="category-content space-y-2 mt-2 ml-2 expanded" style="display: block;">
+                            ${items.map(item => renderVocabItem(item)).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+    }
+
+    function filterSkills(query) {
+        if (!query) {
+            renderSkillsList();
+            return;
+        }
+        skillsList.innerHTML = skills.filter(skill =>
+            skill.name.toLowerCase().includes(query)
+        ).map(skill => `
+            <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}">
+                <div class="font-medium">${skill.name}</div>
+                <div class="flex items-center gap-2">
+                    <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button">${statusIcons[skill.status]}</button>
+                    <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('') || '<p class="text-sm text-gray-500">No skills found.</p>';
+    }
 });
 
 // Update category select options (no changes needed here)
@@ -649,84 +923,3 @@ const statusIcons = {
     [PROGRESS_STATUS.MASTERED]: `<svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
         </svg>`
 };
-
-// Render vocabulary list (no changes needed here)
-function renderVocabularyList() {
-    const expandedCategories = new Set(
-        Array.from(document.querySelectorAll('#vocabularyList .category-content')) // Scope query
-            .filter(content => content.classList.contains('expanded'))
-            .map(content => content.closest('.category-container').querySelector('.category-header').dataset.categoryName) // Use data attribute
-    );
-
-    const groupedVocab = categories.reduce((acc, category) => {
-        // Ensure category exists in the accumulator
-        acc[category] = vocabularyList.filter(item => item.category === category);
-        return acc;
-    }, {});
-
-
-    vocabularyListEl.innerHTML = categories // Iterate through the official categories list
-        .map(category => {
-            const items = groupedVocab[category] || []; // Get items for this category
-            if (items.length === 0 && category !== 'General') return ''; // Don't render empty categories unless it's General (or keep based on preference)
-
-            const isExpanded = expandedCategories.has(category);
-            return `
-                <div class="mb-4 category-container"> <div class="flex items-center justify-between p-2 bg-gray-100 rounded cursor-pointer category-header hover:bg-gray-200" data-category-name="${category}"> <h3 class="font-bold">${category} (${items.length})</h3>
-                        <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </div>
-                    <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}" style="${isExpanded ? '' : 'display: none;'}"> ${items.map(item => renderVocabItem(item)).join('')}
-                        ${items.length === 0 ? '<p class="text-xs text-gray-500 pl-2">No items in this category yet.</p>' : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-    // Re-attach listeners for category headers
-    document.querySelectorAll('#vocabularyList .category-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const content = header.nextElementSibling;
-            const isExpanding = !content.classList.contains('expanded');
-            content.classList.toggle('expanded');
-            content.style.display = isExpanding ? 'block' : 'none'; // Toggle display
-            const arrow = header.querySelector('svg');
-            arrow.style.transform = isExpanding ? 'rotate(180deg)' : '';
-        });
-    });
-}
-
-// Render skills list (no changes needed here)
-function renderSkillsList() {
-    skillsList.innerHTML = skills.length > 0 ? skills
-        .map(skill => `
-            <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}"> <div class="font-medium">${skill.name}</div>
-                <div class="flex items-center gap-2">
-                    <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[skill.status]}
-                    </button>
-                    <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `).join('') : '<p class="text-sm text-gray-500">No skills added yet.</p>'; // Message if empty
-}
-
-// Render individual vocabulary item (no changes needed here)
-function renderVocabItem(item) {
-    return `
-        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}"> <div class="font-medium">${item.word}</div>
-            <div class="flex items-center gap-2">
-                 <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
-                </button>
-                <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-    `;
-}
