@@ -16,6 +16,7 @@ const db = firebase.firestore();
 // Get DOM elements
 const userEmail = document.getElementById("userEmail");
 const logoutBtn = document.getElementById("logoutBtn");
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
 // Constants
 const PROGRESS_STATUS = {
@@ -59,7 +60,7 @@ async function loadUserData() {
         // Ensure 'General' category exists if categories are empty or just loaded
         let loadedCategories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
         if (!loadedCategories.includes('General')) {
-             loadedCategories.unshift('General'); // Add 'General' if missing
+            loadedCategories.unshift('General'); // Add 'General' if missing
         }
         categories = loadedCategories;
 
@@ -320,14 +321,14 @@ document.addEventListener('DOMContentLoaded', () => {
             newCategoryName.value = '';
             deleteCategoryBtn.disabled = false; // Enable delete for the new category
         } else if (!newCategory) {
-             alert("Please enter a category name.");
+            alert("Please enter a category name.");
         } else {
             alert("Category already exists.");
         }
     });
 
-     // Cancel Add New Category
-     document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+    // Cancel Add New Category
+    document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
         newCategoryInput.classList.add('hidden');
         newCategoryName.value = '';
         // Re-enable delete button based on current selection if needed
@@ -394,6 +395,38 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteItem(itemId, false); // Now includes confirmation
         }
     });
+
+    // Delete Account functionality
+    deleteAccountBtn.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const confirmed = confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
+        if (!confirmed) return;
+        try {
+            // Delete all user data from Firestore
+            const userDocRef = db.collection('users').doc(currentUser.uid);
+            // Delete subcollections (vocabulary, skills, metadata)
+            const vocabSnapshot = await userDocRef.collection('vocabulary').get();
+            const skillsSnapshot = await userDocRef.collection('skills').get();
+            const metadataSnapshot = await userDocRef.collection('metadata').get();
+            const batch = db.batch();
+            vocabSnapshot.forEach(doc => batch.delete(doc.ref));
+            skillsSnapshot.forEach(doc => batch.delete(doc.ref));
+            metadataSnapshot.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            // Delete user document
+            await userDocRef.delete();
+            // Delete auth user
+            await currentUser.delete();
+            alert('Your account has been deleted.');
+            window.location.href = 'login.html';
+        } catch (error) {
+            if (error.code === 'auth/requires-recent-login') {
+                alert('Please log out and log in again, then try deleting your account.');
+            } else {
+                alert('Error deleting account: ' + error.message);
+            }
+        }
+    });
 });
 
 // Update category select options (no changes needed here)
@@ -406,7 +439,7 @@ function updateCategorySelect() {
         categories.splice(generalIndex, 1);
         categories.unshift('General');
     } else if (generalIndex === -1) {
-         categories.unshift('General'); // Add if missing entirely
+        categories.unshift('General'); // Add if missing entirely
     }
 
     categorySelect.innerHTML = categories
@@ -432,7 +465,7 @@ function updateCategorySelect() {
 
 // Status Icons HTML (no changes needed)
 const statusIcons = {
-     [PROGRESS_STATUS.NOT_STARTED]: `<svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/>
+    [PROGRESS_STATUS.NOT_STARTED]: `<svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/>
         </svg>`,
 
     [PROGRESS_STATUS.IN_PROGRESS]: `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 6v6l4 4" stroke-width="2"/>
@@ -446,8 +479,8 @@ const statusIcons = {
 function renderVocabularyList() {
     const expandedCategories = new Set(
         Array.from(document.querySelectorAll('#vocabularyList .category-content')) // Scope query
-        .filter(content => content.classList.contains('expanded'))
-        .map(content => content.closest('.category-container').querySelector('.category-header').dataset.categoryName) // Use data attribute
+            .filter(content => content.classList.contains('expanded'))
+            .map(content => content.closest('.category-container').querySelector('.category-header').dataset.categoryName) // Use data attribute
     );
 
     const groupedVocab = categories.reduce((acc, category) => {
@@ -460,7 +493,7 @@ function renderVocabularyList() {
     vocabularyListEl.innerHTML = categories // Iterate through the official categories list
         .map(category => {
             const items = groupedVocab[category] || []; // Get items for this category
-             if (items.length === 0 && category !== 'General') return ''; // Don't render empty categories unless it's General (or keep based on preference)
+            if (items.length === 0 && category !== 'General') return ''; // Don't render empty categories unless it's General (or keep based on preference)
 
             const isExpanded = expandedCategories.has(category);
             return `

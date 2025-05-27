@@ -20,8 +20,13 @@
                 <h1 class="text-xl font-bold">Language Study Tracker</h1>
                 <div class="flex items-center gap-4">
                     <span id="userEmail" class="text-gray-600"></span>
-                    <button id="logoutBtn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50">
+                    <button id="logoutBtn"
+                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50">
                         Logout
+                    </button>
+                    <button id="deleteAccountBtn"
+                        class="px-4 py-2 bg-gray-200 text-red-600 border border-red-400 rounded hover:bg-red-100 transition-colors">
+                        Delete Account
                     </button>
                 </div>
             </div>
@@ -40,23 +45,28 @@
 
                 <div class="space-y-4 mb-4">
                     <div class="flex gap-2 items-center"> <select id="categorySelect" class="p-2 border rounded">
-                            </select>
-                        <button id="deleteCategoryBtn" class="p-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50" disabled>
+                        </select>
+                        <button id="deleteCategoryBtn"
+                            class="p-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50" disabled>
                             Delete Selected Category
                         </button>
-                        </div>
+                    </div>
 
                     <div id="newCategoryInput" class="flex gap-2 hidden">
-                        <input type="text" id="newCategoryName" placeholder="New category name" class="flex-1 p-2 border rounded">
-                        <button id="addCategoryBtn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add</button>
+                        <input type="text" id="newCategoryName" placeholder="New category name"
+                            class="flex-1 p-2 border rounded">
+                        <button id="addCategoryBtn"
+                            class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add</button>
                         <button id="cancelCategoryBtn" class="p-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
                     </div>
 
                     <div class="flex gap-2">
-                        <textarea id="vocabularyInput" placeholder="Enter words (one per line)" class="flex-1 p-2 border rounded min-h-40"></textarea>
+                        <textarea id="vocabularyInput" placeholder="Enter words (one per line)"
+                            class="flex-1 p-2 border rounded min-h-40"></textarea>
                         <button id="addVocabBtn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
                             </svg>
                         </button>
                     </div>
@@ -71,10 +81,12 @@
                 <h2 class="text-2xl font-bold mb-4">Skills Tracker</h2>
 
                 <div class="flex gap-2 mb-4">
-                    <textarea id="skillsInput" placeholder="Enter skills (one per line)" class="flex-1 p-2 border rounded min-h-40"></textarea>
+                    <textarea id="skillsInput" placeholder="Enter skills (one per line)"
+                        class="flex-1 p-2 border rounded min-h-40"></textarea>
                     <button id="addSkillBtn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
                         </svg>
                     </button>
                 </div>
