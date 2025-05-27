@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Language Study Tracker</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
 </head>
+
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full mx-4">
         <!-- Login Form -->
@@ -18,14 +20,17 @@
             <div class="space-y-4">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <input type="email" id="email"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <input type="password" id="password"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div id="errorMessage" class="text-red-500 text-sm hidden"></div>
-                <button id="loginBtn" class="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition-colors">
+                <button id="loginBtn"
+                    class="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition-colors">
                     Sign In
                 </button>
             </div>
@@ -33,7 +38,8 @@
                 <button id="showRegisterBtn" class="text-blue-500 hover:text-blue-600 text-sm">
                     Don't have an account? Sign up
                 </button>
-                <p>Forgot your password? Email me</p>
+                <button id="showResetPasswordBtn" class="text-blue-500 hover:text-blue-600 text-sm ml-2">Forgot your
+                    password?</button>
             </div>
         </div>
 
@@ -43,18 +49,23 @@
             <div class="space-y-4">
                 <div>
                     <label for="registerEmail" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="registerEmail" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <input type="email" id="registerEmail"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
                     <label for="registerPassword" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="registerPassword" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <input type="password" id="registerPassword"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
-                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                    <input type="password" id="confirmPassword" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm
+                        Password</label>
+                    <input type="password" id="confirmPassword"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div id="registerErrorMessage" class="text-red-500 text-sm hidden"></div>
-                <button id="registerBtn" class="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition-colors">
+                <button id="registerBtn"
+                    class="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition-colors">
                     Create Account
                 </button>
             </div>
@@ -64,7 +75,28 @@
                 </button>
             </div>
         </div>
+
+        <!-- Password Reset Modal -->
+        <div id="resetPasswordModal"
+            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+            <div class="bg-white rounded-lg shadow p-8 w-full max-w-sm relative">
+                <button id="closeResetModal"
+                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600">&times;</button>
+                <h2 class="text-xl font-bold text-center text-gray-900 mb-4">Reset Password</h2>
+                <div class="mb-4">
+                    <label for="resetEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="resetEmail"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="resetErrorMessage" class="text-red-500 text-sm hidden mb-2"></div>
+                <div id="resetSuccessMessage" class="text-green-500 text-sm hidden mb-2"></div>
+                <button id="resetPasswordBtn"
+                    class="w-full bg-blue-500 text-white rounded-md p-2 hover:bg-blue-600 transition-colors mb-2">Send
+                    Reset Email</button>
+            </div>
+        </div>
     </div>
     <script src="login.js"></script>
 </body>
+
 </html>

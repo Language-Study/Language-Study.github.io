@@ -17,6 +17,14 @@ const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const errorMessage = document.getElementById('errorMessage');
 const registerErrorMessage = document.getElementById('registerErrorMessage');
+// Password reset modal elements
+const resetPasswordModal = document.getElementById('resetPasswordModal');
+const showResetPasswordBtn = document.getElementById('showResetPasswordBtn');
+const closeResetModal = document.getElementById('closeResetModal');
+const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+const resetEmail = document.getElementById('resetEmail');
+const resetErrorMessage = document.getElementById('resetErrorMessage');
+const resetSuccessMessage = document.getElementById('resetSuccessMessage');
 
 // Show/Hide Forms
 document.getElementById('showRegisterBtn').addEventListener('click', () => {
@@ -67,6 +75,39 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     } catch (error) {
         registerErrorMessage.textContent = error.message;
         registerErrorMessage.classList.remove('hidden');
+    }
+});
+
+// Show password reset modal
+showResetPasswordBtn.addEventListener('click', () => {
+    resetPasswordModal.classList.remove('hidden');
+    resetErrorMessage.classList.add('hidden');
+    resetSuccessMessage.classList.add('hidden');
+    resetEmail.value = '';
+});
+
+// Close password reset modal
+closeResetModal.addEventListener('click', () => {
+    resetPasswordModal.classList.add('hidden');
+});
+
+// Send password reset email
+resetPasswordBtn.addEventListener('click', async () => {
+    const email = resetEmail.value.trim();
+    resetErrorMessage.classList.add('hidden');
+    resetSuccessMessage.classList.add('hidden');
+    if (!email) {
+        resetErrorMessage.textContent = 'Please enter your email.';
+        resetErrorMessage.classList.remove('hidden');
+        return;
+    }
+    try {
+        await auth.sendPasswordResetEmail(email);
+        resetSuccessMessage.textContent = 'Password reset email sent! Check your inbox.';
+        resetSuccessMessage.classList.remove('hidden');
+    } catch (error) {
+        resetErrorMessage.textContent = error.message;
+        resetErrorMessage.classList.remove('hidden');
     }
 });
 
