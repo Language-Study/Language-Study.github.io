@@ -22,14 +22,85 @@ const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 const PROGRESS_STATUS = {
     NOT_STARTED: 'not_started',
     IN_PROGRESS: 'in_progress',
-    MASTERED: 'mastered'
+    MASTERED: 'mastered',
 };
+
+// Badge definitions
+const BADGES = [
+    {
+        id: 'first_word',
+        name: 'First Word Added',
+        description: 'Add your first vocabulary word.',
+        icon: '🏅',
+        check: () => vocabularyList.length >= 1
+    },
+    {
+        id: 'ten_words',
+        name: '10 Words Added',
+        description: 'Add 10 vocabulary words.',
+        icon: '🎖️',
+        check: () => vocabularyList.length >= 10
+    },
+    {
+        id: 'fifty_words',
+        name: '50 Words Added',
+        description: 'Add 50 vocabulary words.',
+        icon: '🥉',
+        check: () => vocabularyList.length >= 50
+    },
+    {
+        id: 'ten_mastered',
+        name: '10 Words Mastered',
+        description: 'Master 10 vocabulary words.',
+        icon: '🥇',
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 10
+    },
+    {
+        id: 'fifty_mastered',
+        name: '50 Words Mastered',
+        description: 'Master 50 vocabulary words.',
+        icon: '🏆',
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 50
+    },
+    {
+        id: 'first_skill',
+        name: 'First Skill Added',
+        description: 'Add your first skill.',
+        icon: '🏆',
+        check: () => skills.length >= 1
+    },
+    {
+        id: 'five_skills',
+        name: '5 Skills Added',
+        description: 'Add 5 skills.',
+        icon: '🥈',
+        check: () => skills.length >= 5
+    },
+    {
+        id: 'ten_skills',
+        name: '10 Skills Added',
+        description: 'Add 10 skills.',
+        icon: '🎯',
+        check: () => skills.length >= 10
+    },
+    {
+        id: 'all_categories',
+        name: 'Explorer',
+        description: 'Add vocabulary to 3 or more categories.',
+        icon: '🌎',
+        check: () => {
+            const usedCategories = new Set(vocabularyList.map(w => w.category));
+            return usedCategories.size >= 3;
+        }
+    }
+];
 
 // State variables
 let vocabularyList = [];
 let skills = [];
 let categories = [];
 let currentUser = null;
+let earnedBadges = [];
 
 // DOM Elements
 const categorySelect = document.getElementById('categorySelect');
@@ -83,9 +154,45 @@ async function loadUserData() {
         updateCategorySelect(); // This now handles the delete button state too
         renderVocabularyList();
         renderSkillsList();
+        renderBadges(); // Call badge rendering after loading user data
     } catch (error) {
         console.error("Error loading data:", error);
     }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+    toast.style.opacity = '1';
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.classList.add('hidden'), 300);
+    }, 2500);
+}
+
+function renderBadges() {
+    const badgesContainer = document.getElementById('badgesContainer');
+    if (!badgesContainer) return;
+    const previouslyEarned = [...earnedBadges];
+    earnedBadges = BADGES.filter(badge => badge.check()).map(b => b.id);
+    // Show toast for any newly earned badge
+    BADGES.forEach(badge => {
+        if (badge.check() && !previouslyEarned.includes(badge.id)) {
+            showToast(`Badge earned: ${badge.name}!`);
+        }
+    });
+    badgesContainer.innerHTML = BADGES.map(badge => `
+        <div class="flex flex-col items-center p-2 rounded border ${earnedBadges.includes(badge.id) ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-200'} w-32">
+            <div class="text-3xl mb-1">${badge.icon}</div>
+            <div class="font-semibold text-center">${badge.name}</div>
+            <div class="text-xs text-gray-500 text-center">${badge.description}</div>
+            <div class="mt-1 text-xs ${earnedBadges.includes(badge.id) ? 'text-green-600' : 'text-gray-400'}">
+                ${earnedBadges.includes(badge.id) ? 'Earned' : 'Locked'}
+            </div>
+        </div>
+    `).join('');
 }
 
 // Save categories to Firestore
