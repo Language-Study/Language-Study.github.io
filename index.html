@@ -75,6 +75,7 @@
         <div class="grid grid-cols-2 gap-2 mb-4">
             <button class="tab-button p-2 bg-blue-500 text-white rounded" data-tab="vocabulary">Vocabulary</button>
             <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="skills">Skills</button>
+            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="portfolio">Portfolio</button>
         </div>
 
         <div id="vocabulary" class="tab-content active">
@@ -131,6 +132,26 @@
                 </div>
 
                 <div id="skillsList" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <div id="portfolio" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-4">Portfolio</h2>
+                <form id="portfolioForm" class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input id="portfolioTitle" type="text" placeholder="Title" class="flex-1 p-2 border rounded"
+                        required />
+                    <input id="portfolioLink" type="url" placeholder="YouTube Link" class="flex-1 p-2 border rounded"
+                        required />
+                    <button type="submit" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add</button>
+                </form>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Select your top 3 to feature as embedded videos. The rest will
+                        appear
+                        as links.</p>
+                </div>
+                <div id="portfolioTop3" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+                <div id="portfolioList" class="space-y-2"></div>
             </div>
         </div>
 

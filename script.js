@@ -115,6 +115,7 @@ let skills = [];
 let categories = [];
 let currentUser = null;
 let earnedBadges = [];
+let portfolioEntries = [];
 
 // DOM Elements
 const categorySelect = document.getElementById('categorySelect');
@@ -171,6 +172,7 @@ async function loadUserData() {
         renderSkillsList();
         renderBadges(); // Call badge rendering after loading user data
         renderProgressMetrics(); // <<< ADDED: Render progress metrics after data load
+        await loadPortfolio(); // Load portfolio entries
     } catch (error) {
         console.error("Error loading data:", error);
     }
@@ -329,6 +331,7 @@ async function loadUserData() {
         renderBadges(); // Call badge rendering after loading user data
         renderProgressMetrics();
         await updateProgressVisibility();
+        await loadPortfolio(); // Load portfolio entries
     } catch (error) {
         console.error("Error loading data:", error);
     }
@@ -890,6 +893,127 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('') || '<p class="text-sm text-gray-500">No skills found.</p>';
     }
+
+    // --- PORTFOLIO TAB LOGIC ---
+    const portfolioForm = document.getElementById('portfolioForm');
+    const portfolioTitle = document.getElementById('portfolioTitle');
+    const portfolioLink = document.getElementById('portfolioLink');
+    const portfolioTop3 = document.getElementById('portfolioTop3');
+    const portfolioList = document.getElementById('portfolioList');
+
+    // Helper: Extract YouTube video ID
+    function getYouTubeId(url) {
+        const match = url.match(/(?:youtu.be\/|youtube.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/);
+        return match ? match[1] : null;
+    }
+
+    // Load portfolio entries from Firestore
+    async function loadPortfolio() {
+        if (!currentUser) return;
+        const snapshot = await db.collection('users').doc(currentUser.uid).collection('portfolio').orderBy('dateAdded').get();
+        portfolioEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderPortfolio();
+    }
+
+    // Save a new portfolio entry
+    async function addPortfolioEntry(e) {
+        e.preventDefault();
+        const title = portfolioTitle.value.trim();
+        const link = portfolioLink.value.trim();
+        if (!title || !link) return;
+        const videoId = getYouTubeId(link);
+        if (!videoId) {
+            alert('Please enter a valid YouTube link.');
+            return;
+        }
+        await db.collection('users').doc(currentUser.uid).collection('portfolio').add({
+            title,
+            link,
+            videoId,
+            isTop: false,
+            dateAdded: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        portfolioTitle.value = '';
+        portfolioLink.value = '';
+        await loadPortfolio();
+    }
+
+    // Delete a portfolio entry
+    async function deletePortfolioEntry(id) {
+        if (!confirm('Delete this portfolio entry?')) return;
+        await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
+        await loadPortfolio();
+    }
+
+    // Toggle top 3 selection
+    async function toggleTopPortfolio(id) {
+        // Count current top 3
+        const topCount = portfolioEntries.filter(e => e.isTop).length;
+        const entry = portfolioEntries.find(e => e.id === id);
+        if (!entry) return;
+        if (!entry.isTop && topCount >= 3) {
+            alert('You can only select up to 3 top portfolio entries.');
+            return;
+        }
+        await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).update({ isTop: !entry.isTop });
+        await loadPortfolio();
+    }
+
+    // Render portfolio UI
+    function renderPortfolio() {
+        if (!portfolioTop3 || !portfolioList) return;
+        const top3 = portfolioEntries.filter(e => e.isTop).slice(0, 3);
+        const rest = portfolioEntries.filter(e => !e.isTop);
+        portfolioTop3.innerHTML = top3.map(e => `
+            <div class="flex flex-col items-center bg-gray-50 rounded p-2 border relative">
+                <div class="w-full aspect-w-16 aspect-h-9 mb-2">
+                    <iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${e.videoId}" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <div class="font-semibold text-center mb-1">${e.title}</div>
+                <div class="flex gap-2">
+                    <button class="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300" data-action="toggleTop" data-id="${e.id}">Unfeature</button>
+                    <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+                </div>
+            </div>
+        `).join('') || '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+        portfolioList.innerHTML = rest.map(e => `
+            <div class="flex items-center justify-between p-2 border rounded">
+                <div class="flex flex-col">
+                    <span class="font-medium">${e.title}</span>
+                    <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" data-action="toggleTop" data-id="${e.id}">Feature</button>
+                    <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+                </div>
+            </div>
+        `).join('') || '<div class="text-gray-400">No portfolio entries yet.</div>';
+    }
+
+    // Portfolio form submit
+    if (portfolioForm) portfolioForm.addEventListener('submit', addPortfolioEntry);
+    // Portfolio actions (feature/unfeature/delete)
+    if (portfolioTop3) portfolioTop3.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
+        if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
+    });
+    if (portfolioList) portfolioList.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
+        if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
+    });
+
+    // Load portfolio after user data
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            loadPortfolio();
+        }
+    });
 });
 
 // Update category select options (no changes needed here)
