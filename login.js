@@ -111,6 +111,42 @@ resetPasswordBtn.addEventListener('click', async () => {
     }
 });
 
+// Add Enter key support for login form
+['email', 'password'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('loginBtn').click();
+            }
+        });
+    }
+});
+
+// Add Enter key support for register form
+['registerEmail', 'registerPassword', 'confirmPassword'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('registerBtn').click();
+            }
+        });
+    }
+});
+
+// Add Enter key support for reset password modal
+if (resetEmail) {
+    resetEmail.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            resetPasswordBtn.click();
+        }
+    });
+}
+
 // Check auth state (auto-login)
 auth.onAuthStateChanged((user) => {
     if (user) {
