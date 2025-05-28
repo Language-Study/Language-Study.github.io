@@ -13,20 +13,20 @@
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
 </head>
 
-<body class="bg-gray-50">
+<body class="bg-gray-50 overflow-x-hidden">
     <nav class="bg-white shadow-sm mb-4">
-        <div class="max-w-4xl mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold">Language Study Tracker</h1>
-                <div class="flex items-center gap-4">
-                    <span id="userEmail" class="text-gray-600"></span>
+        <div class="max-w-4xl mx-auto px-2 sm:px-4 py-3">
+            <div class="flex flex-wrap sm:flex-nowrap justify-between items-center gap-y-2">
+                <h1 class="text-xl font-bold w-full sm:w-auto">Language Study Tracker</h1>
+                <div class="flex flex-wrap gap-2 sm:gap-4 items-center w-full sm:w-auto justify-end">
+                    <span id="userEmail" class="text-gray-600 truncate max-w-[120px] sm:max-w-none"></span>
                     <button id="openSettingsBtn"
                         class="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 focus:outline-none flex items-center justify-center gap-2"
                         title="Settings">
                         <span class="ml-1 font-medium">Settings</span>
                     </button>
                     <button id="logoutBtn"
-                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50">
+                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50 w-full sm:w-auto">
                         Logout
                     </button>
                 </div>
@@ -34,7 +34,7 @@
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto p-4">
+    <div class="max-w-4xl mx-auto p-2 sm:p-4">
         <!-- Settings Modal -->
         <div id="settingsModal"
             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
@@ -90,12 +90,13 @@
                         </button>
                     </div>
 
-                    <div id="newCategoryInput" class="flex gap-2 hidden">
+                    <div id="newCategoryInput" class="flex flex-wrap gap-2 hidden">
                         <input type="text" id="newCategoryName" placeholder="New category name"
-                            class="flex-1 p-2 border rounded">
+                            class="flex-1 min-w-0 p-2 border rounded">
                         <button id="addCategoryBtn"
-                            class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Add</button>
-                        <button id="cancelCategoryBtn" class="p-2 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+                            class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto">Add</button>
+                        <button id="cancelCategoryBtn"
+                            class="p-2 bg-gray-200 rounded hover:bg-gray-300 w-full sm:w-auto">Cancel</button>
                     </div>
 
                     <div class="flex gap-2">
