@@ -721,8 +721,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add vocabulary
     document.getElementById('addVocabBtn').addEventListener('click', addVocabularyWords);
-    vocabularyInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    vocabularyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
             e.preventDefault();
             addVocabularyWords();
         }
