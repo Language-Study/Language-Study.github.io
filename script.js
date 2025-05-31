@@ -13,23 +13,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- Enable Firestore offline persistence ---
-try {
-    db.enablePersistence({ synchronizeTabs: true })
-        .then(() => {
-            console.log('Offline persistence enabled.');
-        })
-        .catch((err) => {
-            if (err.code === 'failed-precondition') {
-                console.warn('Persistence can only be enabled in one tab at a time.');
-            } else if (err.code === 'unimplemented') {
-                console.warn('Offline persistence is not available in this browser.');
-            }
-        });
-} catch (e) {
-    console.warn('Could not enable offline persistence:', e);
-}
-
 // Get DOM elements
 const userEmail = document.getElementById("userEmail");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -1129,69 +1112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadPortfolio();
         }
     });
-
-    // --- UI: Show online/offline status ---
-    function showConnectionStatus(isOnline) {
-        let banner = document.getElementById('connectionStatusBanner');
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'connectionStatusBanner';
-            banner.style.position = 'fixed';
-            banner.style.top = '0';
-            banner.style.left = '0';
-            banner.style.width = '100vw';
-            banner.style.textAlign = 'center';
-            banner.style.padding = '8px 0';
-            banner.style.fontWeight = 'bold';
-            banner.style.transition = 'opacity 0.3s';
-            banner.style.opacity = '0';
-            banner.style.pointerEvents = 'none'; // Prevent interaction
-            banner.style.zIndex = '9999';
-            banner.style.display = 'none';
-            document.body.appendChild(banner);
-        }
-        // Only add padding when banner is visible
-        function setBodyPadding(show) {
-            document.body.style.paddingTop = show ? '40px' : '';
-        }
-        if (isOnline) {
-            // Only show the online message if coming back from offline
-            if (banner.dataset.wasOffline === 'true') {
-                banner.textContent = 'Back online. Syncing changes.';
-                banner.style.background = '#d1fae5';
-                banner.style.color = '#065f46';
-                banner.style.display = 'block';
-                banner.style.opacity = '1';
-                setBodyPadding(true);
-                setTimeout(() => {
-                    banner.style.opacity = '0';
-                    setTimeout(() => {
-                        banner.style.display = 'none';
-                        setBodyPadding(false);
-                        banner.dataset.wasOffline = '';
-                    }, 300);
-                }, 2000);
-            } else {
-                // Hide banner and padding if not coming from offline
-                banner.style.display = 'none';
-                banner.style.opacity = '0';
-                setBodyPadding(false);
-            }
-        } else {
-            banner.textContent = 'You are offline. Changes will sync when reconnected.';
-            banner.style.background = '#fee2e2';
-            banner.style.color = '#991b1b';
-            banner.style.display = 'block';
-            banner.style.opacity = '1';
-            setBodyPadding(true);
-            banner.dataset.wasOffline = 'true';
-        }
-    }
-
-    window.addEventListener('online', () => showConnectionStatus(true));
-    window.addEventListener('offline', () => showConnectionStatus(false));
-
-    showConnectionStatus(navigator.onLine);
 });
 
 // --- Show settings overview for first-time users ---
