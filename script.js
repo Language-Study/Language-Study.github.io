@@ -841,6 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const query = searchInput.value.trim().toLowerCase();
             filterVocabulary(query);
             filterSkills(query);
+            filterPortfolio(query); // Add this line to include portfolio titles in search
         });
     }
 
@@ -901,6 +902,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('') || '<p class="text-sm text-gray-500">No skills found.</p>';
+    }
+
+    function filterPortfolio(query) {
+        if (!query) {
+            renderPortfolio();
+            return;
+        }
+        const lowerQuery = query.toLowerCase();
+        // Filter by title or link
+        const filtered = portfolioEntries.filter(item =>
+            (item.title && item.title.toLowerCase().includes(lowerQuery)) ||
+            (item.link && item.link.toLowerCase().includes(lowerQuery))
+        );
+        // Split into top3 and rest as in renderPortfolio
+        const top3 = filtered.filter(e => e.isTop).slice(0, 3);
+        const rest = filtered.filter(e => !e.isTop);
+        const topCount = top3.length;
+        portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
+            let embedHtml = '';
+            if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
+                let videoId = getYouTubeId(e.link) || e.videoId;
+                if (videoId) {
+                    embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                } else {
+                    embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
+                }
+            } else if (e.type === 'soundcloud') {
+                embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(e.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+            } else {
+                embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
+            }
+            return (
+                `<div class=\"flex flex-col items-center bg-gray-50 rounded p-2 border relative\">` +
+                `<div class=\"w-full aspect-w-16 aspect-h-9 mb-2\">` +
+                embedHtml +
+                `</div>` +
+                `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
+                `<div class=\"flex gap-2\">` +
+                `<button class=\"px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
+                `<button class=\"px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
+                `</div>` +
+                `</div>`
+            );
+        }).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+        portfolioList.innerHTML = rest.length > 0 ? rest.map(e => `
+            <div class="flex items-center justify-between p-2 border rounded">
+                <div class="flex flex-col">
+                    <span class="font-medium">${e.title}</span>
+                    <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''}>Feature</button>
+                    <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+                </div>
+            </div>
+        `).join('') : (filtered.length === 0 ? '<div class="text-gray-400">No portfolio entries found.</div>' : '');
     }
 
     // --- PORTFOLIO TAB LOGIC ---
