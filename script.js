@@ -106,6 +106,20 @@ const BADGES = [
             const usedCategories = new Set(vocabularyList.map(w => w.category));
             return usedCategories.size >= 3;
         }
+    },
+    {
+        id: 'first_portfolio',
+        name: 'First Portfolio Item',
+        description: 'Add your first portfolio entry.',
+        icon: '📁', // file folder
+        check: () => Array.isArray(portfolioEntries) && portfolioEntries.length >= 1
+    },
+    {
+        id: 'five_portfolio',
+        name: '5 Portfolio Items',
+        description: 'Add 5 portfolio entries.',
+        icon: '⭐', // star
+        check: () => Array.isArray(portfolioEntries) && portfolioEntries.length >= 5
     }
 ];
 
