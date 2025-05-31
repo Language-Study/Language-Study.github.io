@@ -211,6 +211,31 @@
                 searchInput.focus();
             });
         }
+
+        // Update search bar hint text based on active tab
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const searchInputBox = document.getElementById('searchInput');
+        const tabPlaceholders = {
+            vocabulary: 'Search vocabulary...',
+            skills: 'Search skills...',
+            portfolio: 'Search portfolio...'
+        };
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.getAttribute('data-tab');
+                if (tabPlaceholders[tab] && searchInputBox) {
+                    searchInputBox.placeholder = tabPlaceholders[tab];
+                }
+            });
+        });
+        // Set initial placeholder based on active tab
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && searchInputBox) {
+            const id = activeTab.id;
+            if (tabPlaceholders[id]) {
+                searchInputBox.placeholder = tabPlaceholders[id];
+            }
+        }
     </script>
 </body>
 
