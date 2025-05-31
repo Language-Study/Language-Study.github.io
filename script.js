@@ -973,7 +973,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!portfolioTop3 || !portfolioList) return;
         const top3 = portfolioEntries.filter(e => e.isTop).slice(0, 3);
         const rest = portfolioEntries.filter(e => !e.isTop);
-        portfolioTop3.innerHTML = top3.map(e => `
+        const topCount = top3.length;
+        portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => `
             <div class="flex flex-col items-center bg-gray-50 rounded p-2 border relative">
                 <div class="w-full aspect-w-16 aspect-h-9 mb-2">
                     <iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${e.videoId}" frameborder="0" allowfullscreen></iframe>
@@ -984,19 +985,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
-        `).join('') || '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
-        portfolioList.innerHTML = rest.map(e => `
+        `).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+        portfolioList.innerHTML = rest.length > 0 ? rest.map(e => `
             <div class="flex items-center justify-between p-2 border rounded">
                 <div class="flex flex-col">
                     <span class="font-medium">${e.title}</span>
                     <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" data-action="toggleTop" data-id="${e.id}">Feature</button>
+                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 videos"' : ''}>Feature</button>
                     <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
-        `).join('') || '<div class="text-gray-400">No portfolio entries yet.</div>';
+        `).join('') : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
     }
 
     // Portfolio form submit
