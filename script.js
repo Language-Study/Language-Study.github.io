@@ -924,10 +924,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const lowerQuery = query.toLowerCase();
-        // Filter by title or link
+        // Only filter by title, not by link
         const filtered = portfolioEntries.filter(item =>
-            (item.title && item.title.toLowerCase().includes(lowerQuery)) ||
-            (item.link && item.link.toLowerCase().includes(lowerQuery))
+            item.title && item.title.toLowerCase().includes(lowerQuery)
         );
         // Split into top3 and rest as in renderPortfolio
         const top3 = filtered.filter(e => e.isTop).slice(0, 3);
