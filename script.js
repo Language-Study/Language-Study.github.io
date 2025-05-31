@@ -134,6 +134,15 @@ auth.onAuthStateChanged(async (user) => {
         userEmail.textContent = `Logged in as: ${user.email}`;
         await loadUserData();
         await updateAchievementsVisibility();
+        // --- Show settings modal and overview if first login ---
+        const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
+            openSettingsModal();
+            setTimeout(() => {
+                showSettingsOverview();
+            }, 400); // Wait for modal animation
+            await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ firstLogin: false }, { merge: true });
+        }
     } else {
         window.location.href = 'login.html';
     }
@@ -1015,6 +1024,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// --- Show settings overview for first-time users ---
+function showSettingsOverview() {
+    const modal = document.getElementById('settingsModal');
+    if (!modal) return;
+    let overview = document.createElement('div');
+    overview.id = 'settingsOverviewMsg';
+    overview.className = 'mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded';
+    overview.innerHTML = `<strong>Welcome!</strong><br>
+        <ul class='list-disc pl-5 mt-2 text-sm'>
+            <li><b>Show Achievements</b>: Toggle to display badges for your learning milestones.</li>
+            <li><b>Show Progress Metrics</b>: Toggle to display your vocabulary and skills progress at the top.</li>
+        </ul>
+        <span class='block mt-2 text-xs text-gray-500'>You can change these settings anytime.</span>`;
+    // Insert at top of modal, remove if already present
+    const old = document.getElementById('settingsOverviewMsg');
+    if (old) old.remove();
+    modal.querySelector('h2').after(overview);
+}
 
 // Update category select options (no changes needed here)
 function updateCategorySelect() {
