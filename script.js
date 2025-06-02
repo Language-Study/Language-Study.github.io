@@ -287,14 +287,14 @@ function renderProgressMetrics() {
 
 // --- PROGRESS METRICS TOGGLE LOGIC ---
 async function getProgressEnabled() {
-    if (!currentUser) return true; // Default ON
+    if (!currentUser) return false;
     try {
         const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (doc.exists && typeof doc.data().progressEnabled === 'boolean') {
             return doc.data().progressEnabled;
         }
     } catch (e) { }
-    return true;
+    return false;
 }
 async function setProgressEnabled(val) {
     if (!currentUser) return;
