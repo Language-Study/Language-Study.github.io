@@ -675,50 +675,84 @@ showToast = async function (message) {
 };
 
 // --- MENTOR CODE GENERATION & SHARING ---
-async function getOrCreateMentorCode() {
+async function getMentorCodeEnabled() {
+    if (!currentUser) return false;
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (doc.exists && typeof doc.data().mentorCodeEnabled === 'boolean') {
+            return doc.data().mentorCodeEnabled;
+        }
+    } catch (e) { }
+    return false;
+}
+async function setMentorCodeEnabled(val) {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ mentorCodeEnabled: val }, { merge: true });
+    if (!val) {
+        // Delete mentor code if disabling mentor access
+        const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+        if (!codeDoc.empty) {
+            // There should only be one code per user
+            await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
+        }
+    }
+}
+async function getOrCreateMentorCode(forceRegenerate = false) {
     if (!currentUser) return null;
     const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
-    if (!codeDoc.empty) {
+    if (!codeDoc.empty && !forceRegenerate) {
         return codeDoc.docs[0].id;
+    }
+    // If regenerating, delete old code
+    if (!codeDoc.empty && forceRegenerate) {
+        await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
     }
     // Generate a new 5-digit alphanumeric code
     const code = generateMentorCode();
     await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid });
     return code;
 }
-
-function generateMentorCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 5; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+async function showMentorCode(forceRegenerate = false) {
+    const enabled = await getMentorCodeEnabled();
+    const codeDiv = document.getElementById('mentorCodeDiv');
+    const regenBtn = document.getElementById('regenerateMentorCodeBtn');
+    const infoDiv = document.getElementById('mentorCodeInfo');
+    if (!enabled) {
+        if (codeDiv) codeDiv.innerHTML = '';
+        if (regenBtn) regenBtn.classList.add('hidden');
+        if (infoDiv) infoDiv.classList.add('hidden');
+        return;
     }
-    return code;
-}
-
-// Show mentor code in settings modal
-async function showMentorCode() {
-    const code = await getOrCreateMentorCode();
-    let codeDiv = document.getElementById('mentorCodeDiv');
-    if (!codeDiv) {
-        codeDiv = document.createElement('div');
-        codeDiv.id = 'mentorCodeDiv';
-        codeDiv.className = 'mt-4 p-2 bg-blue-50 border border-blue-300 rounded text-center';
-        document.getElementById('settingsModal').appendChild(codeDiv);
+    const code = await getOrCreateMentorCode(forceRegenerate);
+    if (codeDiv) {
+        codeDiv.innerHTML = `<b>Mentor Share Code:</b> <span class='font-mono text-lg select-all'>${code}</span>`;
     }
-    codeDiv.innerHTML = `<b>Mentor Share Code:</b> <span class='font-mono text-lg select-all'>${code}</span><br><span class='text-xs text-gray-500'>Share this code with your mentor to let them view your progress (read-only).</span>`;
+    if (regenBtn) regenBtn.classList.remove('hidden');
+    if (infoDiv) infoDiv.classList.remove('hidden');
 }
-
 // Add mentor code display when opening settings
 const _openSettingsModal = openSettingsModal;
 openSettingsModal = function () {
     _openSettingsModal();
-    showMentorCode();
+    updateMentorCodeToggle();
 };
-
-// --- Mentor View Logic ---
-window.isMentorView = false;
-window.mentorUid = null;
+async function updateMentorCodeToggle() {
+    const toggle = document.getElementById('toggleMentorCode');
+    const regenBtn = document.getElementById('regenerateMentorCodeBtn');
+    if (!toggle) return;
+    const enabled = await getMentorCodeEnabled();
+    toggle.checked = enabled;
+    showMentorCode();
+    toggle.onchange = async (e) => {
+        await setMentorCodeEnabled(e.target.checked);
+        showMentorCode();
+    };
+    if (regenBtn) {
+        regenBtn.onclick = async () => {
+            await showMentorCode(true);
+        };
+    }
+}
 
 // --- Ensure mentor view is detected before auth state logic ---
 (async function detectMentorViewEarly() {
@@ -797,7 +831,6 @@ function showMentorExitButton() {
 // Mentor view logic (no changes needed here)
 async function loadUserDataForMentor(uid) {
     // ...same as loadUserData, but use uid instead of currentUser.uid and do not allow editing
-    // Only load and render data, do not attach event listeners for editing
     // (You can refactor loadUserData to accept a uid and a readOnly flag)
     // For brevity, call loadUserData with a global override
     window.forceReadOnly = true;
@@ -967,6 +1000,11 @@ document.addEventListener('DOMContentLoaded', () => {
             skillsSnapshot.forEach(doc => batch.delete(doc.ref));
             metadataSnapshot.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
+            // Delete mentor code if it exists
+            const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+            if (!codeDoc.empty) {
+                await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
+            }
             // Delete user document
             await userDocRef.delete();
             // Delete auth user
@@ -1008,6 +1046,34 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProgressVisibility();
     }
 
+    // Mentor code toggle confirmation
+    const mentorToggle = document.getElementById('toggleMentorCode');
+    if (mentorToggle) {
+        let lastMentorChecked = mentorToggle.checked;
+        mentorToggle.addEventListener('change', async (e) => {
+            if (!mentorToggle.checked) {
+                const confirmed = confirm('Are you sure you want to disable Mentor Access? Your mentor will no longer be able to view your progress.');
+                if (!confirmed) {
+                    mentorToggle.checked = true;
+                    return;
+                }
+            }
+            lastMentorChecked = mentorToggle.checked;
+        });
+    }
+    // Regenerate code confirmation
+    const regenBtn = document.getElementById('regenerateMentorCodeBtn');
+    if (regenBtn) {
+        regenBtn.addEventListener('click', async (e) => {
+            const confirmed = confirm('Are you sure you want to regenerate your mentor code? Your old code will no longer work.');
+            if (!confirmed) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // If you have a handler for regeneration, let it proceed
+        }, true);
+    }
     // --- SEARCH FEATURE ---
     const searchInput = document.getElementById('searchInput');
 
@@ -1290,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mentor View Form Logic
     const mentorViewForm = document.getElementById('mentorViewForm');
     if (mentorViewForm) {
-        mentorViewForm.addEventListener('submit', function (e) {
+        mentorViewForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             const codeInput = document.getElementById('mentorCodeInput');
             const errorDiv = document.getElementById('mentorViewError');
@@ -1300,9 +1366,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorDiv.classList.remove('hidden');
                 return;
             }
+            // Check Firestore for code validity before redirecting
             errorDiv.classList.add('hidden');
-            // Redirect to mentor view with code in URL
-            window.location.href = window.location.pathname + '?mentor=' + code;
+            try {
+                const doc = await db.collection('mentorCodes').doc(code).get();
+                if (!doc.exists) {
+                    errorDiv.textContent = 'Invalid mentor code.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                // Valid code, redirect
+                window.location.href = window.location.pathname + '?mentor=' + code;
+            } catch (err) {
+                errorDiv.textContent = 'Error checking code. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
         });
     }
 });
@@ -1371,3 +1449,13 @@ const statusIcons = {
     [PROGRESS_STATUS.MASTERED]: `<svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
         </svg>`
 };
+
+// Utility: Generate a random 5-character alphanumeric mentor code
+function generateMentorCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}

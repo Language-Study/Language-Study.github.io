@@ -50,8 +50,20 @@
                     <input type="checkbox" id="toggleProgress" class="form-checkbox h-5 w-5 text-blue-600">
                     <label for="toggleProgress" class="text-gray-700">Show Progress Metrics</label>
                 </div>
-                <!-- Mentor Code Section (shown dynamically) -->
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" id="toggleMentorCode" class="form-checkbox h-5 w-5 text-blue-600">
+                    <label for="toggleMentorCode" class="text-gray-700">Enable Mentor Access</label>
+                </div>
                 <div id="mentorCodeDiv"></div>
+                <div id="mentorCodeInfo" class="text-xs text-gray-500 mt-1 mb-2 hidden">
+                    Share this code with your mentor to let them view your progress.
+                    <br>
+                    Only you can edit your data. Mentors with this code can view your progress, but cannot make changes.
+                </div>
+                <button id="regenerateMentorCodeBtn"
+                    class="w-full mt-2 p-2 bg-blue-100 text-blue-700 border border-blue-300 rounded hover:bg-blue-200 transition-colors hidden">
+                    Regenerate Code
+                </button>
                 <button id="deleteAccountBtn"
                     class="w-full mt-6 p-2 bg-gray-200 text-red-600 border border-red-400 rounded hover:bg-red-100 transition-colors">
                     Delete Account
