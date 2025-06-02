@@ -145,7 +145,15 @@ const deleteCategoryBtn = document.getElementById('deleteCategoryBtn');
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
-        userEmail.textContent = `Logged in as: ${user.email}`;
+        if (window.isMentorView) {
+            const params = new URLSearchParams(window.location.search);
+            const mentorCode = params.get('mentor');
+            userEmail.innerHTML = mentorCode
+                ? `Mentor View: <b>(${mentorCode})</b>`
+                : 'Mentor View';
+        } else {
+            userEmail.textContent = `Logged in as: ${user.email}`;
+        }
         await loadUserData();
         await updateAchievementsVisibility();
         // --- Show settings modal and overview if first login ---
@@ -666,6 +674,159 @@ showToast = async function (message) {
     if (window.achievementsEnabledCache) _showToast(message);
 };
 
+// --- MENTOR CODE GENERATION & SHARING ---
+async function getOrCreateMentorCode() {
+    if (!currentUser) return null;
+    const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+    if (!codeDoc.empty) {
+        return codeDoc.docs[0].id;
+    }
+    // Generate a new 5-digit alphanumeric code
+    const code = generateMentorCode();
+    await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid });
+    return code;
+}
+
+function generateMentorCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+
+// Show mentor code in settings modal
+async function showMentorCode() {
+    const code = await getOrCreateMentorCode();
+    let codeDiv = document.getElementById('mentorCodeDiv');
+    if (!codeDiv) {
+        codeDiv = document.createElement('div');
+        codeDiv.id = 'mentorCodeDiv';
+        codeDiv.className = 'mt-4 p-2 bg-blue-50 border border-blue-300 rounded text-center';
+        document.getElementById('settingsModal').appendChild(codeDiv);
+    }
+    codeDiv.innerHTML = `<b>Mentor Share Code:</b> <span class='font-mono text-lg select-all'>${code}</span><br><span class='text-xs text-gray-500'>Share this code with your mentor to let them view your progress (read-only).</span>`;
+}
+
+// Add mentor code display when opening settings
+const _openSettingsModal = openSettingsModal;
+openSettingsModal = function () {
+    _openSettingsModal();
+    showMentorCode();
+};
+
+// --- Mentor View Logic ---
+window.isMentorView = false;
+window.mentorUid = null;
+
+// --- Ensure mentor view is detected before auth state logic ---
+(async function detectMentorViewEarly() {
+    const params = new URLSearchParams(window.location.search);
+    const mentorCode = params.get('mentor');
+    if (mentorCode) {
+        // Set isMentorView to true immediately if mentor param is present
+        window.isMentorView = true;
+    }
+    // Do not load data here, just set the flag for UI
+})();
+
+function addMentorBackButton() {
+    // Only show in mentor view
+    if (!window.isMentorView) return;
+    // Hide the logout button
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    // Prevent duplicate mentor back button
+    if (document.getElementById('mentorBackBtn')) return;
+    // Create a new button for going back to mentor's account
+    const btn = document.createElement('button');
+    btn.id = 'mentorBackBtn';
+    btn.textContent = 'Go back to my account';
+    // Use the same classes as the logout button for position and style
+    btn.className = logoutBtn ? logoutBtn.className : 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+    // Place the button in the same parent and position as the logout button
+    if (logoutBtn && logoutBtn.parentNode) {
+        logoutBtn.parentNode.insertBefore(btn, logoutBtn.nextSibling);
+    } else {
+        document.body.appendChild(btn);
+    }
+    btn.onclick = () => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('mentor');
+        let newUrl = url.pathname;
+        if (url.searchParams.toString()) {
+            newUrl += '?' + url.searchParams.toString();
+        }
+        window.location.replace(newUrl);
+    };
+}
+
+async function tryMentorView() {
+    const params = new URLSearchParams(window.location.search);
+    const mentorCode = params.get('mentor');
+    if (!mentorCode) return;
+    // Lookup code in Firestore
+    const code = mentorCode.toUpperCase();
+    const doc = await db.collection('mentorCodes').doc(code).get();
+    if (!doc.exists) {
+        alert('Invalid mentor code.');
+        return;
+    }
+    window.isMentorView = true;
+    window.mentorUid = doc.data().uid;
+    // Load data for mentorUid instead of currentUser
+    await loadUserDataForMentor(window.mentorUid);
+    // Disable all editing features
+    disableEditingUI();
+    addMentorBackButton();
+}
+
+function showMentorExitButton() {
+    // Only add if not already present
+    if (document.getElementById('mentorExitBtn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'mentorExitBtn';
+    btn.textContent = 'Go back to my account';
+    btn.className = 'fixed top-4 right-4 z-50 px-4 py-2 bg-blue-600 text-white rounded shadow-lg hover:bg-blue-700';
+    btn.addEventListener('click', function () {
+        window.location.href = 'login.html';
+    });
+    document.body.appendChild(btn);
+}
+
+// Mentor view logic (no changes needed here)
+async function loadUserDataForMentor(uid) {
+    // ...same as loadUserData, but use uid instead of currentUser.uid and do not allow editing
+    // Only load and render data, do not attach event listeners for editing
+    // (You can refactor loadUserData to accept a uid and a readOnly flag)
+    // For brevity, call loadUserData with a global override
+    window.forceReadOnly = true;
+    currentUser = { uid };
+    await loadUserData();
+}
+
+function disableEditingUI() {
+    // Disable all buttons/inputs for editing
+    document.querySelectorAll('button, input, textarea, select').forEach(el => {
+        if (!el.closest('#settingsModal') && el !== logoutBtn) el.disabled = true;
+    });
+    // Hide add/delete buttons (but NOT logoutBtn)
+    document.querySelectorAll('.delete-button, .status-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn').forEach(el => {
+        if (el) el.style.display = 'none';
+    });
+    // Hide settings modal if open
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.classList.add('hidden');
+    // Ensure logoutBtn is visible and enabled in mentor view
+    if (window.isMentorView && logoutBtn) {
+        logoutBtn.style.display = '';
+        logoutBtn.disabled = false;
+    }
+}
+
+// On page load, check for mentor view
+window.addEventListener('DOMContentLoaded', tryMentorView);
+
 document.addEventListener('DOMContentLoaded', () => {
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -1125,6 +1286,25 @@ document.addEventListener('DOMContentLoaded', () => {
             loadPortfolio();
         }
     });
+
+    // Mentor View Form Logic
+    const mentorViewForm = document.getElementById('mentorViewForm');
+    if (mentorViewForm) {
+        mentorViewForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const codeInput = document.getElementById('mentorCodeInput');
+            const errorDiv = document.getElementById('mentorViewError');
+            const code = codeInput.value.trim().toUpperCase();
+            if (!/^[A-Z0-9]{5}$/.test(code)) {
+                errorDiv.textContent = 'Please enter a valid 5-digit code.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            errorDiv.classList.add('hidden');
+            // Redirect to mentor view with code in URL
+            window.location.href = window.location.pathname + '?mentor=' + code;
+        });
+    }
 });
 
 // --- Show settings overview for first-time users ---
