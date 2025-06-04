@@ -707,8 +707,15 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
     if (!codeDoc.empty && forceRegenerate) {
         await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
     }
-    // Generate a new 5-digit alphanumeric code
-    const code = generateMentorCode();
+    // Generate a new unique 5-digit alphanumeric code
+    let code, exists, attempts = 0;
+    do {
+        code = generateMentorCode();
+        const doc = await db.collection('mentorCodes').doc(code).get();
+        exists = doc.exists;
+        attempts++;
+    } while (exists && attempts < 10);
+    if (exists) throw new Error('Could not generate a unique mentor code. Please try again.');
     await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid });
     return code;
 }
