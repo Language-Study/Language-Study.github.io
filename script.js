@@ -1411,7 +1411,7 @@ function showSettingsOverview() {
         <ul class='list-disc pl-5 mt-2 text-sm'>
             <li><b>Show Achievements</b>: Toggle to display badges for your learning milestones.</li>
             <li><b>Show Progress Metrics</b>: Toggle to display your vocabulary and skills progress at the top.</li>
-            <li><b>Mentor Mode</b>: Enable Mentor Access to generate a code you can share with a mentor. Mentors can use this code to view your progress, but cannot make changes to your data. You can disable or regenerate your mentor code at any time in Settings.</li>
+            <li><b>Mentor Mode</b>: Enable Mentor Access to allow mentors to view your progress. They cannot make changes to your data.</li>
         </ul>
         <span class='block mt-2 text-xs text-gray-500'>You can change these settings anytime.</span>`;
     // Insert at top of modal, remove if already present
