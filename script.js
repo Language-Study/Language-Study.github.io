@@ -1196,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
                 `<div class=\"flex gap-2\">` +
                 `<button class=\"px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
-                `<button class=\"px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
+                `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
                 `</div>` +
                 `</div>`
             );
@@ -1209,10 +1209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="flex gap-2">
                     <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''}>Feature</button>
-                    <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+                    <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
-        `).join('') : (filtered.length === 0 ? '<div class="text-gray-400">No portfolio entries found.</div>' : '');
+        `).join('') : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
     }
 
     // --- PORTFOLIO TAB LOGIC ---
@@ -1304,7 +1304,6 @@ document.addEventListener('DOMContentLoaded', () => {
         portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
             let embedHtml = '';
             if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
-                // Always extract videoId from link if missing (for legacy entries)
                 let videoId = getYouTubeId(e.link) || e.videoId;
                 if (videoId) {
                     embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
@@ -1324,7 +1323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
                 `<div class=\"flex gap-2\">` +
                 `<button class=\"px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
-                `<button class=\"px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
+                `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
                 `</div>` +
                 `</div>`
             );
@@ -1337,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="flex gap-2">
                     <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''}>Feature</button>
-                    <button class="px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+                    <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
         `).join('') : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
