@@ -202,11 +202,13 @@ async function loadUserData() {
         renderVocabularyList();
         renderSkillsList();
         renderBadges(); // Call badge rendering after loading user data
-        renderProgressMetrics(); // <<< ADDED: Render progress metrics after data load
         await loadPortfolio(); // Load portfolio entries
     } catch (error) {
         console.error("Error loading data:", error);
     }
+    // Ensure progress metrics visibility and rendering are updated after loading user data
+    await updateProgressVisibility();
+    renderProgressMetrics();
 }
 
 function showToast(message) {
@@ -360,12 +362,14 @@ async function loadUserData() {
         renderVocabularyList();
         renderSkillsList();
         renderBadges(); // Call badge rendering after loading user data
-        renderProgressMetrics();
-        await updateProgressVisibility();
+        // Do not call renderProgressMetrics here
         await loadPortfolio(); // Load portfolio entries
     } catch (error) {
         console.error("Error loading data:", error);
     }
+    // Ensure progress metrics visibility and rendering are updated after loading user data
+    await updateProgressVisibility();
+    renderProgressMetrics();
 }
 
 function renderVocabularyList() {
