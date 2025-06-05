@@ -848,7 +848,7 @@ async function loadUserDataForMentor(uid) {
 function disableEditingUI() {
     // Only disable editing actions, not tab navigation or content display
     // Hide add/delete/status buttons and forms, but keep tab buttons and content visible
-    document.querySelectorAll('.delete-button, .status-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn, #newCategoryInput, #vocabularyInput, #skillsInput, #portfolioTitle, #portfolioLink').forEach(el => {
+    document.querySelectorAll('.delete-button, .status-button, .feature-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn, #newCategoryInput, #vocabularyInput, #skillsInput, #portfolioTitle, #portfolioLink').forEach(el => {
         if (el) {
             if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
                 el.style.display = 'none';
@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `</div>` +
                 `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
                 `<div class=\"flex gap-2\">` +
-                `<button class=\"px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
+                `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
                 `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
                 `</div>` +
                 `</div>`
@@ -1208,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''}>Feature</button>
+                    <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title=\"You can only feature 3 items\"' : ''}>Feature</button>
                     <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
@@ -1322,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `</div>` +
                 `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
                 `<div class=\"flex gap-2\">` +
-                `<button class=\"px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
+                `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
                 `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
                 `</div>` +
                 `</div>`
@@ -1335,7 +1335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''}>Feature</button>
+                    <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title=\"You can only feature 3 items\"' : ''}>Feature</button>
                     <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
