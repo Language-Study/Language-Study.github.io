@@ -846,13 +846,16 @@ async function loadUserDataForMentor(uid) {
 }
 
 function disableEditingUI() {
-    // Disable all buttons/inputs for editing
-    document.querySelectorAll('button, input, textarea, select').forEach(el => {
-        if (!el.closest('#settingsModal') && el !== logoutBtn) el.disabled = true;
-    });
-    // Hide add/delete buttons (but NOT logoutBtn)
-    document.querySelectorAll('.delete-button, .status-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn').forEach(el => {
-        if (el) el.style.display = 'none';
+    // Only disable editing actions, not tab navigation or content display
+    // Hide add/delete/status buttons and forms, but keep tab buttons and content visible
+    document.querySelectorAll('.delete-button, .status-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn, #newCategoryInput, #vocabularyInput, #skillsInput, #portfolioTitle, #portfolioLink').forEach(el => {
+        if (el) {
+            if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
+                el.style.display = 'none';
+            } else {
+                el.disabled = true;
+            }
+        }
     });
     // Hide settings modal if open
     const modal = document.getElementById('settingsModal');
@@ -862,6 +865,11 @@ function disableEditingUI() {
         logoutBtn.style.display = '';
         logoutBtn.disabled = false;
     }
+    // Show all tab buttons and tab content (vocabulary, skills, portfolio)
+    document.querySelectorAll('.tab-button, .tab-content').forEach(el => {
+        el.style.display = '';
+        el.disabled = false;
+    });
 }
 
 // On page load, check for mentor view
