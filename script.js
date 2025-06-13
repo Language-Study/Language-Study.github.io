@@ -586,7 +586,7 @@ async function deleteItem(id, isVocab) {
     } // <<< End confirmation check
 }
 
-// --- Delete Category Function (no changes needed here) ---
+// --- Delete Category Function ---
 async function deleteCategory() {
     const categoryToDelete = categorySelect.value;
     const protectedCategories = ['General']; // 'General' cannot be deleted
@@ -1157,7 +1157,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
                     </button>
                 </div>
             </div>
@@ -1398,6 +1397,47 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 errorDiv.textContent = 'Error checking code. Please try again.';
                 errorDiv.classList.remove('hidden');
+            }
+        });
+    }
+
+    // Change Email functionality
+    const changeEmailBtn = document.getElementById('changeEmailBtn');
+    const changeEmailInput = document.getElementById('changeEmailInput');
+    const changeEmailMsg = document.getElementById('changeEmailMsg');
+    if (changeEmailBtn && changeEmailInput && changeEmailMsg) {
+        changeEmailBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            const newEmail = changeEmailInput.value.trim();
+            changeEmailMsg.textContent = '';
+            if (!newEmail) {
+                changeEmailMsg.textContent = 'Please enter an email address.';
+                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
+                return;
+            }
+            if (newEmail === currentUser.email) {
+                changeEmailMsg.textContent = 'You entered your current email. Please enter a different email address.';
+                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
+                return;
+            }
+            try {
+                await currentUser.verifyBeforeUpdateEmail(newEmail);
+                changeEmailMsg.textContent = 'A verification link has been sent to your new email address. Please check your inbox and click the link to complete the email change.';
+                changeEmailMsg.className = 'text-sm mt-2 text-blue-600';
+            } catch (error) {
+                let msg = 'Error: ' + (error.message || error);
+                if (error.code) msg += ` (code: ${error.code})`;
+                if (error.code === 'auth/requires-recent-login') {
+                    msg = 'Please log out and log in again, then try changing your email.';
+                } else if (error.code === 'auth/email-already-in-use') {
+                    msg = 'This email is already in use by another account.';
+                } else if (error.code === 'auth/invalid-email') {
+                    msg = 'The email address is not valid.';
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    msg = 'Email change is not allowed. Check your Firebase Authentication settings.';
+                }
+                changeEmailMsg.textContent = msg;
+                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
             }
         });
     }
