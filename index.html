@@ -149,8 +149,10 @@
                     </div>
 
                     <div class="flex gap-2">
-                        <textarea id="vocabularyInput" placeholder="Enter word or phrase"
-                            class="flex-1 p-2 border rounded min-h-40"></textarea>
+                        <input id="vocabularyInput" type="text" placeholder="Enter word or phrase"
+                            class="flex-1 p-2 border rounded" />
+                        <input id="translationInput" type="text" placeholder="Translation or media link (optional)"
+                            class="flex-1 p-2 border rounded" />
                         <button id="addVocabBtn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -158,8 +160,9 @@
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Tip: Press <b>Shift+Enter</b> to add multiple vocabulary items
-                        at once.</p>
+                    <p class="text-xs text-gray-500 mt-1">Press <b>Enter</b> in either box to add a vocabulary item. You
+                        can also add a translation or a YouTube/SoundCloud link.
+                    </p>
                 </div>
 
                 <div id="vocabularyList" class="space-y-4"></div>

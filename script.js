@@ -17,6 +17,7 @@ const db = firebase.firestore();
 const userEmail = document.getElementById("userEmail");
 const logoutBtn = document.getElementById("logoutBtn");
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+const translationInput = document.getElementById('translationInput');
 
 // Constants
 const PROGRESS_STATUS = {
@@ -450,10 +451,26 @@ function renderSkillsList() {
 
 // Render individual vocabulary item (updated for mentor view)
 function renderVocabItem(item) {
+    let translationHtml = '';
+    if (item.translation) {
+        const ytRegex = /(?:youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|(?:v|embed|shorts)\/)|youtu\.be\/)([\w-]{11})/;
+        const scRegex = /^https?:\/\/(soundcloud\.com|snd\.sc)\//;
+        if (ytRegex.test(item.translation)) {
+            translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline">YouTube Link</a>`;
+        } else if (scRegex.test(item.translation)) {
+            translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline">SoundCloud Link</a>`;
+        } else {
+            translationHtml = `<span class="text-gray-700">${item.translation}</span>`;
+        }
+    }
     return `
-        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}"> <div class="font-medium">${item.word}</div>
-            <div class="flex items-center gap-2">
-                 ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
+        <div class="vocab-item flex flex-col sm:flex-row sm:items-center justify-between p-2 border rounded mb-2" data-id="${item.id}">
+            <div class="flex-1">
+                <div class="font-medium">${item.word}</div>
+                ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
+            </div>
+            <div class="flex items-center gap-2 mt-2 sm:mt-0">
+                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
                 </button>`}
                 ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -482,26 +499,26 @@ async function saveCategories() {
 // Add vocabulary words
 async function addVocabularyWords() {
     const words = vocabularyInput.value.trim().split('\n').filter(word => word.trim());
+    const translation = translationInput.value.trim();
     if (words.length > 0) {
         try {
             const batch = db.batch();
             const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
-
             const newItems = words.map(word => ({
                 word: word.trim(),
-                category: categorySelect.value === 'new' ? 'General' : categorySelect.value, // Default to General if 'new' somehow selected
+                translation: translation || '',
+                category: categorySelect.value === 'new' ? 'General' : categorySelect.value,
                 status: PROGRESS_STATUS.NOT_STARTED,
                 dateAdded: firebase.firestore.FieldValue.serverTimestamp()
             }));
-
             for (const item of newItems) {
                 const newDocRef = vocabRef.doc();
                 batch.set(newDocRef, item);
             }
-
             await batch.commit();
             vocabularyInput.value = '';
-            await loadUserData(); // Reload data to show new items
+            translationInput.value = '';
+            await loadUserData();
         } catch (error) {
             console.error("Error adding vocabulary:", error);
         }
@@ -961,7 +978,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add vocabulary
     document.getElementById('addVocabBtn').addEventListener('click', addVocabularyWords);
     vocabularyInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addVocabularyWords();
+        }
+    });
+    translationInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
             e.preventDefault();
             addVocabularyWords();
         }
