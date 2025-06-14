@@ -382,4 +382,10 @@
     #badgesContainer>.bg-green-50 .text-xs {
         color: #e0e6ed !important;
     }
+
+    /* Improves translation visibility in dark mode */
+    .translation-text {
+        color: #e5e7eb !important;
+        /* Tailwind's gray-200 */
+    }
 }

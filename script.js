@@ -460,7 +460,7 @@ function renderVocabItem(item) {
         } else if (scRegex.test(item.translation)) {
             translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline">SoundCloud Link</a>`;
         } else {
-            translationHtml = `<span class="text-gray-700">${item.translation}</span>`;
+            translationHtml = `<span class="text-gray-700 translation-text">${item.translation}</span>`;
         }
     }
     return `
