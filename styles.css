@@ -126,8 +126,8 @@
 
     .settings,
     .btn-secondary {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
+        background-color: #2a2d32 !important;
+        color: #e0e6ed !important;
         border: 1px solid #888 !important;
     }
 
@@ -481,5 +481,19 @@
 
     #cancelCategoryBtn:hover {
         background-color: #35383d !important;
+    }
+
+    #badgesContainer>.bg-green-50 {
+        background-color: #193c2f !important;
+        border-color: #3ba97b !important;
+    }
+
+    #badgesContainer>.bg-green-50 .text-green-600 {
+        color: #6ee7b7 !important;
+    }
+
+    #badgesContainer>.bg-green-50 .font-semibold,
+    #badgesContainer>.bg-green-50 .text-xs {
+        color: #e0e6ed !important;
     }
 }
