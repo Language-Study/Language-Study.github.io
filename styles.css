@@ -57,3 +57,333 @@
     background-color: #fee2e2;
     transform: scale(1.1);
 }
+
+/* Dark mode styles based on user's device preference */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #181a1b;
+        color: #e8e6e3;
+    }
+
+    header,
+    .header,
+    .top-bar {
+        background-color: #181a1b;
+        color: #e8e6e3;
+    }
+
+    .tab-button {
+        background-color: #23272a;
+        color: #e8e6e3;
+        border-color: #23272a;
+    }
+
+    .tab-button.active {
+        background-color: #2c2f33;
+        color: #fff;
+    }
+
+    .tab.active {
+        background-color: #2563eb !important;
+        /* Distinct blue for active tab in dark mode */
+        color: #fff !important;
+    }
+
+    .category-header:hover {
+        background-color: #23272a;
+    }
+
+    .category-content.expanded {
+        background-color: #23272a;
+    }
+
+    .progress-button {
+        background-color: #23272a;
+        color: #e8e6e3;
+    }
+
+    /* --- Improved dark mode for better card, button, and input contrast --- */
+    .card,
+    .container,
+    .vocab-tracker,
+    .category-content,
+    .category-header,
+    .vocab-tracker,
+    .tracker-card,
+    .tracker-container {
+        background-color: #23272a !important;
+        color: #e8e6e3;
+        border-color: #23272a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    .vocab-tracker,
+    .tracker-card,
+    .tracker-container {
+        background-color: #23272a !important;
+        color: #e8e6e3;
+    }
+
+    .settings,
+    .btn-secondary {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #888 !important;
+    }
+
+    .logout,
+    .btn-danger,
+    .Delete {
+        background-color: #e74c3c !important;
+        color: #fff !important;
+        border: 1px solid #c0392b !important;
+    }
+
+    .progress-button,
+    .add-btn,
+    .plus-btn,
+    .blue-btn {
+        background-color: #2563eb !important;
+        color: #fff !important;
+        border: 1px solid #1e40af !important;
+    }
+
+    input,
+    textarea,
+    select {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #b0b3b8 !important;
+        opacity: 1;
+    }
+
+    .search-box,
+    .search-input {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    .no-items,
+    .empty-message {
+        color: #b0b3b8 !important;
+    }
+
+    /* Make sure all text in cards and containers is readable */
+    .card *,
+    .container *,
+    .vocab-tracker *,
+    .tracker-card *,
+    .tracker-container * {
+        color: #e8e6e3 !important;
+    }
+
+    /* Header text color */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .header-title,
+    .vocab-title {
+        color: #e8e6e3 !important;
+    }
+
+    /* For white backgrounds that may remain */
+    .white-bg,
+    .bg-white {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+    }
+
+    /* Dark mode for colored info/warning/legend/mentor sections */
+    .progress-legend,
+    .legend,
+    .status-legend,
+    .mentor-access,
+    .mentor-section,
+    .bg-blue-50,
+    .bg-yellow-50,
+    .bg-info,
+    .bg-warning {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+        border-color: #23272a !important;
+    }
+
+    .mentor-access *,
+    .mentor-section * {
+        color: #e8e6e3 !important;
+    }
+
+    /* Adjust icon colors for status indicators */
+    .status-icon.not-started {
+        color: #b0b3b8 !important;
+    }
+
+    .status-icon.in-progress {
+        color: #facc15 !important;
+    }
+
+    .status-icon.mastered {
+        color: #4ade80 !important;
+    }
+
+    /* Orange mentor button for dark mode */
+    .mentor-btn,
+    .btn-mentor,
+    .view-mentor-btn {
+        background-color: #f59e42 !important;
+        color: #23272a !important;
+        border: 1px solid #b45309 !important;
+    }
+
+    /* Ensure 'Logged in as:' and modal text are readable in dark mode */
+    .user-info,
+    .logged-in-as,
+    .login-status,
+    .modal,
+    .modal-content,
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        color: #e8e6e3 !important;
+        background-color: #23272a !important;
+        border-color: #23272a !important;
+    }
+
+    .modal input,
+    .modal textarea,
+    .modal select {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    .modal-title,
+    .modal-header * {
+        color: #e8e6e3 !important;
+    }
+
+    .modal-footer button,
+    .modal-footer .btn {
+        background-color: #2563eb !important;
+        color: #fff !important;
+        border: 1px solid #1e40af !important;
+    }
+
+    /* Force the #userEmail ("Logged in as:") text to be bright and readable in dark mode */
+    #userEmail {
+        color: #e8e6e3 !important;
+        opacity: 1 !important;
+        font-weight: 400 !important;
+    }
+
+    /* Ensure all modal text, labels, and checkboxes are bright in dark mode */
+    .modal,
+    .modal-content,
+    .modal * {
+        color: #e8e6e3 !important;
+    }
+
+    .modal label,
+    .modal-content label,
+    .modal label *,
+    .modal-content label * {
+        color: #e8e6e3 !important;
+    }
+
+    .modal input[type="checkbox"],
+    .modal-content input[type="checkbox"] {
+        accent-color: #2563eb !important;
+        background-color: #23272a !important;
+        border: 1px solid #444 !important;
+    }
+
+    .modal input,
+    .modal-content input,
+    .modal textarea,
+    .modal-content textarea {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    .modal button,
+    .modal-content button {
+        color: #fff !important;
+    }
+
+    .modal .text-gray-700,
+    .modal .text-gray-600,
+    .modal .text-gray-500,
+    .modal-content .text-gray-700,
+    .modal-content .text-gray-600,
+    .modal-content .text-gray-500 {
+        color: #e8e6e3 !important;
+    }
+
+    /* Force modal and all modal content to use dark backgrounds and light text in dark mode */
+    #settingsModal>div,
+    #settingsModal .bg-white,
+    #settingsModal .rounded-lg,
+    #settingsModal .shadow,
+    #settingsModal .p-8 {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+    }
+
+    #settingsModal label,
+    #settingsModal .text-gray-700,
+    #settingsModal .text-gray-600,
+    #settingsModal .text-gray-500,
+    #settingsModal .text-xs,
+    #settingsModal .block {
+        color: #e8e6e3 !important;
+    }
+
+    #settingsModal input[type="checkbox"] {
+        accent-color: #2563eb !important;
+        background-color: #23272a !important;
+        border: 1px solid #444 !important;
+    }
+
+    #settingsModal input,
+    #settingsModal textarea {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    #settingsModal button {
+        color: #fff !important;
+    }
+
+    #settingsModal #deleteAccountBtn {
+        background-color: #23272a !important;
+        color: #ff6b6b !important;
+        border: 1px solid #ff6b6b !important;
+    }
+
+    #settingsModal #deleteAccountBtn:hover {
+        background-color: #3a2323 !important;
+    }
+
+    /* Force main background to be dark in dark mode, overriding Tailwind utility classes */
+    body,
+    .bg-gray-50,
+    .bg-white,
+    .main-bg,
+    html {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+    }
+
+    /* Add more selectors as needed for your UI */
+}

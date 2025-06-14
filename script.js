@@ -887,13 +887,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 content.classList.remove('active');
             });
             document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-200', 'text-gray-700', 'active');
                 btn.classList.add('bg-gray-200', 'text-gray-700');
             });
 
             document.getElementById(button.dataset.tab).classList.add('active');
             button.classList.remove('bg-gray-200', 'text-gray-700');
-            button.classList.add('bg-blue-500', 'text-white');
+            button.classList.add('bg-blue-500', 'text-white', 'active');
         });
     });
 
