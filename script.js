@@ -156,19 +156,31 @@ auth.onAuthStateChanged(async (user) => {
         }
         await loadUserData();
         await updateAchievementsVisibility();
-        // --- Show settings modal and overview if first login ---
+        // --- Show welcome modal if first login ---
         const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
-            openSettingsModal();
-            setTimeout(() => {
-                showSettingsOverview();
-            }, 400); // Wait for modal animation
+            showWelcomeModal();
             await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ firstLogin: false }, { merge: true });
         }
     } else {
         window.location.href = 'login.html';
     }
 });
+
+// Show the welcome modal for new users
+function showWelcomeModal() {
+    const modal = document.getElementById('welcomeModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    // Close modal on X or Continue
+    const closeBtn = document.getElementById('closeWelcomeBtn');
+    const continueBtn = document.getElementById('welcomeContinueBtn');
+    function close() {
+        modal.classList.add('hidden');
+    }
+    if (closeBtn) closeBtn.onclick = close;
+    if (continueBtn) continueBtn.onclick = close;
+}
 
 // Load user data from Firestore
 async function loadUserData() {
@@ -1442,26 +1454,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// --- Show settings overview for first-time users ---
-function showSettingsOverview() {
-    const modal = document.getElementById('settingsModal');
-    if (!modal) return;
-    let overview = document.createElement('div');
-    overview.id = 'settingsOverviewMsg';
-    overview.className = 'mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded';
-    overview.innerHTML = `<strong>Welcome!</strong><br>
-        <ul class='list-disc pl-5 mt-2 text-sm'>
-            <li><b>Show Achievements</b>: Toggle to display badges for your learning milestones.</li>
-            <li><b>Show Progress Metrics</b>: Toggle to display your vocabulary and skills progress at the top.</li>
-            <li><b>Mentor Mode</b>: Enable Mentor Access to allow mentors to view your progress. They cannot make changes to your data.</li>
-        </ul>
-        <span class='block mt-2 text-xs text-gray-500'>You can change these settings anytime.</span>`;
-    // Insert at top of modal, remove if already present
-    const old = document.getElementById('settingsOverviewMsg');
-    if (old) old.remove();
-    modal.querySelector('h2').after(overview);
-}
 
 // Update category select options (no changes needed here)
 function updateCategorySelect() {

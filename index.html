@@ -35,6 +35,28 @@
     </nav>
 
     <div class="max-w-4xl mx-auto p-2 sm:p-4">
+        <!-- New User Welcome Modal -->
+        <div id="welcomeModal"
+            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
+            <div class="bg-white rounded-lg shadow p-8 w-full max-w-xs relative">
+                <button id="closeWelcomeBtn"
+                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <h2 class="text-xl font-bold mb-4 text-center">Welcome!</h2>
+                <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-blue-900 rounded">
+                    <ul class='list-disc pl-5 mt-2 text-sm'>
+                        <li><b>Show Achievements</b>: Toggle to display badges for your learning milestones.</li>
+                        <li><b>Show Progress Metrics</b>: Toggle to display your vocabulary and skills progress at the
+                            top.</li>
+                        <li><b>Mentor Mode</b>: Enable Mentor Access to allow mentors to view your progress. They cannot
+                            make changes to your data.</li>
+                    </ul>
+                    <span class='block mt-2 text-xs text-gray-500'>You can change these settings anytime.</span>
+                </div>
+                <button id="welcomeContinueBtn"
+                    class="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors mt-4">Continue</button>
+            </div>
+        </div>
+
         <!-- Settings Modal -->
         <div id="settingsModal"
             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
