@@ -387,5 +387,8 @@
     .translation-text {
         color: #e5e7eb !important;
         /* Tailwind's gray-200 */
+        font-style: italic;
+        font-weight: 500;
+        letter-spacing: 0.02em;
     }
 }
