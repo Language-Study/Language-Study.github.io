@@ -385,5 +385,19 @@
         color: #e8e6e3 !important;
     }
 
-    /* Add more selectors as needed for your UI */
+    .icon-btn,
+    .icon-button,
+    .timer-icon {
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    .status-button.progress-button {
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    .text-gray-500, .text-gray-600, .hint, .tip, .text-xs, .text-sm {
+        color: #b0b3b8 !important;
+    }
 }
