@@ -405,4 +405,81 @@
     .text-sm {
         color: #b0b3b8 !important;
     }
+
+    /* Dark mode styles for cards */
+    .card {
+        background: #23272f;
+        color: #e0e6ed;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .card .card-title {
+        color: #6cb4ff;
+    }
+
+    .card .card-title.skills {
+        color: #6fcf97;
+    }
+
+    .card .card-subtitle,
+    .card .card-progress {
+        color: #b0b8c1;
+    }
+
+    #progressMetrics>div {
+        background-color: #23272f !important;
+    }
+
+    #progressMetrics .font-bold.text-blue-700 {
+        color: #6cb4ff !important;
+    }
+
+    #progressMetrics .font-bold.text-green-700 {
+        color: #6fcf97 !important;
+    }
+
+    #progressMetrics .text-sm {
+        color: #e0e6ed !important;
+    }
+
+    #progressMetrics .text-xs.text-gray-500 {
+        color: #b0b8c1 !important;
+    }
+
+    #regenerateMentorCodeBtn {
+        background-color: #223355 !important;
+        color: #e0e6ed !important;
+        border-color: #395b8c !important;
+    }
+
+    #regenerateMentorCodeBtn:hover {
+        background-color: #2d4266 !important;
+    }
+
+    .feature-button {
+        background-color: #223355 !important;
+        color: #a3cbff !important;
+    }
+
+    .feature-button:hover {
+        background-color: #2d4266 !important;
+    }
+
+    .delete-button {
+        background-color: #23272f !important;
+        color: #ff6b6b !important;
+    }
+
+    .delete-button:hover {
+        background-color: #3a2323 !important;
+    }
+
+    #cancelCategoryBtn {
+        background-color: #2a2d32 !important;
+        color: #e0e6ed !important;
+    }
+
+    #cancelCategoryBtn:hover {
+        background-color: #35383d !important;
+    }
 }
