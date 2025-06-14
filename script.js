@@ -13,9 +13,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Enable Firestore offline persistence using FirestoreSettings.cache (future-proof)
-db.settings({ cache: { type: 'persistent' } });
-
 // Get DOM elements
 const userEmail = document.getElementById("userEmail");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -474,40 +471,27 @@ async function saveCategories() {
 async function addVocabularyWords() {
     const words = vocabularyInput.value.trim().split('\n').filter(word => word.trim());
     if (words.length > 0) {
-        if (navigator.onLine) {
-            try {
-                const batch = db.batch();
-                const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
-                const newItems = words.map(word => ({
-                    word: word.trim(),
-                    category: categorySelect.value === 'new' ? 'General' : categorySelect.value,
-                    status: PROGRESS_STATUS.NOT_STARTED,
-                    dateAdded: firebase.firestore.FieldValue.serverTimestamp()
-                }));
-                for (const item of newItems) {
-                    const newDocRef = vocabRef.doc();
-                    batch.set(newDocRef, item);
-                }
-                await batch.commit();
-                vocabularyInput.value = '';
-                await loadUserData();
-            } catch (error) {
-                console.error("Error adding vocabulary:", error);
-            }
-        } else {
-            // Offline: queue changes and update UI
+        try {
+            const batch = db.batch();
+            const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
+
             const newItems = words.map(word => ({
                 word: word.trim(),
-                category: categorySelect.value === 'new' ? 'General' : categorySelect.value,
+                category: categorySelect.value === 'new' ? 'General' : categorySelect.value, // Default to General if 'new' somehow selected
                 status: PROGRESS_STATUS.NOT_STARTED,
-                dateAdded: Date.now()
+                dateAdded: firebase.firestore.FieldValue.serverTimestamp()
             }));
-            let offlineVocab = JSON.parse(localStorage.getItem('offline_vocabulary') || '[]');
-            offlineVocab = offlineVocab.concat(newItems);
-            localStorage.setItem('offline_vocabulary', JSON.stringify(offlineVocab));
-            newItems.forEach(item => queueOfflineChange('add_vocab', item));
+
+            for (const item of newItems) {
+                const newDocRef = vocabRef.doc();
+                batch.set(newDocRef, item);
+            }
+
+            await batch.commit();
             vocabularyInput.value = '';
-            loadAllDataOffline();
+            await loadUserData(); // Reload data to show new items
+        } catch (error) {
+            console.error("Error adding vocabulary:", error);
         }
     }
 }
@@ -516,38 +500,26 @@ async function addVocabularyWords() {
 async function addSkills() {
     const skillsToAdd = skillsInput.value.trim().split('\n').filter(skill => skill.trim());
     if (skillsToAdd.length > 0) {
-        if (navigator.onLine) {
-            try {
-                const batch = db.batch();
-                const skillsRef = db.collection('users').doc(currentUser.uid).collection('skills');
-                const newItems = skillsToAdd.map(skill => ({
-                    name: skill.trim(),
-                    status: PROGRESS_STATUS.NOT_STARTED,
-                    dateAdded: firebase.firestore.FieldValue.serverTimestamp()
-                }));
-                for (const item of newItems) {
-                    const newDocRef = skillsRef.doc();
-                    batch.set(newDocRef, item);
-                }
-                await batch.commit();
-                skillsInput.value = '';
-                await loadUserData();
-            } catch (error) {
-                console.error("Error adding skills:", error);
-            }
-        } else {
-            // Offline: queue changes and update UI
+        try {
+            const batch = db.batch();
+            const skillsRef = db.collection('users').doc(currentUser.uid).collection('skills');
+
             const newItems = skillsToAdd.map(skill => ({
                 name: skill.trim(),
                 status: PROGRESS_STATUS.NOT_STARTED,
-                dateAdded: Date.now()
+                dateAdded: firebase.firestore.FieldValue.serverTimestamp()
             }));
-            let offlineSkills = JSON.parse(localStorage.getItem('offline_skills') || '[]');
-            offlineSkills = offlineSkills.concat(newItems);
-            localStorage.setItem('offline_skills', JSON.stringify(offlineSkills));
-            newItems.forEach(item => queueOfflineChange('add_skill', item));
+
+            for (const item of newItems) {
+                const newDocRef = skillsRef.doc();
+                batch.set(newDocRef, item);
+            }
+
+            await batch.commit();
             skillsInput.value = '';
-            loadAllDataOffline();
+            await loadUserData(); // Reload data to show new items
+        } catch (error) {
+            console.error("Error adding skills:", error);
         }
     }
 }
@@ -606,16 +578,6 @@ async function deleteItem(id, isVocab) {
         try {
             const collection = isVocab ? 'vocabulary' : 'skills';
             await db.collection('users').doc(currentUser.uid).collection(collection).doc(id).delete();
-            // --- Remove from offline/localStorage ---
-            if (isVocab) {
-                let offlineVocab = JSON.parse(localStorage.getItem('offline_vocabulary') || '[]');
-                offlineVocab = offlineVocab.filter(item => item.id !== id);
-                localStorage.setItem('offline_vocabulary', JSON.stringify(offlineVocab));
-            } else {
-                let offlineSkills = JSON.parse(localStorage.getItem('offline_skills') || '[]');
-                offlineSkills = offlineSkills.filter(item => item.id !== id);
-                localStorage.setItem('offline_skills', JSON.stringify(offlineSkills));
-            }
             await loadUserData(); // Reload data to update UI
         } catch (error) {
             console.error(`Error deleting ${itemType}:`, error);
@@ -641,24 +603,20 @@ async function deleteCategory() {
         try {
             // 1. Filter out the category locally
             categories = categories.filter(cat => cat !== categoryToDelete);
-            // --- Remove from offline/localStorage ---
-            let offlineCategories = JSON.parse(localStorage.getItem('offline_categories') || '[]');
-            offlineCategories = offlineCategories.filter(cat => cat !== categoryToDelete);
-            localStorage.setItem('offline_categories', JSON.stringify(offlineCategories));
+
             // 2. Save updated categories list to Firestore
-            await saveCategories();
+            await saveCategories(); // This now ensures 'General' persists if needed
+
             // 3. Find and delete vocabulary items associated with this category
             const itemsToDelete = vocabularyList.filter(item => item.category === categoryToDelete);
             const batch = db.batch();
             const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
+
             itemsToDelete.forEach(item => {
                 batch.delete(vocabRef.doc(item.id));
             });
-            await batch.commit();
-            // --- Remove vocabulary from offline/localStorage ---
-            let offlineVocab = JSON.parse(localStorage.getItem('offline_vocabulary') || '[]');
-            offlineVocab = offlineVocab.filter(item => item.category !== categoryToDelete);
-            localStorage.setItem('offline_vocabulary', JSON.stringify(offlineVocab));
+            await batch.commit(); // Commit the batch delete
+
             // 4. Refresh user data (which includes re-rendering lists)
             await loadUserData();
 
@@ -1323,10 +1281,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deletePortfolioEntry(id) {
         if (!confirm('Delete this portfolio entry?')) return;
         await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
-        // --- Remove from offline/localStorage ---
-        let offlinePortfolio = JSON.parse(localStorage.getItem('offline_portfolio') || '[]');
-        offlinePortfolio = offlinePortfolio.filter(item => item.id !== id);
-        localStorage.setItem('offline_portfolio', JSON.stringify(offlinePortfolio));
         await loadPortfolio();
     }
 
@@ -1564,225 +1518,3 @@ function generateMentorCode() {
     }
     return code;
 }
-
-// --- OFFLINE SYNC LOGIC ---
-// Utility: Save all user data to localStorage
-async function saveAllDataOffline() {
-    if (!currentUser) return;
-    try {
-        // Fetch all user data
-        const [categoriesDoc, vocabularySnapshot, skillsSnapshot, portfolioSnapshot] = await Promise.all([
-            db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').get(),
-            db.collection('users').doc(currentUser.uid).collection('vocabulary').get(),
-            db.collection('users').doc(currentUser.uid).collection('skills').get(),
-            db.collection('users').doc(currentUser.uid).collection('portfolio').get()
-        ]);
-        const categories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
-        const vocabulary = vocabularySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const skills = skillsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const portfolio = portfolioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Save to localStorage
-        localStorage.setItem('offline_categories', JSON.stringify(categories));
-        localStorage.setItem('offline_vocabulary', JSON.stringify(vocabulary));
-        localStorage.setItem('offline_skills', JSON.stringify(skills));
-        localStorage.setItem('offline_portfolio', JSON.stringify(portfolio));
-        showToast('All data saved for offline use!');
-    } catch (e) {
-        showToast('Failed to save data for offline use.');
-        console.error(e);
-    }
-}
-
-// Utility: Load all user data from localStorage (offline)
-function loadAllDataOffline() {
-    try {
-        categories = JSON.parse(localStorage.getItem('offline_categories')) || ['General'];
-        vocabularyList = JSON.parse(localStorage.getItem('offline_vocabulary')) || [];
-        skills = JSON.parse(localStorage.getItem('offline_skills')) || [];
-        portfolioEntries = JSON.parse(localStorage.getItem('offline_portfolio')) || [];
-        updateCategorySelect();
-        renderVocabularyList();
-        renderSkillsList();
-        renderBadges();
-        renderProgressMetrics();
-        showToast('Offline data loaded.');
-    } catch (e) {
-        showToast('Failed to load offline data.');
-        console.error(e);
-    }
-}
-
-// Utility: Queue offline changes
-function queueOfflineChange(type, data) {
-    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
-    queue.push({ type, data, timestamp: Date.now() });
-    localStorage.setItem('offline_queue', JSON.stringify(queue));
-}
-
-// Utility: Sync queued changes to Firebase
-async function syncOfflineQueue() {
-    if (!currentUser) return;
-    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
-    if (queue.length === 0) return;
-    for (const item of queue) {
-        try {
-            if (item.type === 'add_vocab') {
-                await db.collection('users').doc(currentUser.uid).collection('vocabulary').add(item.data);
-            } else if (item.type === 'add_skill') {
-                await db.collection('users').doc(currentUser.uid).collection('skills').add(item.data);
-            } // Add more types as needed
-        } catch (e) {
-            console.error('Failed to sync offline change:', item, e);
-        }
-    }
-    localStorage.removeItem('offline_queue');
-    showToast('Offline changes synced!');
-}
-
-// --- TWO-WAY MERGE LOGIC ---
-async function twoWayMergeData() {
-    if (!currentUser) return;
-    try {
-        console.log('[SYNC] Starting two-way merge...');
-        // 1. Fetch online data
-        const [categoriesDoc, vocabularySnapshot, skillsSnapshot, portfolioSnapshot] = await Promise.all([
-            db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').get(),
-            db.collection('users').doc(currentUser.uid).collection('vocabulary').get(),
-            db.collection('users').doc(currentUser.uid).collection('skills').get(),
-            db.collection('users').doc(currentUser.uid).collection('portfolio').get()
-        ]);
-        const onlineCategories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
-        const onlineVocabulary = vocabularySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const onlineSkills = skillsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const onlinePortfolio = portfolioSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('[SYNC] Online data loaded:', { onlineCategories, onlineVocabulary, onlineSkills, onlinePortfolio });
-
-        // 2. Fetch offline data
-        const offlineCategories = JSON.parse(localStorage.getItem('offline_categories')) || ['General'];
-        const offlineVocabulary = JSON.parse(localStorage.getItem('offline_vocabulary')) || [];
-        const offlineSkills = JSON.parse(localStorage.getItem('offline_skills')) || [];
-        const offlinePortfolio = JSON.parse(localStorage.getItem('offline_portfolio')) || [];
-        console.log('[SYNC] Offline data loaded:', { offlineCategories, offlineVocabulary, offlineSkills, offlinePortfolio });
-
-        // 3. Merge logic (by id, prefer latest dateAdded if conflict)
-        function mergeById(onlineArr, offlineArr) {
-            const map = new Map();
-            [...onlineArr, ...offlineArr].forEach(item => {
-                if (!item.id) {
-                    // Assign a temp id for offline items without id
-                    item.id = item.word || item.name || Math.random().toString(36).slice(2, 10);
-                }
-                if (!map.has(item.id)) {
-                    map.set(item.id, item);
-                } else {
-                    // Conflict: pick latest
-                    const existing = map.get(item.id);
-                    if ((item.dateAdded || 0) > (existing.dateAdded || 0)) {
-                        map.set(item.id, item);
-                    }
-                }
-            });
-            return Array.from(map.values());
-        }
-        // Categories: merge unique
-        const mergedCategories = Array.from(new Set([...onlineCategories, ...offlineCategories]));
-        const mergedVocabulary = mergeById(onlineVocabulary, offlineVocabulary);
-        const mergedSkills = mergeById(onlineSkills, offlineSkills);
-        const mergedPortfolio = mergeById(onlinePortfolio, offlinePortfolio);
-        console.log('[SYNC] Merged data:', { mergedCategories, mergedVocabulary, mergedSkills, mergedPortfolio });
-
-        // 4. Update both sources
-        // Update Firestore
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').set({ list: mergedCategories });
-        // Vocabulary
-        const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
-        const vocabDocs = await vocabRef.get();
-        // Delete removed
-        for (const doc of vocabDocs.docs) {
-            if (!mergedVocabulary.find(item => item.id === doc.id)) {
-                await vocabRef.doc(doc.id).delete();
-                console.log('[SYNC] Deleted vocab from Firestore:', doc.id);
-            }
-        }
-        // Upsert all
-        for (const item of mergedVocabulary) {
-            await vocabRef.doc(item.id).set(item, { merge: true });
-            console.log('[SYNC] Upserted vocab to Firestore:', item);
-        }
-        // Skills
-        const skillsRef = db.collection('users').doc(currentUser.uid).collection('skills');
-        const skillsDocs = await skillsRef.get();
-        for (const doc of skillsDocs.docs) {
-            if (!mergedSkills.find(item => item.id === doc.id)) {
-                await skillsRef.doc(doc.id).delete();
-                console.log('[SYNC] Deleted skill from Firestore:', doc.id);
-            }
-        }
-        for (const item of mergedSkills) {
-            await skillsRef.doc(item.id).set(item, { merge: true });
-            console.log('[SYNC] Upserted skill to Firestore:', item);
-        }
-        // Portfolio
-        const portfolioRef = db.collection('users').doc(currentUser.uid).collection('portfolio');
-        const portfolioDocs = await portfolioRef.get();
-        for (const doc of portfolioDocs.docs) {
-            if (!mergedPortfolio.find(item => item.id === doc.id)) {
-                await portfolioRef.doc(doc.id).delete();
-                console.log('[SYNC] Deleted portfolio from Firestore:', doc.id);
-            }
-        }
-        for (const item of mergedPortfolio) {
-            await portfolioRef.doc(item.id).set(item, { merge: true });
-            console.log('[SYNC] Upserted portfolio to Firestore:', item);
-        }
-        // 5. Update offline
-        localStorage.setItem('offline_categories', JSON.stringify(mergedCategories));
-        localStorage.setItem('offline_vocabulary', JSON.stringify(mergedVocabulary));
-        localStorage.setItem('offline_skills', JSON.stringify(mergedSkills));
-        localStorage.setItem('offline_portfolio', JSON.stringify(mergedPortfolio));
-        console.log('[SYNC] Offline storage updated.');
-        // 6. Clear offline queue (already merged)
-        localStorage.removeItem('offline_queue');
-        console.log('[SYNC] Offline queue cleared.');
-        showToast('Online and offline data merged!');
-        // 7. Reload UI
-        await loadUserData();
-        console.log('[SYNC] UI reloaded.');
-    } catch (e) {
-        showToast('Failed to merge online/offline data.');
-        console.error('[SYNC] Merge error:', e);
-    }
-}
-
-// Call twoWayMergeData on login and when coming online
-window.addEventListener('online', () => {
-    twoWayMergeData();
-});
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        currentUser = user;
-        await twoWayMergeData();
-        if (window.isMentorView) {
-            const params = new URLSearchParams(window.location.search);
-            const mentorCode = params.get('mentor');
-            userEmail.innerHTML = mentorCode
-                ? `Mentor View: <b>(${mentorCode})</b>`
-                : 'Mentor View';
-        } else {
-            userEmail.textContent = `Logged in as: ${user.email}`;
-        }
-        await loadUserData();
-        await updateAchievementsVisibility();
-        // --- Show settings modal and overview if first login ---
-        const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
-            openSettingsModal();
-            setTimeout(() => {
-                showSettingsOverview();
-            }, 400); // Wait for modal animation
-            await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({ firstLogin: false }, { merge: true });
-        }
-    } else {
-        window.location.href = 'login.html';
-    }
-});
