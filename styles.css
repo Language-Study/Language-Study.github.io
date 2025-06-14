@@ -397,7 +397,12 @@
         box-shadow: none !important;
     }
 
-    .text-gray-500, .text-gray-600, .hint, .tip, .text-xs, .text-sm {
+    .text-gray-500,
+    .text-gray-600,
+    .hint,
+    .tip,
+    .text-xs,
+    .text-sm {
         color: #b0b3b8 !important;
     }
 }
