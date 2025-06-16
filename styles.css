@@ -392,3 +392,78 @@
         letter-spacing: 0.02em;
     }
 }
+
+/* --- Responsive Styles for Vocabulary Tab (Mobile Friendly) --- */
+@media (max-width: 600px) {
+    .tab-content.active .bg-white.rounded-lg.shadow.p-6 {
+        padding: 1rem !important;
+    }
+
+    .tab-content.active h2 {
+        font-size: 1.25rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    /* Stack and space select and delete button */
+    .tab-content.active .space-y-4.mb-4>div.flex.gap-2.items-center {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .tab-content.active .space-y-4.mb-4>div.flex.gap-2.items-center>select,
+    .tab-content.active .space-y-4.mb-4>div.flex.gap-2.items-center>button {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        font-size: 1rem !important;
+        height: 44px !important;
+    }
+
+    /* Stack and space vocab/translation inputs and add button */
+    .tab-content.active .space-y-4.mb-4>.flex.gap-2 {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .tab-content.active .space-y-4.mb-4>.flex.gap-2>input,
+    .tab-content.active .space-y-4.mb-4>.flex.gap-2>button {
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 1rem !important;
+        height: 44px !important;
+        margin: 0 !important;
+    }
+
+    .tab-content.active .space-y-4.mb-4>.flex.gap-2>button {
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* Add spacing below add button */
+    .tab-content.active .space-y-4.mb-4>.flex.gap-2+p.text-xs {
+        margin-top: 0.5rem !important;
+    }
+
+    /* Make category input fields full width */
+    .tab-content.active .space-y-4.mb-4>.flex.flex-wrap.gap-2.hidden>input,
+    .tab-content.active .space-y-4.mb-4>.flex.flex-wrap.gap-2.hidden>button {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .tab-content.active .text-xs.text-gray-500.mt-1 {
+        font-size: 0.75rem !important;
+        margin-top: 0.5rem !important;
+    }
+
+    #vocabularyList>div {
+        font-size: 1rem !important;
+    }
+}
