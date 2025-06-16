@@ -464,12 +464,12 @@ function renderVocabItem(item) {
         }
     }
     return `
-        <div class="vocab-item flex flex-col sm:flex-row sm:items-center justify-between p-2 border rounded mb-2" data-id="${item.id}">
+        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}">
             <div class="flex-1">
                 <div class="font-medium">${item.word}</div>
                 ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
             </div>
-            <div class="flex items-center gap-2 mt-2 sm:mt-0">
+            <div class="flex items-center gap-2">
                 ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button"> ${statusIcons[item.status]}
                 </button>`}
                 ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all"> <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">

@@ -127,45 +127,52 @@
         </div>
 
         <div id="vocabulary" class="tab-content active">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-2xl font-bold mb-4">Vocabulary Tracker</h2>
+            <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h2 class="text-xl mb-4 sm:text-2xl sm:mb-4 font-bold">Vocabulary Tracker</h2>
 
                 <div class="space-y-4 mb-4">
-                    <div class="flex gap-2 items-center"> <select id="categorySelect" class="p-2 border rounded">
-                        </select>
+                    <!-- Category select and delete button -->
+                    <div class="flex flex-col items-stretch gap-2 mb-2 sm:flex-row sm:items-center sm:gap-2 sm:mb-4">
+                        <select id="categorySelect"
+                            class="p-2 border rounded w-full sm:w-auto min-w-0 m-0 text-base h-11 sm:h-auto sm:text-sm"></select>
                         <button id="deleteCategoryBtn"
-                            class="p-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50" disabled>
+                            class="p-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 w-full sm:w-auto min-w-0 m-0 text-base h-11 sm:h-auto sm:text-sm"
+                            disabled>
                             Delete Selected Category
                         </button>
                     </div>
 
-                    <div id="newCategoryInput" class="flex flex-wrap gap-2 hidden">
+                    <!-- New category input -->
+                    <div id="newCategoryInput" class="flex flex-col gap-2 hidden sm:flex-row sm:flex-wrap sm:gap-2">
                         <input type="text" id="newCategoryName" placeholder="New category name"
-                            class="flex-1 min-w-0 p-2 border rounded">
+                            class="flex-1 min-w-0 p-2 border rounded w-full sm:w-auto" />
                         <button id="addCategoryBtn"
                             class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto">Add</button>
                         <button id="cancelCategoryBtn"
                             class="p-2 bg-gray-200 rounded hover:bg-gray-300 w-full sm:w-auto">Cancel</button>
                     </div>
 
-                    <div class="flex gap-2">
+                    <!-- Vocab/translation inputs and add button -->
+                    <div class="flex flex-col gap-2 mb-2 sm:flex-row sm:gap-2 sm:mb-0">
                         <input id="vocabularyInput" type="text" placeholder="Enter word or phrase"
-                            class="flex-1 p-2 border rounded" />
+                            class="flex-1 p-2 border rounded w-full sm:w-auto" />
                         <input id="translationInput" type="text" placeholder="Translation or media link (optional)"
-                            class="flex-1 p-2 border rounded" />
-                        <button id="addVocabBtn" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            class="flex-1 p-2 border rounded w-full sm:w-auto" />
+                        <button id="addVocabBtn"
+                            class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full sm:w-auto flex items-center justify-center text-xl sm:text-base h-11 sm:h-auto">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 4v16m8-8H4"></path>
                             </svg>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Press <b>Enter</b> in either box to add a vocabulary item. You
+                    <p class="text-xs text-gray-500 mt-2 sm:mt-1">Press <b>Enter</b> in either box to add a vocabulary
+                        item. You
                         can also add a translation or a YouTube/SoundCloud link.
                     </p>
                 </div>
 
-                <div id="vocabularyList" class="space-y-4"></div>
+                <div id="vocabularyList" class="space-y-4 text-base sm:text-lg"></div>
             </div>
         </div>
 
