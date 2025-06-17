@@ -934,11 +934,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // On page load, check for tab parameter in URL
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
+    let initialTabButton;
     if (tabParam) {
-        const tabButton = document.querySelector(`.tab-button[data-tab="${tabParam}"]`);
-        if (tabButton) {
-            tabButton.click();
-        }
+        initialTabButton = document.querySelector(`.tab-button[data-tab="${tabParam}"]`);
+    }
+    if (!initialTabButton) {
+        // Default to the first tab button if no param or invalid param
+        initialTabButton = document.querySelector('.tab-button');
+    }
+    if (initialTabButton) {
+        // Remove all active classes first
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-200', 'text-gray-700', 'active');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+        // Activate the correct tab and button
+        document.getElementById(initialTabButton.dataset.tab).classList.add('active');
+        initialTabButton.classList.remove('bg-gray-200', 'text-gray-700');
+        initialTabButton.classList.add('bg-blue-500', 'text-white', 'active');
     }
 
     // Category select change
