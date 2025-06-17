@@ -923,8 +923,23 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(button.dataset.tab).classList.add('active');
             button.classList.remove('bg-gray-200', 'text-gray-700');
             button.classList.add('bg-blue-500', 'text-white', 'active');
+
+            // Update URL with tab parameter
+            const url = new URL(window.location);
+            url.searchParams.set('tab', button.dataset.tab);
+            window.history.replaceState({}, '', url);
         });
     });
+
+    // On page load, check for tab parameter in URL
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+        const tabButton = document.querySelector(`.tab-button[data-tab="${tabParam}"]`);
+        if (tabButton) {
+            tabButton.click();
+        }
+    }
 
     // Category select change
     categorySelect.addEventListener('change', (e) => {
