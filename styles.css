@@ -383,6 +383,30 @@
         color: #e0e6ed !important;
     }
 
+    .bg-green-100 {
+        background-color: #2a3c2e !important;
+    }
+
+    .border-green-500 {
+        border-color: #4caf50 !important;
+    }
+
+    .text-green-700 {
+        color: #a5d6a7 !important;
+    }
+
+    .bg-gray-50 {
+        background-color: #2c2c2c !important;
+    }
+
+    .border-gray-200 {
+        border-color: #444 !important;
+    }
+
+    .text-gray-500 {
+        color: #aaa !important;
+    }
+
     /* Improves translation visibility in dark mode */
     .translation-text {
         color: #e5e7eb !important;

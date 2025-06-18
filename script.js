@@ -62,6 +62,11 @@ auth.onAuthStateChanged(async (user) => {
         }
         await loadUserData();
         await updateAchievementsVisibility();
+        // Render ASL Club achievements if section is visible
+        const section = document.getElementById('achievementsSection');
+        if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+            renderASLClubAchievements();
+        }
         // --- Show welcome modal if first login ---
         const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
@@ -601,6 +606,9 @@ async function updateAchievementsVisibility() {
     if (section) section.style.display = enabled ? '' : 'none';
     if (toggle) toggle.checked = enabled;
     window.achievementsEnabledCache = enabled;
+    if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+        renderASLClubAchievements();
+    }
 }
 
 // Patch showToast to respect achievements toggle (now async-aware)
@@ -1022,6 +1030,11 @@ document.addEventListener('DOMContentLoaded', () => {
         toggle.addEventListener('change', async (e) => {
             await setAchievementsEnabled(e.target.checked);
             await updateAchievementsVisibility();
+            // Render ASL Club achievements if section is visible
+            const section = document.getElementById('achievementsSection');
+            if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+                renderASLClubAchievements();
+            }
         });
         updateAchievementsVisibility();
     }
