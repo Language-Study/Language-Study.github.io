@@ -917,52 +917,82 @@ function disableEditingUI() {
 window.addEventListener('DOMContentLoaded', tryMentorView);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab switching
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
+    // Generalized tab toggling functionality
+    const tabButtons = document.querySelectorAll("[data-tab-target]");
+    const tabContents = document.querySelectorAll("[data-tab-content]");
+
+    if (tabButtons && tabContents) {
+        tabButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                const target = document.querySelector(button.dataset.tabTarget);
+
+                tabContents.forEach(content => {
+                    content.classList.add("hidden");
+                });
+
+                tabButtons.forEach(btn => {
+                    btn.classList.remove("active");
+                });
+
+                if (target) {
+                    target.classList.remove("hidden");
+                }
+                button.classList.add("active");
             });
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-200', 'text-gray-700', 'active');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+    }
+
+    // Generalized tab toggling functionality for modals
+    const modalTabButtons = document.querySelectorAll("[data-tab-target]");
+    const modalTabContents = document.querySelectorAll("[data-tab-content]");
+
+    if (modalTabButtons && modalTabContents) {
+        modalTabButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                const target = document.querySelector(button.dataset.tabTarget);
+
+                modalTabContents.forEach(content => {
+                    content.classList.add("hidden");
+                });
+
+                modalTabButtons.forEach(btn => {
+                    btn.classList.remove("active");
+                });
+
+                if (target) {
+                    target.classList.remove("hidden");
+                }
+                button.classList.add("active");
             });
-
-            document.getElementById(button.dataset.tab).classList.add('active');
-            button.classList.remove('bg-gray-200', 'text-gray-700');
-            button.classList.add('bg-blue-500', 'text-white', 'active');
-
-            // Update URL with tab parameter
-            const url = new URL(window.location);
-            url.searchParams.set('tab', button.dataset.tab);
-            window.history.replaceState({}, '', url);
         });
-    });
-
-    // On page load, check for tab parameter in URL
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    let initialTabButton;
-    if (tabParam) {
-        initialTabButton = document.querySelector(`.tab-button[data-tab="${tabParam}"]`);
     }
-    if (!initialTabButton) {
-        // Default to the first tab button if no param or invalid param
-        initialTabButton = document.querySelector('.tab-button');
-    }
-    if (initialTabButton) {
-        // Remove all active classes first
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
+
+    // Tab toggling functionality for main sections (Vocabulary, Skills, Portfolio)
+    const mainTabButtons = document.querySelectorAll(".tab-button");
+    const mainTabContents = document.querySelectorAll(".tab-content");
+
+    if (mainTabButtons && mainTabContents) {
+        mainTabButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                const targetId = button.dataset.tab;
+                const target = document.getElementById(targetId);
+
+                mainTabContents.forEach(content => {
+                    content.classList.remove("active");
+                });
+
+                mainTabButtons.forEach(btn => {
+                    btn.classList.remove("bg-blue-500", "text-white");
+                    btn.classList.add("bg-gray-200", "text-gray-700");
+                });
+
+                if (target) {
+                    target.classList.add("active");
+                }
+                button.classList.add("bg-blue-500", "text-white");
+                button.classList.remove("bg-gray-200", "text-gray-700");
+            });
         });
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-200', 'text-gray-700', 'active');
-            btn.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        // Activate the correct tab and button
-        document.getElementById(initialTabButton.dataset.tab).classList.add('active');
-        initialTabButton.classList.remove('bg-gray-200', 'text-gray-700');
-        initialTabButton.classList.add('bg-blue-500', 'text-white', 'active');
     }
 
     // Category select change
@@ -1522,6 +1552,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 changeEmailMsg.textContent = msg;
                 changeEmailMsg.className = 'text-sm mt-2 text-red-600';
             }
+        });
+    }
+
+    // Toggle between Change Email and Reset Password sections
+    const toggleChangeEmail = document.getElementById("toggleChangeEmail");
+    const toggleResetPassword = document.getElementById("toggleResetPassword");
+    const changeEmailSection = document.getElementById("changeEmailSection");
+    const resetPasswordSection = document.getElementById("resetPasswordSection");
+
+    // Event listeners for toggling
+    if (toggleChangeEmail && toggleResetPassword && changeEmailSection && resetPasswordSection) {
+        toggleChangeEmail.addEventListener("click", () => {
+            changeEmailSection.classList.remove("hidden");
+            resetPasswordSection.classList.add("hidden");
+        });
+
+        toggleResetPassword.addEventListener("click", () => {
+            resetPasswordSection.classList.remove("hidden");
+            changeEmailSection.classList.add("hidden");
         });
     }
 
