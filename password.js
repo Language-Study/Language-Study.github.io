@@ -1,29 +1,34 @@
 // This file will contain all password-related JavaScript functionality.
 
-// Function to handle password reset
-function resetPassword() {
-    const email = document.getElementById('resetEmailInput').value;
-    const resetPasswordMsg = document.getElementById('resetPasswordMsg');
+// Refactored function to handle password reset with customizable parameters
+function resetPasswordWithParams(emailInputId, messageElementId, successClass, errorClass) {
+    const email = document.getElementById(emailInputId).value;
+    const messageElement = document.getElementById(messageElementId);
+
+    // Ensure the message element is visible
+    messageElement.classList.remove('hidden');
 
     if (!email) {
-        resetPasswordMsg.textContent = 'Please enter your email address.';
-        resetPasswordMsg.classList.add('text-red-500');
+        messageElement.textContent = 'Please enter your email address.';
+        messageElement.classList.add(errorClass);
         return;
     }
 
     // Firebase password reset logic
     firebase.auth().sendPasswordResetEmail(email)
         .then(() => {
-            resetPasswordMsg.textContent = 'Password reset email sent!';
-            resetPasswordMsg.classList.remove('text-red-500');
-            resetPasswordMsg.classList.add('text-green-500');
+            messageElement.textContent = 'Password reset email sent!';
+            messageElement.classList.remove(errorClass);
+            messageElement.classList.add(successClass);
         })
         .catch((error) => {
             console.error('Error sending password reset email:', error);
-            resetPasswordMsg.textContent = 'Failed to send password reset email. Please try again.';
-            resetPasswordMsg.classList.add('text-red-500');
+            messageElement.textContent = 'Failed to send password reset email. Please try again.';
+            messageElement.classList.add(errorClass);
         });
 }
 
 // Event listener for reset password button
-document.getElementById('resetPasswordBtn').addEventListener('click', resetPassword);
+document.getElementById('resetPasswordBtn').addEventListener('click', () => {
+    resetPasswordWithParams('resetEmailInput', 'resetPasswordMsg', 'text-green-500', 'text-red-500');
+});

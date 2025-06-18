@@ -91,24 +91,9 @@ closeResetModal.addEventListener('click', () => {
     resetPasswordModal.classList.add('hidden');
 });
 
-// Send password reset email
-resetPasswordBtn.addEventListener('click', async () => {
-    const email = resetEmail.value.trim();
-    resetErrorMessage.classList.add('hidden');
-    resetSuccessMessage.classList.add('hidden');
-    if (!email) {
-        resetErrorMessage.textContent = 'Please enter your email.';
-        resetErrorMessage.classList.remove('hidden');
-        return;
-    }
-    try {
-        await auth.sendPasswordResetEmail(email);
-        resetSuccessMessage.textContent = 'Password reset email sent! Check your inbox.';
-        resetSuccessMessage.classList.remove('hidden');
-    } catch (error) {
-        resetErrorMessage.textContent = error.message;
-        resetErrorMessage.classList.remove('hidden');
-    }
+// Updated reset password logic to use the refactored function from password.js
+resetPasswordBtn.addEventListener('click', () => {
+    resetPasswordWithParams('resetEmail', 'resetErrorMessage', 'text-green-500', 'text-red-500');
 });
 
 // Add Enter key support for login form
