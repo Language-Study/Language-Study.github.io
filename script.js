@@ -951,8 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Activate tab based on URL query parameter on page load
         const params = new URLSearchParams(window.location.search);
-        const tabParam = params.get('tab');
-        if (tabParam && ['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
+        const tabParam = params.get('tab') || 'vocabulary'; // Default to 'vocabulary' if param is not present
+        if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
             const activeButton = document.querySelector(`[data-tab-target="#${tabParam}"]`);
             const activeContent = document.querySelector(`#${tabParam}`);
 
