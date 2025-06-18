@@ -1416,6 +1416,40 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // --- ASL Club Admin: Show/hide Create Achievement tab ---
+    async function updateCreateAchievementTabVisibility() {
+        const tabBtn = document.querySelector('.tab-button[data-tab="create-achievement"]');
+        const tabContent = document.getElementById('create-achievement');
+        if (!currentUser || !tabBtn || !tabContent) return;
+        try {
+            const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('aslClub').get();
+            const isAdmin = doc.exists && doc.data().isAdmin === true;
+            tabBtn.style.display = isAdmin ? '' : 'none';
+            tabContent.style.display = isAdmin ? '' : 'none';
+            // If hiding and it's the active tab, switch to Vocabulary
+            if (!isAdmin && tabBtn.classList.contains('active')) {
+                const vocabBtn = document.querySelector('.tab-button[data-tab="vocabulary"]');
+                if (vocabBtn) vocabBtn.click();
+            }
+        } catch (e) {
+            tabBtn.style.display = 'none';
+            tabContent.style.display = 'none';
+        }
+    }
+    // Call after login and on page load
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUser = user;
+            await updateCreateAchievementTabVisibility();
+        } else {
+            // User is signed out
+            currentUser = null;
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCreateAchievementTabVisibility();
+    });
 });
 
 // Update category select options (no changes needed here)

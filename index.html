@@ -124,6 +124,9 @@
             <button class="tab-button p-2 bg-blue-500 text-white rounded" data-tab="vocabulary">Vocabulary</button>
             <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="skills">Skills</button>
             <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="portfolio">Portfolio</button>
+            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="create-achievement"
+                style="display:none;">Create
+                Achievement</button>
         </div>
 
         <div id="vocabulary" class="tab-content active">
@@ -216,6 +219,39 @@
             </div>
         </div>
 
+        <div id="create-achievement" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold mb-4">Create New Achievement</h2>
+                <form id="createAchievementForm" class="space-y-4">
+                    <div>
+                        <label for="achievementEmoji" class="block font-medium mb-1">Emoji</label>
+                        <input id="achievementEmoji" name="emoji" type="text" maxlength="2"
+                            class="p-2 border rounded w-16 text-2xl" placeholder="🏆" required />
+                    </div>
+                    <div>
+                        <label for="achievementTitle" class="block font-medium mb-1">Title</label>
+                        <input id="achievementTitle" name="title" type="text" class="p-2 border rounded w-full"
+                            placeholder="Achievement Title" required />
+                    </div>
+                    <div>
+                        <label for="achievementDescription" class="block font-medium mb-1">Description</label>
+                        <textarea id="achievementDescription" name="description" class="p-2 border rounded w-full"
+                            placeholder="Describe the achievement..." required></textarea>
+                    </div>
+                    <div>
+                        <label for="achievementCode" class="block font-medium mb-1">6-Digit Code (alphanumeric)</label>
+                        <input id="achievementCode" name="code" type="text" maxlength="6" minlength="6"
+                            pattern="[A-Za-z0-9]{6}" class="p-2 border rounded w-32 font-mono uppercase"
+                            placeholder="(auto)" />
+                        <span class="text-xs text-gray-500 ml-2">Leave blank to auto-generate</span>
+                    </div>
+                    <button type="submit" class="p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Create
+                        Achievement</button>
+                </form>
+                <div id="achievementCreateMsg" class="mt-4 text-green-600 font-medium"></div>
+            </div>
+        </div>
+
         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
             <p class="text-sm">Progress Status Legend:</p>
             <div class="flex gap-4 mt-2">
@@ -246,6 +282,8 @@
         <div id="achievementsSection" class="bg-white rounded-lg shadow p-6 mb-6" style="display:none;">
             <h2 class="text-xl font-bold mb-4">Achievements</h2>
             <div id="badgesContainer" class="flex flex-wrap gap-4"></div>
+            <h2 class="text-xl font-bold mt-8 mb-4">ASL Club</h2>
+            <div id="aslClubAchievementsContainer" class="flex flex-wrap gap-4"></div>
         </div>
 
         <!-- Mentor View Entry -->
@@ -267,6 +305,7 @@
     </div>
     <script src="badges.js"></script>
     <script src="script.js"></script>
+    <script src="aslClubAchievements.js"></script>
     <script>
         // Show/hide clear button and clear search input
         const searchInput = document.getElementById('searchInput');
