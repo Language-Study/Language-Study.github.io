@@ -143,12 +143,15 @@
         </div>
 
         <div class="grid grid-cols-2 gap-2 mb-4">
-            <button class="tab-button p-2 bg-blue-500 text-white rounded" data-tab="vocabulary">Vocabulary</button>
-            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="skills">Skills</button>
-            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab="portfolio">Portfolio</button>
+            <button class="tab-button p-2 bg-blue-500 text-white rounded"
+                data-tab-target="#vocabulary">Vocabulary</button>
+            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded" data-tab-target="#skills">Skills</button>
+            <button class="tab-button p-2 bg-gray-200 text-gray-700 rounded"
+                data-tab-target="#portfolio">Portfolio</button>
         </div>
 
-        <div id="vocabulary" class="tab-content active">
+        <!-- Tab Contents -->
+        <div id="vocabulary" data-tab-content class="hidden">
             <div class="bg-white rounded-lg shadow p-4 sm:p-6">
                 <h2 class="text-xl mb-4 sm:text-2xl sm:mb-4 font-bold">Vocabulary Tracker</h2>
 
@@ -198,7 +201,7 @@
             </div>
         </div>
 
-        <div id="skills" class="tab-content">
+        <div id="skills" data-tab-content class="hidden">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-2xl font-bold mb-4">Skills Tracker</h2>
 
@@ -219,7 +222,7 @@
             </div>
         </div>
 
-        <div id="portfolio" class="tab-content">
+        <div id="portfolio" data-tab-content class="hidden">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-2xl font-bold mb-4">Portfolio</h2>
                 <form id="portfolioForm" class="flex flex-col sm:flex-row gap-2 mb-4">

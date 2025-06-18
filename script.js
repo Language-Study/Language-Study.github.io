@@ -938,8 +938,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     target.classList.remove("hidden");
                 }
                 button.classList.add("active");
+
+                // Update the URL query parameter only for specific tabs
+                const tabId = button.dataset.tabTarget.replace('#', '');
+                if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', tabId);
+                    window.history.pushState({}, '', url);
+                }
             });
         });
+
+        // Activate tab based on URL query parameter on page load
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam && ['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
+            const activeButton = document.querySelector(`[data-tab-target="#${tabParam}"]`);
+            const activeContent = document.querySelector(`#${tabParam}`);
+
+            if (activeButton && activeContent) {
+                tabButtons.forEach(btn => btn.classList.remove("active"));
+                tabContents.forEach(content => content.classList.add("hidden"));
+
+                activeButton.classList.add("active");
+                activeContent.classList.remove("hidden");
+            }
+        }
     }
 
     // Generalized tab toggling functionality for modals
