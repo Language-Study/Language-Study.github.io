@@ -28,6 +28,16 @@ function resetPasswordWithParams(emailInputId, messageElementId, successClass, e
         });
 }
 
+// Function to send a password reset email with a link to the custom reset page
+function sendCustomPasswordResetEmail(email) {
+    const actionCodeSettings = {
+        url: `${window.location.origin}/reset-password.html`,
+        handleCodeInApp: true
+    };
+
+    return firebase.auth().sendPasswordResetEmail(email, actionCodeSettings);
+}
+
 // Event listener for reset password button
 document.getElementById('resetPasswordBtn').addEventListener('click', () => {
     resetPasswordWithParams('resetEmailInput', 'resetPasswordMsg', 'text-green-500', 'text-red-500');
