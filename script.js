@@ -1524,6 +1524,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Disable translation input box for mentor mode
+    if (window.isMentorView) {
+        translationInput.disabled = true;
+    }
+
+    // Disable mentor code input and button for mentor mode
+    if (window.isMentorView) {
+        const mentorCodeInput = document.getElementById('mentorCodeInput');
+        const viewAsMentorBtn = document.querySelector('#mentorViewForm button[type="submit"]');
+        if (mentorCodeInput) mentorCodeInput.disabled = true;
+        if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
+    }
 });
 
 // Update category select options (no changes needed here)
