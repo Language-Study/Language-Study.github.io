@@ -85,19 +85,19 @@
                 emailVerificationMsg.style.display = 'block';
                 resendVerificationBtn.style.display = 'block';
 
-                const verifyEmail = async () => {
+                const verifyAndUpdateEmail = async () => {
                     try {
                         await firebase.auth().applyActionCode(oobCode);
-                        resetPasswordMsg.textContent = 'Email has been verified successfully!';
+                        resetPasswordMsg.textContent = 'Email has been verified and updated successfully!';
                         resetPasswordMsg.classList.add('text-green-500');
                     } catch (error) {
-                        console.error('Error verifying email:', error);
-                        resetPasswordMsg.textContent = `Failed to verify email: ${error.message}`;
+                        console.error('Error verifying and updating email:', error);
+                        resetPasswordMsg.textContent = `Failed to verify and update email: ${error.message}`;
                         resetPasswordMsg.classList.add('text-red-500');
                     }
                 };
 
-                verifyEmail();
+                verifyAndUpdateEmail();
             } else {
                 document.getElementById('resetPasswordMsg').textContent = 'Invalid or missing action parameter.';
                 resetPasswordMsg.classList.add('text-red-500');
