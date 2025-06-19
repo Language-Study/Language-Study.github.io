@@ -58,34 +58,3 @@ function sendEmailVerification(messageElementId, successClass, errorClass) {
         messageElement.classList.add(errorClass);
     }
 }
-
-// Event listener for resend verification email button
-document.addEventListener('DOMContentLoaded', () => {
-    const resendVerificationBtn = document.getElementById('resendVerificationBtn');
-
-    if (resendVerificationBtn) {
-        resendVerificationBtn.addEventListener('click', () => {
-            const user = firebase.auth().currentUser;
-            const messageElement = document.getElementById('emailVerificationMsg');
-
-            if (!user) {
-                messageElement.textContent = 'You must be signed in to resend the verification email.';
-                messageElement.classList.add('text-red-500');
-                return;
-            }
-
-            user.sendEmailVerification()
-                .then(() => {
-                    messageElement.textContent = 'Verification email has been resent. Please check your inbox.';
-                    messageElement.classList.add('text-green-500');
-                })
-                .catch((error) => {
-                    console.error('Error resending verification email:', error);
-                    messageElement.textContent = `Failed to resend verification email: ${error.message}`;
-                    messageElement.classList.add('text-red-500');
-                });
-        });
-    } else {
-        console.error('Resend verification button not found in the DOM.');
-    }
-});

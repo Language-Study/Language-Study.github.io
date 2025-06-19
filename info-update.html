@@ -27,10 +27,6 @@
                     Reset Password
                 </button>
             </form>
-            <button id="resendVerificationBtn"
-                class="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 hidden">
-                Resend Verification Email
-            </button>
             <a href="index.html" class="block text-center text-blue-500 hover:underline mt-4">Back to Site</a>
         </div>
     </div>
@@ -54,22 +50,18 @@
 
             const resetPasswordForm = document.getElementById('resetPasswordForm');
             const emailVerificationMsg = document.getElementById('emailVerificationMsg');
-            const resendVerificationBtn = document.getElementById('resendVerificationBtn');
 
             // Hide all forms initially
             resetPasswordForm.style.display = 'none';
             emailVerificationMsg.style.display = 'none';
-            resendVerificationBtn.style.display = 'none';
 
             // Show the appropriate form based on the action
             if (mode === 'resetPassword') {
                 resetPasswordForm.style.display = 'block';
             } else if (mode === 'verifyEmail') {
                 emailVerificationMsg.style.display = 'block';
-                resendVerificationBtn.style.display = 'block';
             } else if (mode === 'verifyAndChangeEmail') {
                 emailVerificationMsg.style.display = 'block';
-                resendVerificationBtn.style.display = 'block';
 
                 const verifyAndUpdateEmail = async () => {
                     try {
@@ -112,10 +104,6 @@
                     resetPasswordMsg.textContent = `Failed to reset password: ${error.message}`;
                     resetPasswordMsg.classList.add('text-red-500');
                 }
-            });
-
-            resendVerificationBtn.addEventListener('click', () => {
-                sendEmailVerification('emailVerificationMsg', 'text-green-500', 'text-red-500');
             });
         });
     </script>
