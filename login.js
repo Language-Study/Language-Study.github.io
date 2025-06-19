@@ -132,6 +132,21 @@ if (resetEmail) {
     });
 }
 
+// Google Login
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+            window.location.href = 'index.html';
+        } catch (error) {
+            errorMessage.textContent = error.message;
+            errorMessage.classList.remove('hidden');
+        }
+    });
+}
+
 // Check auth state (auto-login)
 auth.onAuthStateChanged((user) => {
     if (user) {
