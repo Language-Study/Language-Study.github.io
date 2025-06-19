@@ -64,9 +64,6 @@
             // Show the appropriate form based on the action
             if (mode === 'resetPassword') {
                 resetPasswordForm.style.display = 'block';
-            } else if (mode === 'changeEmail') {
-                resetPasswordMsg.textContent = 'Please use the settings modal to update your email.';
-                resetPasswordMsg.classList.add('text-blue-500');
             } else if (mode === 'verifyEmail') {
                 emailVerificationMsg.style.display = 'block';
                 resendVerificationBtn.style.display = 'block';
