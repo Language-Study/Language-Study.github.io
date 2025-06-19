@@ -28,16 +28,6 @@ function resetPasswordWithParams(emailInputId, messageElementId, successClass, e
         });
 }
 
-// Function to send a password reset email with a link to the custom reset page
-function sendCustomPasswordResetEmail(email) {
-    const actionCodeSettings = {
-        url: `${window.location.origin}/reset-password.html`,
-        handleCodeInApp: true
-    };
-
-    return firebase.auth().sendPasswordResetEmail(email, actionCodeSettings);
-}
-
 // Event listener for reset password button
 document.getElementById('resetPasswordBtn').addEventListener('click', () => {
     resetPasswordWithParams('resetEmailInput', 'resetPasswordMsg', 'text-green-500', 'text-red-500');
@@ -117,6 +107,32 @@ function sendEmailVerification(messageElementId, successClass, errorClass) {
 }
 
 // Event listener for resend verification email button
-document.getElementById('resendVerificationBtn').addEventListener('click', () => {
-    sendEmailVerification('emailVerificationMsg', 'text-green-500', 'text-red-500');
+document.addEventListener('DOMContentLoaded', () => {
+    const resendVerificationBtn = document.getElementById('resendVerificationBtn');
+
+    if (resendVerificationBtn) {
+        resendVerificationBtn.addEventListener('click', () => {
+            const user = firebase.auth().currentUser;
+            const messageElement = document.getElementById('emailVerificationMsg');
+
+            if (!user) {
+                messageElement.textContent = 'You must be signed in to resend the verification email.';
+                messageElement.classList.add('text-red-500');
+                return;
+            }
+
+            user.sendEmailVerification()
+                .then(() => {
+                    messageElement.textContent = 'Verification email has been resent. Please check your inbox.';
+                    messageElement.classList.add('text-green-500');
+                })
+                .catch((error) => {
+                    console.error('Error resending verification email:', error);
+                    messageElement.textContent = `Failed to resend verification email: ${error.message}`;
+                    messageElement.classList.add('text-red-500');
+                });
+        });
+    } else {
+        console.error('Resend verification button not found in the DOM.');
+    }
 });

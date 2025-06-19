@@ -139,25 +139,8 @@
                 }
             });
 
-            resendVerificationBtn.addEventListener('click', async () => {
-                const user = firebase.auth().currentUser;
-                const resetPasswordMsg = document.getElementById('resetPasswordMsg');
-
-                if (!user) {
-                    resetPasswordMsg.textContent = 'You must be signed in to resend the verification email.';
-                    resetPasswordMsg.classList.add('text-red-500');
-                    return;
-                }
-
-                try {
-                    await user.sendEmailVerification();
-                    resetPasswordMsg.textContent = 'Verification email has been resent. Please check your inbox.';
-                    resetPasswordMsg.classList.add('text-green-500');
-                } catch (error) {
-                    console.error('Error resending verification email:', error);
-                    resetPasswordMsg.textContent = `Failed to resend verification email: ${error.message}`;
-                    resetPasswordMsg.classList.add('text-red-500');
-                }
+            resendVerificationBtn.addEventListener('click', () => {
+                sendEmailVerification('emailVerificationMsg', 'text-green-500', 'text-red-500');
             });
         });
     </script>
