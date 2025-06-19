@@ -1610,6 +1610,89 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mentorCodeInput) mentorCodeInput.disabled = true;
         if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
     }
+
+    // Logic to toggle Google Sign-In
+    const toggleGoogleSignIn = document.getElementById('toggleGoogleSignIn');
+    if (toggleGoogleSignIn) {
+        toggleGoogleSignIn.addEventListener('change', (event) => {
+            const isEnabled = event.target.checked;
+            if (isEnabled) {
+                console.log('Google Sign-In enabled');
+                // Add logic to enable Google Sign-In
+            } else {
+                console.log('Google Sign-In disabled');
+                // Add logic to disable Google Sign-In
+            }
+        });
+    }
+
+    // Logic to link or unlink Google Sign-In
+    const googleSignInToggleBtn = document.getElementById('googleSignInToggleBtn');
+    if (googleSignInToggleBtn) {
+        googleSignInToggleBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+
+            const providerData = user.providerData;
+            const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
+
+            if (googleProvider) {
+                // Unlink Google Sign-In
+                try {
+                    await user.unlink('google.com');
+                    googleSignInToggleBtn.textContent = 'Link Google Sign-In';
+                    console.log('Google Sign-In unlinked');
+                } catch (error) {
+                    console.error('Error unlinking Google Sign-In:', error);
+                }
+            } else {
+                // Link Google Sign-In
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await user.linkWithPopup(provider);
+                    googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+                    console.log('Google Sign-In linked');
+                } catch (error) {
+                    console.error('Error linking Google Sign-In:', error);
+                }
+            }
+        });
+    }
+
+    // Update button text based on Google Sign-In status
+    const updateGoogleSignInButton = async () => {
+
+        const providerData = user.providerData;
+        const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
+
+        if (googleProvider) {
+            googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+        } else {
+            googleSignInToggleBtn.textContent = 'Link Google Sign-In';
+        }
+    };
+
+    // Ensure user is initialized before updating the button
+    firebase.auth().onAuthStateChanged((authUser) => {
+        if (authUser) {
+            const user = authUser; // Assign the authenticated user
+
+            // Update button text based on Google Sign-In status
+            const updateGoogleSignInButton = async () => {
+                const providerData = user.providerData;
+                const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
+
+                if (googleProvider) {
+                    googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+                } else {
+                    googleSignInToggleBtn.textContent = 'Link Google Sign-In';
+                }
+            };
+
+            if (googleSignInToggleBtn) {
+                updateGoogleSignInButton();
+            }
+        }
+    });
 });
 
 // Update category select options (no changes needed here)
@@ -1626,6 +1709,7 @@ function updateCategorySelect() {
     }
 
     categorySelect.innerHTML = categories
+
         .map(cat => `<option value="${cat}">${cat}</option>`)
         .join('') + '<option value="new">+ New Category</option>';
 
