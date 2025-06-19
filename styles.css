@@ -271,8 +271,15 @@
         border: 1px solid #444 !important;
     }
 
-    #settingsModal button {
+    #settingsModal button[data-tab-target="#changeEmailSection"],
+    #settingsModal button[data-tab-target="#resetPasswordSection"] {
         color: #fff !important;
+        background-color: #492525 !important;
+    }
+
+        #settingsModal button:hover[data-tab-target="#changeEmailSection"],
+        #settingsModal button:hover[data-tab-target="#resetPasswordSection"] {
+        background-color: #5a2a2a !important;
     }
 
     #settingsModal #deleteAccountBtn {
@@ -421,34 +428,6 @@
         letter-spacing: 0.02em;
     }
 
-    /* Styles for the email change form */
-    #changeEmailForm {
-        margin-top: 20px;
-    }
-
-    #changeEmailForm input {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    #changeEmailForm button {
-        background-color: #28a745;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
-    }
-
-    #changeEmailForm button:hover {
-        background-color: #218838;
-    }
-
     body.bg-gray-100 {
         background-color: #181a1b !important;
         color: #e8e6e3 !important;
@@ -504,5 +483,41 @@
     .bg-gray-100 {
         background-color: #181a1b !important;
         color: #e8e6e3 !important;
+    }
+
+    body.dark-mode {
+        background-color: #121212;
+        /* Dark background */
+        color: #ffffff;
+        /* White text */
+    }
+
+    .modal {
+        background-color: #23272a;
+        color: #e8e6e3;
+        border-color: #23272a;
+    }
+
+    .modal-button {
+        background-color: #1f2937;
+        /* Dark gray */
+        color: #ffffff;
+        /* White text */
+        border: 1px solid #374151;
+        /* Slightly lighter gray border */
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .modal-button:hover {
+        background-color: #374151;
+        /* Lighter gray on hover */
+        color: #e5e7eb;
+        /* Light gray text */
+    }
+
+    .modal-button:focus {
+        outline: 2px solid #2563eb;
+        /* Blue outline */
+        outline-offset: 2px;
     }
 }
