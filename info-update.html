@@ -143,6 +143,12 @@
                 const user = firebase.auth().currentUser;
                 const resetPasswordMsg = document.getElementById('resetPasswordMsg');
 
+                if (!user) {
+                    resetPasswordMsg.textContent = 'You must be signed in to resend the verification email.';
+                    resetPasswordMsg.classList.add('text-red-500');
+                    return;
+                }
+
                 try {
                     await user.sendEmailVerification();
                     resetPasswordMsg.textContent = 'Verification email has been resent. Please check your inbox.';
