@@ -33,53 +33,6 @@ document.getElementById('resetPasswordBtn').addEventListener('click', () => {
     resetPasswordWithParams('resetEmailInput', 'resetPasswordMsg', 'text-green-500', 'text-red-500');
 });
 
-// Function to handle email change
-function changeEmail(newEmailInputId, confirmEmailInputId, messageElementId, successClass, errorClass) {
-    const newEmail = document.getElementById(newEmailInputId).value;
-    const confirmEmail = document.getElementById(confirmEmailInputId).value;
-    const messageElement = document.getElementById(messageElementId);
-
-    // Ensure the message element is visible
-    messageElement.classList.remove('hidden');
-
-    if (!newEmail || !confirmEmail) {
-        messageElement.textContent = 'Please fill in both email fields.';
-        messageElement.classList.add(errorClass);
-        return;
-    }
-
-    if (newEmail !== confirmEmail) {
-        messageElement.textContent = 'Emails do not match. Please try again.';
-        messageElement.classList.add(errorClass);
-        return;
-    }
-
-    // Firebase email update logic
-    const user = firebase.auth().currentUser;
-    if (user) {
-        user.updateEmail(newEmail)
-            .then(() => {
-                messageElement.textContent = 'Email updated successfully!';
-                messageElement.classList.remove(errorClass);
-                messageElement.classList.add(successClass);
-            })
-            .catch((error) => {
-                console.error('Error updating email:', error);
-                messageElement.textContent = `Failed to update email: ${error.message}`;
-                messageElement.classList.add(errorClass);
-            });
-    } else {
-        messageElement.textContent = 'No user is currently signed in.';
-        messageElement.classList.add(errorClass);
-    }
-}
-
-// Event listener for change email form
-document.getElementById('changeEmailForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    changeEmail('newEmail', 'confirmEmail', 'resetPasswordMsg', 'text-green-500', 'text-red-500');
-});
-
 // Function to send email verification
 function sendEmailVerification(messageElementId, successClass, errorClass) {
     const messageElement = document.getElementById(messageElementId);
