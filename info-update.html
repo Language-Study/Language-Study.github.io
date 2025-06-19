@@ -78,9 +78,26 @@
                 resetPasswordForm.style.display = 'block';
             } else if (mode === 'changeEmail') {
                 changeEmailForm.style.display = 'block';
+            } else if (mode === 'verifyEmail') {
+                emailVerificationMsg.style.display = 'block';
+                resendVerificationBtn.style.display = 'block';
             } else if (mode === 'verifyAndChangeEmail') {
                 emailVerificationMsg.style.display = 'block';
                 resendVerificationBtn.style.display = 'block';
+
+                const verifyEmail = async () => {
+                    try {
+                        await firebase.auth().applyActionCode(oobCode);
+                        resetPasswordMsg.textContent = 'Email has been verified successfully!';
+                        resetPasswordMsg.classList.add('text-green-500');
+                    } catch (error) {
+                        console.error('Error verifying email:', error);
+                        resetPasswordMsg.textContent = `Failed to verify email: ${error.message}`;
+                        resetPasswordMsg.classList.add('text-red-500');
+                    }
+                };
+
+                verifyEmail();
             } else {
                 document.getElementById('resetPasswordMsg').textContent = 'Invalid or missing action parameter.';
                 resetPasswordMsg.classList.add('text-red-500');
