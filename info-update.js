@@ -44,6 +44,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         verifyAndUpdateEmail();
+    } else if (mode === 'recoverEmail') {
+        h1Element.textContent = 'Recover Your Email';
+        titleElement.textContent = 'Recover Email';
+        const recoverEmail = async () => {
+            try {
+                const info = await firebase.auth().checkActionCode(oobCode);
+                const restoredEmail = info.data.email;
+                await firebase.auth().applyActionCode(oobCode);
+                resetPasswordMsg.textContent = `Your email address (${restoredEmail}) has been successfully restored. Please log in.`;
+                resetPasswordMsg.classList.add('text-green-500');
+            } catch (error) {
+                console.error('Error recovering email:', error);
+                resetPasswordMsg.textContent = `Failed to recover email: ${error.message}`;
+                resetPasswordMsg.classList.add('text-red-500');
+            }
+        };
+
+        recoverEmail();
     } else {
         h1Element.textContent = 'Invalid Action';
         titleElement.textContent = 'Invalid Action';
