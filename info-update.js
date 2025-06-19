@@ -1,6 +1,12 @@
-import { firebaseConfig } from './firebase-config.js';
-
 // Initialize Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c",
+    authDomain: "language-study-tracker.firebaseapp.com",
+    projectId: "language-study-tracker",
+    storageBucket: "language-study-tracker.appspot.com",
+    messagingSenderId: "47054764584",
+    appId: "1:47054764584:web:7c0b6597bc42aaf961131d"
+};
 firebase.initializeApp(firebaseConfig);
 
 document.addEventListener('DOMContentLoaded', () => {

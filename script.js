@@ -1,4 +1,17 @@
-import { auth, db } from './firebase-config.js';
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyB8B5Saw8kArUOIL_m5NHFWDQwplR8HF_c",
+    authDomain: "language-study-tracker.firebaseapp.com",
+    projectId: "language-study-tracker",
+    storageBucket: "language-study-tracker.firebasestorage.app",
+    messagingSenderId: "47054764584",
+    appId: "1:47054764584:web:7c0b6597bc42aaf961131d"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Get DOM elements
 const userEmail = document.getElementById("userEmail");
@@ -334,6 +347,48 @@ renderProgressMetrics = function () {
         if (metricsEl) metricsEl.innerHTML = '';
     }
 };
+
+// Load user data from Firestore
+async function loadUserData() {
+    try {
+        // Load categories
+        const categoriesDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('categories').get();
+        // Ensure 'General' category exists if categories are empty or just loaded
+        let loadedCategories = categoriesDoc.exists ? categoriesDoc.data().list : ['General'];
+        if (!loadedCategories.includes('General')) {
+            loadedCategories.unshift('General'); // Add 'General' if missing
+        }
+        categories = loadedCategories;
+
+
+        // Load vocabulary
+        const vocabularySnapshot = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+        vocabularyList = vocabularySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Load skills
+        const skillsSnapshot = await db.collection('users').doc(currentUser.uid).collection('skills').get();
+        skills = skillsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Update UI
+        updateCategorySelect(); // This now handles the delete button state too
+        renderVocabularyList();
+        renderSkillsList();
+        renderBadges(); // Call badge rendering after loading user data
+        // Do not call renderProgressMetrics here
+        await loadPortfolio(); // Load portfolio entries
+    } catch (error) {
+        console.error("Error loading data:", error);
+    }
+    // Ensure progress metrics visibility and rendering are updated after loading user data
+    await updateProgressVisibility();
+    renderProgressMetrics();
+}
 
 function renderVocabularyList() {
     const expandedCategories = new Set(
