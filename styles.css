@@ -61,6 +61,11 @@
 /* --- Consolidated Dark Mode Styles --- */
 @media (prefers-color-scheme: dark) {
 
+    body {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+    }
+
     body,
     html,
     .main-bg,
@@ -442,5 +447,62 @@
 
     #changeEmailForm button:hover {
         background-color: #218838;
+    }
+
+    body.bg-gray-100 {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
+    }
+
+    .bg-white {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+    }
+
+    .text-gray-800 {
+        color: #e8e6e3 !important;
+    }
+
+    .text-blue-500 {
+        color: #6cb4ff !important;
+    }
+
+    .hover\:bg-blue-600:hover {
+        background-color: #1e40af !important;
+    }
+
+    .focus\:ring-blue-500 {
+        box-shadow: 0 0 0 2px #2563eb !important;
+    }
+
+    input[type="password"] {
+        background-color: #23272a !important;
+        color: #e8e6e3 !important;
+        border: 1px solid #444 !important;
+    }
+
+    input[type="password"]::placeholder {
+        color: #b0b3b8 !important;
+    }
+
+    #resetPasswordMsg.text-green-500 {
+        color: #4ade80 !important;
+    }
+
+    #resetPasswordMsg.text-red-500 {
+        color: #f87171 !important;
+    }
+
+    a.text-blue-500 {
+        color: #6cb4ff !important;
+    }
+
+    a.text-blue-500:hover {
+        text-decoration: underline;
+    }
+
+    .bg-gray-100 {
+        background-color: #181a1b !important;
+        color: #e8e6e3 !important;
     }
 }
