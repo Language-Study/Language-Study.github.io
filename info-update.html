@@ -59,7 +59,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
-            const action = urlParams.get('action');
+            // Get the mode parameter (action to perform) to determine the form to show
+            const mode = urlParams.get('mode');
 
             const resetPasswordForm = document.getElementById('resetPasswordForm');
             const changeEmailForm = document.getElementById('changeEmailForm');
@@ -73,11 +74,11 @@
             resendVerificationBtn.style.display = 'none';
 
             // Show the appropriate form based on the action
-            if (action === 'resetPassword') {
+            if (mode === 'resetPassword') {
                 resetPasswordForm.style.display = 'block';
-            } else if (action === 'changeEmail') {
+            } else if (mode === 'changeEmail') {
                 changeEmailForm.style.display = 'block';
-            } else if (action === 'verifyEmail') {
+            } else if (mode === 'verifyEmail') {
                 emailVerificationMsg.style.display = 'block';
                 resendVerificationBtn.style.display = 'block';
             } else {
