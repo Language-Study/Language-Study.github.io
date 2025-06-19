@@ -132,7 +132,7 @@ if (resetEmail) {
     });
 }
 
-// Google Login
+// Updated Google Login Button
 const googleLoginBtn = document.getElementById('googleLoginBtn');
 if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
