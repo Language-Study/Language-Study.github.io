@@ -16,14 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const mode = urlParams.get('mode');
 
     const resetPasswordForm = document.getElementById('resetPasswordForm');
+    const h1Element = document.querySelector('h1');
+    const resetPasswordMsg = document.getElementById('resetPasswordMsg');
+    const titleElement = document.querySelector('title');
 
     // Hide all forms initially
     resetPasswordForm.style.display = 'none';
 
-    // Show the appropriate form based on the action
+    // Show the appropriate form and update the header based on the action
     if (mode === 'resetPassword') {
+        h1Element.textContent = 'Reset Your Password';
+        titleElement.textContent = 'Reset Password';
         resetPasswordForm.style.display = 'block';
     } else if (mode === 'verifyAndChangeEmail') {
+        h1Element.textContent = 'Verify and Change Your Email';
+        titleElement.textContent = 'Verify Email';
         const verifyAndUpdateEmail = async () => {
             try {
                 await firebase.auth().applyActionCode(oobCode);
@@ -38,12 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         verifyAndUpdateEmail();
     } else {
-        document.getElementById('resetPasswordMsg').textContent = 'Invalid or missing action parameter.';
+        h1Element.textContent = 'Invalid Action';
+        titleElement.textContent = 'Invalid Action';
+        resetPasswordMsg.textContent = 'Invalid or missing action parameter.';
         resetPasswordMsg.classList.add('text-red-500');
     }
 
     if (!oobCode) {
-        document.getElementById('resetPasswordMsg').textContent = 'Invalid or missing reset code.';
+        h1Element.textContent = 'Invalid Reset Code';
+        titleElement.textContent = 'Invalid Reset Code';
+        resetPasswordMsg.textContent = 'Invalid or missing reset code.';
         resetPasswordMsg.classList.add('text-red-500');
         return;
     }
@@ -51,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resetPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const newPassword = document.getElementById('newPassword').value;
-        const resetPasswordMsg = document.getElementById('resetPasswordMsg');
 
         try {
             await firebase.auth().confirmPasswordReset(oobCode, newPassword);
