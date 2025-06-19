@@ -273,13 +273,13 @@
 
     #settingsModal button[data-tab-target="#changeEmailSection"],
     #settingsModal button[data-tab-target="#resetPasswordSection"] {
-        color: #fff !important;
-        background-color: #492525 !important;
+        color: #374151 !important;
+        background-color: #e5e7eb !important;
     }
 
         #settingsModal button:hover[data-tab-target="#changeEmailSection"],
         #settingsModal button:hover[data-tab-target="#resetPasswordSection"] {
-        background-color: #5a2a2a !important;
+        background-color: #d1d5db !important;
     }
 
     #settingsModal #deleteAccountBtn {
