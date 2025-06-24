@@ -141,6 +141,8 @@ const skillsInput = document.getElementById('skillsInput');
 const vocabularyListEl = document.getElementById('vocabularyList');
 const skillsList = document.getElementById('skillsList');
 const deleteCategoryBtn = document.getElementById('deleteCategoryBtn');
+const languageSelect = document.getElementById('languageSelect');
+const languageLinksContainer = document.getElementById('languageLinksContainer');
 
 // Firebase Authentication Logic
 auth.onAuthStateChanged(async (user) => {
@@ -1672,6 +1674,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Ensure user is initialized before updating the button
+
+
+
+
+
     firebase.auth().onAuthStateChanged((authUser) => {
         if (authUser) {
             const user = authUser; // Assign the authenticated user
@@ -1693,9 +1700,81 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Add language selection dropdown logic
+    if (languageSelect) {
+        languageSelect.addEventListener('change', async (e) => {
+            const selectedLanguage = e.target.value;
+            if (!currentUser) return;
+
+            try {
+                // Save selected language to Firebase
+                await db.collection('users').doc(currentUser.uid).update({
+                    language: selectedLanguage
+                });
+
+                // Fetch and display links for the selected language
+                const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
+                if (linksSnapshot.exists) {
+                    const links = linksSnapshot.data().links;
+                    languageLinksContainer.innerHTML = links.map(link => `
+                        <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
+                    `).join('<br>');
+                } else {
+                    languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
+                }
+            } catch (error) {
+                console.error('Error updating language or fetching links:', error);
+            }
+        });
+    }
+
+    // Ensure user's language selection and links are restored after authentication
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) return;
+
+        try {
+            // Fetch user's language from Firebase
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.language) {
+                    const languageSelect = document.getElementById('languageSelect');
+                    const languageLinksHeader = document.getElementById('languageLinksHeader');
+                    const languageLinksContainer = document.getElementById('languageLinksContainer');
+                    const languageName = userData.language;
+
+                    if (languageSelect) {
+                        languageSelect.value = userData.language;
+
+                        // Trigger change event to load links
+                        const event = new Event('change');
+                        languageSelect.dispatchEvent(event);
+                    }
+
+                    if (languageLinksContainer) {
+                        // Fetch and display links for the selected language
+                        const linksSnapshot = await db.collection('languageLinks').doc(userData.language).get();
+                        if (linksSnapshot.exists) {
+                            const links = linksSnapshot.data().links;
+                            languageLinksHeader.innerHTML = `Vocabulary and Dictionary Sites for ${languageName}`;
+                            languageLinksHeader.classList.remove('hidden');
+                            languageLinksContainer.innerHTML = links.map(link => `
+                                <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
+                            `).join('<br>');
+                        } else {
+                            languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error restoring user language and links:', error);
+        }
+    });
 });
 
-// Update category select options (no changes needed here)
+// Update category select options
 function updateCategorySelect() {
     const currentSelection = categorySelect.value; // Store current selection
 
