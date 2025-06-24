@@ -1679,6 +1679,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
     firebase.auth().onAuthStateChanged((authUser) => {
         if (authUser) {
             const user = authUser; // Assign the authenticated user
@@ -1709,9 +1713,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 // Save selected language to Firebase
-                await db.collection('users').doc(currentUser.uid).update({
-                    language: selectedLanguage
-                });
+                await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({
+                    languageLearning: selectedLanguage
+                }, { merge: true });
 
                 // Fetch and display links for the selected language
                 const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
@@ -1729,23 +1733,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Ensure user's language selection and links are restored after authentication
+    // Update logic to restore user's language selection
     auth.onAuthStateChanged(async (user) => {
         if (!user) return;
 
         try {
-            // Fetch user's language from Firebase
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                if (userData.language) {
+            // Fetch user's language from Firestore
+            const settingsDoc = await db.collection('users').doc(user.uid).collection('metadata').doc('settings').get();
+            if (settingsDoc.exists) {
+                const userData = settingsDoc.data();
+                if (userData.languageLearning) {
                     const languageSelect = document.getElementById('languageSelect');
-                    const languageLinksHeader = document.getElementById('languageLinksHeader');
                     const languageLinksContainer = document.getElementById('languageLinksContainer');
-                    const languageName = userData.language;
 
                     if (languageSelect) {
-                        languageSelect.value = userData.language;
+                        languageSelect.value = userData.languageLearning;
 
                         // Trigger change event to load links
                         const event = new Event('change');
@@ -1754,11 +1756,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (languageLinksContainer) {
                         // Fetch and display links for the selected language
-                        const linksSnapshot = await db.collection('languageLinks').doc(userData.language).get();
+                        const linksSnapshot = await db.collection('languageLinks').doc(userData.languageLearning).get();
                         if (linksSnapshot.exists) {
                             const links = linksSnapshot.data().links;
-                            languageLinksHeader.innerHTML = `Vocabulary and Dictionary Sites for ${languageName}`;
-                            languageLinksHeader.classList.remove('hidden');
                             languageLinksContainer.innerHTML = links.map(link => `
                                 <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
                             `).join('<br>');
