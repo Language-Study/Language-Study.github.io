@@ -891,7 +891,7 @@ async function loadUserDataForMentor(uid) {
 function disableEditingUI() {
     // Only disable editing actions, not tab navigation or content display
     // Hide add/delete/status buttons and forms, but keep tab buttons and content visible
-    document.querySelectorAll('.delete-button, .status-button, .feature-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn, #newCategoryInput, #vocabularyInput, #skillsInput, #portfolioTitle, #portfolioLink').forEach(el => {
+    document.querySelectorAll('.delete-button, .status-button, .feature-button, #addVocabBtn, #addSkillBtn, #addCategoryBtn, #deleteCategoryBtn, #portfolioForm, #openSettingsBtn, #deleteAccountBtn, #newCategoryInput, #vocabularyInput, #skillsInput, #portfolioTitle, #portfolioLink, #toggleLanguageSection, #openPrintPdfModalBtn').forEach(el => {
         if (el) {
             if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
                 el.style.display = 'none';
