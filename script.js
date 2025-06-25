@@ -1677,6 +1677,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+
+
+
+
+
     firebase.auth().onAuthStateChanged((authUser) => {
         if (authUser) {
             const user = authUser; // Assign the authenticated user
