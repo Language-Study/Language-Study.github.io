@@ -164,6 +164,17 @@ auth.onAuthStateChanged(async (user) => {
         if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
             renderASLClubAchievements();
         }
+        // --- Activate tab from URL parameter after data is loaded ---
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') || 'vocabulary';
+        if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
+            // Use setTimeout to ensure DOM is ready
+            setTimeout(() => {
+                if (typeof activateTab === 'function') {
+                    activateTab(tabParam);
+                }
+            }, 100);
+        }
         // --- Show welcome modal if first login ---
         const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
@@ -863,6 +874,15 @@ async function tryMentorView() {
     // Disable all editing features
     disableEditingUI();
     addMentorBackButton();
+    // Activate tab from URL parameter for mentor view
+    const tabParam = params.get('tab') || 'vocabulary';
+    if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
+        setTimeout(() => {
+            if (typeof activateTab === 'function') {
+                activateTab(tabParam);
+            }
+        }, 100);
+    }
 }
 
 function showMentorExitButton() {
@@ -918,64 +938,96 @@ function disableEditingUI() {
 // On page load, check for mentor view
 window.addEventListener('DOMContentLoaded', tryMentorView);
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Generalized tab toggling functionality
+// Unified tab activation function
+function activateTab(tabId) {
+    // Handle data-tab-target system (primary system)
     const tabButtons = document.querySelectorAll("[data-tab-target]");
     const tabContents = document.querySelectorAll("[data-tab-content]");
 
     if (tabButtons && tabContents) {
-        tabButtons.forEach(button => {
-            button.addEventListener("click", () => {
-                const target = document.querySelector(button.dataset.tabTarget);
+        const activeButton = document.querySelector(`[data-tab-target="#${tabId}"]`);
+        const activeContent = document.querySelector(`#${tabId}`);
 
-                tabContents.forEach(content => {
-                    content.classList.add("hidden");
-                });
+        if (activeButton && activeContent) {
+            tabButtons.forEach(btn => btn.classList.remove("active"));
+            tabContents.forEach(content => content.classList.add("hidden"));
 
-                tabButtons.forEach(btn => {
-                    btn.classList.remove("active");
-                });
-
-                if (target) {
-                    target.classList.remove("hidden");
-                }
-                button.classList.add("active");
-
-                // Update the URL query parameter only for specific tabs
-                const tabId = button.dataset.tabTarget.replace('#', '');
-                if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', tabId);
-                    window.history.pushState({}, '', url);
-                }
-            });
-        });
-
-        // Activate tab based on URL query parameter on page load
-        const params = new URLSearchParams(window.location.search);
-        const tabParam = params.get('tab') || 'vocabulary'; // Default to 'vocabulary' if param is not present
-        if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
-            const activeButton = document.querySelector(`[data-tab-target="#${tabParam}"]`);
-            const activeContent = document.querySelector(`#${tabParam}`);
-
-            if (activeButton && activeContent) {
-                tabButtons.forEach(btn => btn.classList.remove("active"));
-                tabContents.forEach(content => content.classList.add("hidden"));
-
-                activeButton.classList.add("active");
-                activeContent.classList.remove("hidden");
-            }
+            activeButton.classList.add("active");
+            activeContent.classList.remove("hidden");
         }
     }
 
-    // Generalized tab toggling functionality for modals
-    const modalTabButtons = document.querySelectorAll("[data-tab-target]");
-    const modalTabContents = document.querySelectorAll("[data-tab-content]");
+    // Handle main tab button system (.tab-button)
+    const mainTabButtons = document.querySelectorAll(".tab-button");
+    const mainTabContents = document.querySelectorAll(".tab-content");
 
-    if (modalTabButtons && modalTabContents) {
-        modalTabButtons.forEach(button => {
-            button.addEventListener("click", () => {
+    if (mainTabButtons && mainTabContents) {
+        const activeMainButton = document.querySelector(`[data-tab="${tabId}"]`);
+        const activeMainContent = document.getElementById(tabId);
+
+        if (activeMainButton && activeMainContent) {
+            mainTabButtons.forEach(btn => {
+                btn.classList.remove("bg-blue-500", "text-white");
+                btn.classList.add("bg-gray-200", "text-gray-700");
+            });
+
+            mainTabContents.forEach(content => {
+                content.classList.remove("active");
+            });
+
+            activeMainButton.classList.add("bg-blue-500", "text-white");
+            activeMainButton.classList.remove("bg-gray-200", "text-gray-700");
+            activeMainContent.classList.add("active");
+        }
+    }
+
+    // Update URL parameter
+    if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabId);
+        window.history.pushState({}, '', url);
+    }
+}
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', () => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab') || 'vocabulary';
+    if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
+        activateTab(tabParam);
+    }
+});
+
+// Helper function to get current active tab
+function getCurrentActiveTab() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'vocabulary';
+}
+
+// Helper function to navigate to a tab (can be called from anywhere)
+function navigateToTab(tabId) {
+    if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
+        activateTab(tabId);
+    } else {
+        console.warn('Invalid tab ID:', tabId);
+    }
+}
+
+// Generalized tab toggling functionality using unified activateTab function
+const tabButtons = document.querySelectorAll("[data-tab-target]");
+
+if (tabButtons) {
+    tabButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const tabId = button.dataset.tabTarget.replace('#', '');
+            // Only use unified function for main tabs, not modals
+            if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
+                activateTab(tabId);
+            } else {
+                // Handle modal tabs separately
                 const target = document.querySelector(button.dataset.tabTarget);
+                const modalTabContents = document.querySelectorAll("[data-tab-content]");
+                const modalTabButtons = document.querySelectorAll("[data-tab-target]");
 
                 modalTabContents.forEach(content => {
                     content.classList.add("hidden");
@@ -989,488 +1041,345 @@ document.addEventListener('DOMContentLoaded', () => {
                     target.classList.remove("hidden");
                 }
                 button.classList.add("active");
-            });
-        });
-    }
-
-    // Tab toggling functionality for main sections (Vocabulary, Skills, Portfolio)
-    const mainTabButtons = document.querySelectorAll(".tab-button");
-    const mainTabContents = document.querySelectorAll(".tab-content");
-
-    if (mainTabButtons && mainTabContents) {
-        mainTabButtons.forEach(button => {
-            button.addEventListener("click", () => {
-                const targetId = button.dataset.tab;
-                const target = document.getElementById(targetId);
-
-                mainTabContents.forEach(content => {
-                    content.classList.remove("active");
-                });
-
-                mainTabButtons.forEach(btn => {
-                    btn.classList.remove("bg-blue-500", "text-white");
-                    btn.classList.add("bg-gray-200", "text-gray-700");
-                });
-
-                if (target) {
-                    target.classList.add("active");
-                }
-                button.classList.add("bg-blue-500", "text-white");
-                button.classList.remove("bg-gray-200", "text-gray-700");
-            });
-        });
-    }
-
-    // Category select change
-    categorySelect.addEventListener('change', (e) => {
-        const selectedValue = e.target.value;
-        if (selectedValue === 'new') {
-            newCategoryInput.classList.remove('hidden');
-            deleteCategoryBtn.disabled = true; // Disable delete when adding new
-        } else {
-            newCategoryInput.classList.add('hidden');
-            // Enable delete button only if it's not 'General'
-            const protectedCategories = ['General'];
-            if (protectedCategories.includes(selectedValue)) {
-                deleteCategoryBtn.disabled = true;
-            } else {
-                deleteCategoryBtn.disabled = false;
             }
-        }
+        });
     });
+}
 
-    // Add new category
-    document.getElementById('addCategoryBtn').addEventListener('click', async () => {
-        const newCategory = newCategoryName.value.trim();
-        if (newCategory && !categories.includes(newCategory)) {
-            categories.push(newCategory);
-            await saveCategories();
-            updateCategorySelect(); // Refresh dropdown
-            categorySelect.value = newCategory; // Select the newly added category
-            newCategoryInput.classList.add('hidden');
-            newCategoryName.value = '';
-            deleteCategoryBtn.disabled = false; // Enable delete for the new category
-        } else if (!newCategory) {
-            alert("Please enter a category name.");
+// Tab toggling functionality for main sections using unified activateTab function
+const mainTabButtons = document.querySelectorAll(".tab-button");
+
+if (mainTabButtons) {
+    mainTabButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const targetId = button.dataset.tab;
+            if (targetId) {
+                activateTab(targetId);
+            }
+        });
+    });
+}
+
+// Category select change
+categorySelect.addEventListener('change', (e) => {
+    const selectedValue = e.target.value;
+    if (selectedValue === 'new') {
+        newCategoryInput.classList.remove('hidden');
+        deleteCategoryBtn.disabled = true; // Disable delete when adding new
+    } else {
+        newCategoryInput.classList.add('hidden');
+        // Enable delete button only if it's not 'General'
+        const protectedCategories = ['General'];
+        if (protectedCategories.includes(selectedValue)) {
+            deleteCategoryBtn.disabled = true;
         } else {
-            alert("Category already exists.");
+            deleteCategoryBtn.disabled = false;
         }
-    });
+    }
+});
 
-    // Cancel Add New Category
-    document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+// Add new category
+document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+    const newCategory = newCategoryName.value.trim();
+    if (newCategory && !categories.includes(newCategory)) {
+        categories.push(newCategory);
+        await saveCategories();
+        updateCategorySelect(); // Refresh dropdown
+        categorySelect.value = newCategory; // Select the newly added category
         newCategoryInput.classList.add('hidden');
         newCategoryName.value = '';
-        // Re-enable delete button based on current selection if needed
-        const protectedCategories = ['General'];
-        if (categorySelect.value !== 'new' && !protectedCategories.includes(categorySelect.value)) {
-            deleteCategoryBtn.disabled = false;
-        } else {
-            deleteCategoryBtn.disabled = true;
-        }
-    });
-
-    // Add vocabulary
-    document.getElementById('addVocabBtn').addEventListener('click', addVocabularyWords);
-    vocabularyInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addVocabularyWords();
-        }
-    });
-    translationInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addVocabularyWords();
-        }
-    });
-
-    // Add skills
-    document.getElementById('addSkillBtn').addEventListener('click', addSkills);
-    skillsInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            addSkills();
-        }
-    });
-
-    // Event Listener for Delete Category Button
-    deleteCategoryBtn.addEventListener('click', deleteCategory);
-
-    // Logout functionality
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await auth.signOut();
-            window.location.href = 'login.html';
-        } catch (error) {
-            console.error("Logout error: ", error.message);
-        }
-    });
-
-    // Delegate event listeners for status updates and deletions
-    vocabularyListEl.addEventListener('click', (e) => {
-        const statusButton = e.target.closest('.status-button');
-        const deleteButton = e.target.closest('.delete-button');
-        const itemId = e.target.closest('.vocab-item')?.dataset.id;
-
-        if (statusButton && itemId) {
-            updateStatus(itemId, true);
-        } else if (deleteButton && itemId) {
-            deleteItem(itemId, true); // Now includes confirmation
-        }
-    });
-
-    skillsList.addEventListener('click', (e) => {
-        const statusButton = e.target.closest('.status-button');
-        const deleteButton = e.target.closest('.delete-button');
-        const itemId = e.target.closest('.skill-item')?.dataset.id;
-
-        if (statusButton && itemId) {
-            updateStatus(itemId, false);
-        } else if (deleteButton && itemId) {
-            deleteItem(itemId, false); // Now includes confirmation
-        }
-    });
-
-    // Delete Account functionality
-    deleteAccountBtn.addEventListener('click', async () => {
-        if (!currentUser) return;
-        const confirmed = confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
-        if (!confirmed) return;
-        try {
-            // Delete all user data from Firestore
-            const userDocRef = db.collection('users').doc(currentUser.uid);
-            // Delete subcollections (vocabulary, skills, metadata)
-            const vocabSnapshot = await userDocRef.collection('vocabulary').get();
-            const skillsSnapshot = await userDocRef.collection('skills').get();
-            const metadataSnapshot = await userDocRef.collection('metadata').get();
-            const batch = db.batch();
-            vocabSnapshot.forEach(doc => batch.delete(doc.ref));
-            skillsSnapshot.forEach(doc => batch.delete(doc.ref));
-            metadataSnapshot.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            // Delete mentor code if it exists
-            const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
-            if (!codeDoc.empty) {
-                await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
-            }
-            // Delete user document
-            await userDocRef.delete();
-            // Delete auth user
-            await currentUser.delete();
-            alert('Your account has been deleted.');
-            window.location.href = 'login.html';
-        } catch (error) {
-            if (error.code === 'auth/requires-recent-login') {
-                alert('Please log out and log in again, then try deleting your account.');
-            } else {
-                alert('Error deleting account: ' + error.message);
-            }
-        }
-    });
-
-    // Settings modal logic
-    document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
-    document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
-    document.getElementById('settingsModal').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('settingsModal')) closeSettingsModal();
-    });
-    // Achievements toggle logic
-    const toggle = document.getElementById('toggleAchievements');
-    if (toggle) {
-        toggle.addEventListener('change', async (e) => {
-            await setAchievementsEnabled(e.target.checked);
-            await updateAchievementsVisibility();
-            // Render ASL Club achievements if section is visible
-            const section = document.getElementById('achievementsSection');
-            if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
-                renderASLClubAchievements();
-            }
-        });
-        updateAchievementsVisibility();
+        deleteCategoryBtn.disabled = false; // Enable delete for the new category
+    } else if (!newCategory) {
+        alert("Please enter a category name.");
+    } else {
+        alert("Category already exists.");
     }
-    // Progress metrics toggle logic
-    const toggleProgress = document.getElementById('toggleProgress');
-    if (toggleProgress) {
-        toggleProgress.addEventListener('change', async (e) => {
-            await setProgressEnabled(e.target.checked);
-            await updateProgressVisibility();
-            renderProgressMetrics();
-        });
-        updateProgressVisibility();
-    }
+});
 
-    // Mentor code toggle confirmation
-    const mentorToggle = document.getElementById('toggleMentorCode');
-    if (mentorToggle) {
-        let lastMentorChecked = mentorToggle.checked;
-        mentorToggle.addEventListener('change', async (e) => {
-            if (!mentorToggle.checked) {
-                const confirmed = confirm('Are you sure you want to disable Mentor Access? Your mentor will no longer be able to view your progress.');
-                if (!confirmed) {
-                    mentorToggle.checked = true;
-                    return;
-                }
-            }
-            lastMentorChecked = mentorToggle.checked;
-        });
+// Cancel Add New Category
+document.getElementById('cancelCategoryBtn').addEventListener('click', () => {
+    newCategoryInput.classList.add('hidden');
+    newCategoryName.value = '';
+    // Re-enable delete button based on current selection if needed
+    const protectedCategories = ['General'];
+    if (categorySelect.value !== 'new' && !protectedCategories.includes(categorySelect.value)) {
+        deleteCategoryBtn.disabled = false;
+    } else {
+        deleteCategoryBtn.disabled = true;
     }
-    // Regenerate code confirmation
-    const regenBtn = document.getElementById('regenerateMentorCodeBtn');
-    if (regenBtn) {
-        regenBtn.addEventListener('click', async (e) => {
-            const confirmed = confirm('Are you sure you want to regenerate your mentor code? Your old code will no longer work.');
-            if (!confirmed) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            // If you have a handler for regeneration, let it proceed
-        }, true);
-    }
-    // --- SEARCH FEATURE ---
-    const searchInput = document.getElementById('searchInput');
+});
 
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.trim().toLowerCase();
-            filterVocabulary(query);
-            filterSkills(query);
-            filterPortfolio(query); // Add this line to include portfolio titles in search
-        });
-    }
-
-    function filterVocabulary(query) {
-        if (!query) {
-            renderVocabularyList();
-            return;
-        }
-        const filtered = vocabularyList.filter(item =>
-            item.word.toLowerCase().includes(query) ||
-            (item.category && item.category.toLowerCase().includes(query))
-        );
-        // Group by category for display
-        const grouped = categories.reduce((acc, category) => {
-            acc[category] = filtered.filter(item => item.category === category);
-            return acc;
-        }, {});
-        // If no results at all, show a single message
-        const totalResults = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
-        if (totalResults === 0) {
-            vocabularyListEl.innerHTML = '<p class="text-sm text-gray-500">No vocabulary results found.</p>';
-            return;
-        }
-        vocabularyListEl.innerHTML = categories
-            .map(category => {
-                const items = grouped[category] || [];
-                if (items.length === 0) return '';
-                return `
-                    <div class="mb-4 category-container">
-                        <div class="flex items-center justify-between p-2 bg-gray-100 rounded category-header">
-                            <h3 class="font-bold">${category} (${items.length})</h3>
-                        </div>
-                        <div class="category-content space-y-2 mt-2 ml-2 expanded" style="display: block;">
-                            ${items.map(item => renderVocabItem(item)).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-    }
-
-    function filterSkills(query) {
-        if (!query) {
-            renderSkillsList();
-            return;
-        }
-        skillsList.innerHTML = skills.filter(skill =>
-            skill.name.toLowerCase().includes(query)
-        ).map(skill => `
-            <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}">
-                <div class="font-medium">${skill.name}</div>
-                <div class="flex items-center gap-2">
-                    <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button">${statusIcons[skill.status]}</button>
-                    <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </button>
-                </div>
-            </div>
-        `).join('') || '<p class="text-sm text-gray-500">No skills found.</p>';
-    }
-
-    function filterPortfolio(query) {
-        if (!query) {
-            renderPortfolio();
-            return;
-        }
-        const lowerQuery = query.toLowerCase();
-        // Only filter by title, not by link
-        const filtered = portfolioEntries.filter(item =>
-            item.title && item.title.toLowerCase().includes(lowerQuery)
-        );
-        // Split into top3 and rest as in renderPortfolio
-        const top3 = filtered.filter(e => e.isTop).slice(0, 3);
-        const rest = filtered.filter(e => !e.isTop);
-        const topCount = top3.length;
-        portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
-            let embedHtml = '';
-            if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
-                let videoId = getYouTubeId(e.link) || e.videoId;
-                if (videoId) {
-                    embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-                } else {
-                    embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
-                }
-            } else if (e.type === 'soundcloud') {
-                embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(e.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
-            } else {
-                embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
-            }
-            return (
-                `<div class=\"flex flex-col items-center bg-gray-50 rounded p-2 border relative\">` +
-                `<div class=\"w-full aspect-w-16 aspect-h-9 mb-2\">` +
-                embedHtml +
-                `</div>` +
-                `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
-                `<div class=\"flex gap-2\">` +
-                `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
-                `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
-                `</div>` +
-                `</div>`
-            );
-        }).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
-        if (rest.length > 0) {
-            portfolioList.innerHTML = rest.map(e => `
-                <div class="flex items-center justify-between p-2 border rounded">
-                    <div class="flex flex-col">
-                        <span class="font-medium">${e.title}</span>
-                        <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title=\"You can only feature 3 items\"' : ''}>Feature</button>
-                        <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            portfolioList.innerHTML = '<div class="text-sm text-gray-500">No portfolio results found.</div>';
-        }
-    }
-
-    // --- PORTFOLIO TAB LOGIC ---
-    const portfolioForm = document.getElementById('portfolioForm');
-    const portfolioTitle = document.getElementById('portfolioTitle');
-    const portfolioLink = document.getElementById('portfolioLink');
-    const portfolioTop3 = document.getElementById('portfolioTop3');
-    const portfolioList = document.getElementById('portfolioList');
-
-    // Helper: Extract YouTube video ID (robust for all YouTube URLs)
-    function getYouTubeId(url) {
-        // Handles: youtu.be, youtube.com/watch?v=, youtube.com/embed/, youtube.com/v/, youtube.com/shorts/
-        const regex = /(?:youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|(?:v|embed|shorts)\/)|youtu\.be\/)([\w-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    }
-    // Helper: Extract SoundCloud track URL (basic validation)
-    function isSoundCloudUrl(url) {
-        return /^https?:\/\/(soundcloud\.com|snd\.sc)\//.test(url);
-    }
-    // Helper: Get portfolio type
-    function getPortfolioType(url) {
-        if (getYouTubeId(url)) return 'youtube';
-        if (isSoundCloudUrl(url)) return 'soundcloud';
-        return null;
-    }
-
-    // Load portfolio entries from Firestore
-    async function loadPortfolio() {
-        if (!currentUser) return;
-        const snapshot = await db.collection('users').doc(currentUser.uid).collection('portfolio').orderBy('dateAdded').get();
-        portfolioEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderPortfolio();
-    }
-
-    // Save a new portfolio entry
-    async function addPortfolioEntry(e) {
+// Add vocabulary
+document.getElementById('addVocabBtn').addEventListener('click', addVocabularyWords);
+vocabularyInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
         e.preventDefault();
-        const title = portfolioTitle.value.trim();
-        const link = portfolioLink.value.trim();
-        if (!title || !link) return;
-        const type = getPortfolioType(link);
-        if (!type) {
-            alert('Please enter a valid YouTube or SoundCloud link.');
-            return;
+        addVocabularyWords();
+    }
+});
+translationInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addVocabularyWords();
+    }
+});
+
+// Add skills
+document.getElementById('addSkillBtn').addEventListener('click', addSkills);
+skillsInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addSkills();
+    }
+});
+
+// Event Listener for Delete Category Button
+deleteCategoryBtn.addEventListener('click', deleteCategory);
+
+// Logout functionality
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await auth.signOut();
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error("Logout error: ", error.message);
+    }
+});
+
+// Delegate event listeners for status updates and deletions
+vocabularyListEl.addEventListener('click', (e) => {
+    const statusButton = e.target.closest('.status-button');
+    const deleteButton = e.target.closest('.delete-button');
+    const itemId = e.target.closest('.vocab-item')?.dataset.id;
+
+    if (statusButton && itemId) {
+        updateStatus(itemId, true);
+    } else if (deleteButton && itemId) {
+        deleteItem(itemId, true); // Now includes confirmation
+    }
+});
+
+skillsList.addEventListener('click', (e) => {
+    const statusButton = e.target.closest('.status-button');
+    const deleteButton = e.target.closest('.delete-button');
+    const itemId = e.target.closest('.skill-item')?.dataset.id;
+
+    if (statusButton && itemId) {
+        updateStatus(itemId, false);
+    } else if (deleteButton && itemId) {
+        deleteItem(itemId, false); // Now includes confirmation
+    }
+});
+
+// Delete Account functionality
+deleteAccountBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    const confirmed = confirm('Are you sure you want to delete your account? This will permanently remove all your data and cannot be undone.');
+    if (!confirmed) return;
+    try {
+        // Delete all user data from Firestore
+        const userDocRef = db.collection('users').doc(currentUser.uid);
+        // Delete subcollections (vocabulary, skills, metadata)
+        const vocabSnapshot = await userDocRef.collection('vocabulary').get();
+        const skillsSnapshot = await userDocRef.collection('skills').get();
+        const metadataSnapshot = await userDocRef.collection('metadata').get();
+        const batch = db.batch();
+        vocabSnapshot.forEach(doc => batch.delete(doc.ref));
+        skillsSnapshot.forEach(doc => batch.delete(doc.ref));
+        metadataSnapshot.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        // Delete mentor code if it exists
+        const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+        if (!codeDoc.empty) {
+            await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
         }
-        let videoId = null;
-        if (type === 'youtube') videoId = getYouTubeId(link);
-        await db.collection('users').doc(currentUser.uid).collection('portfolio').add({
-            title,
-            link,
-            type,
-            videoId,
-            isTop: false,
-            dateAdded: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        portfolioTitle.value = '';
-        portfolioLink.value = '';
-        await loadPortfolio();
-    }
-
-    // Delete a portfolio entry
-    async function deletePortfolioEntry(id) {
-        if (!confirm('Delete this portfolio entry?')) return;
-        await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
-        await loadPortfolio();
-    }
-
-    // Toggle top 3 selection
-    async function toggleTopPortfolio(id) {
-        // Count current top 3
-        const topCount = portfolioEntries.filter(e => e.isTop).length;
-        const entry = portfolioEntries.find(e => e.id === id);
-        if (!entry) return;
-        if (!entry.isTop && topCount >= 3) {
-            alert('You can only select up to 3 top portfolio entries.');
-            return;
+        // Delete user document
+        await userDocRef.delete();
+        // Delete auth user
+        await currentUser.delete();
+        alert('Your account has been deleted.');
+        window.location.href = 'login.html';
+    } catch (error) {
+        if (error.code === 'auth/requires-recent-login') {
+            alert('Please log out and log in again, then try deleting your account.');
+        } else {
+            alert('Error deleting account: ' + error.message);
         }
-        await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).update({ isTop: !entry.isTop });
-        await loadPortfolio();
     }
+});
 
-    // Render portfolio UI
-    function renderPortfolio() {
-        if (!portfolioTop3 || !portfolioList) return;
-        const top3 = portfolioEntries.filter(e => e.isTop).slice(0, 3);
-        const rest = portfolioEntries.filter(e => !e.isTop);
-        const topCount = top3.length;
-        portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
-            let embedHtml = '';
-            if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
-                let videoId = getYouTubeId(e.link) || e.videoId;
-                if (videoId) {
-                    embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-                } else {
-                    embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
-                }
-            } else if (e.type === 'soundcloud') {
-                embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(e.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+// Settings modal logic
+document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
+document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsModal);
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settingsModal')) closeSettingsModal();
+});
+// Achievements toggle logic
+const toggle = document.getElementById('toggleAchievements');
+if (toggle) {
+    toggle.addEventListener('change', async (e) => {
+        await setAchievementsEnabled(e.target.checked);
+        await updateAchievementsVisibility();
+        // Render ASL Club achievements if section is visible
+        const section = document.getElementById('achievementsSection');
+        if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+            renderASLClubAchievements();
+        }
+    });
+    updateAchievementsVisibility();
+}
+// Progress metrics toggle logic
+const toggleProgress = document.getElementById('toggleProgress');
+if (toggleProgress) {
+    toggleProgress.addEventListener('change', async (e) => {
+        await setProgressEnabled(e.target.checked);
+        await updateProgressVisibility();
+        renderProgressMetrics();
+    });
+    updateProgressVisibility();
+}
+
+// Mentor code toggle confirmation
+const mentorToggle = document.getElementById('toggleMentorCode');
+if (mentorToggle) {
+    let lastMentorChecked = mentorToggle.checked;
+    mentorToggle.addEventListener('change', async (e) => {
+        if (!mentorToggle.checked) {
+            const confirmed = confirm('Are you sure you want to disable Mentor Access? Your mentor will no longer be able to view your progress.');
+            if (!confirmed) {
+                mentorToggle.checked = true;
+                return;
+            }
+        }
+        lastMentorChecked = mentorToggle.checked;
+    });
+}
+// Regenerate code confirmation
+const regenBtn = document.getElementById('regenerateMentorCodeBtn');
+if (regenBtn) {
+    regenBtn.addEventListener('click', async (e) => {
+        const confirmed = confirm('Are you sure you want to regenerate your mentor code? Your old code will no longer work.');
+        if (!confirmed) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        // If you have a handler for regeneration, let it proceed
+    }, true);
+}
+// --- SEARCH FEATURE ---
+const searchInput = document.getElementById('searchInput');
+
+if (searchInput) {
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        filterVocabulary(query);
+        filterSkills(query);
+        filterPortfolio(query); // Add this line to include portfolio titles in search
+    });
+}
+
+function filterVocabulary(query) {
+    if (!query) {
+        renderVocabularyList();
+        return;
+    }
+    const filtered = vocabularyList.filter(item =>
+        item.word.toLowerCase().includes(query) ||
+        (item.category && item.category.toLowerCase().includes(query))
+    );
+    // Group by category for display
+    const grouped = categories.reduce((acc, category) => {
+        acc[category] = filtered.filter(item => item.category === category);
+        return acc;
+    }, {});
+    // If no results at all, show a single message
+    const totalResults = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
+    if (totalResults === 0) {
+        vocabularyListEl.innerHTML = '<p class="text-sm text-gray-500">No vocabulary results found.</p>';
+        return;
+    }
+    vocabularyListEl.innerHTML = categories
+        .map(category => {
+            const items = grouped[category] || [];
+            if (items.length === 0) return '';
+            return `
+                <div class="mb-4 category-container">
+                    <div class="flex items-center justify-between p-2 bg-gray-100 rounded category-header">
+                        <h3 class="font-bold">${category} (${items.length})</h3>
+                    </div>
+                    <div class="category-content space-y-2 mt-2 ml-2 expanded" style="display: block;">
+                        ${items.map(item => renderVocabItem(item)).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+}
+
+function filterSkills(query) {
+    if (!query) {
+        renderSkillsList();
+        return;
+    }
+    skillsList.innerHTML = skills.filter(skill =>
+        skill.name.toLowerCase().includes(query)
+    ).map(skill => `
+        <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}">
+            <div class="font-medium">${skill.name}</div>
+            <div class="flex items-center gap-2">
+                <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button">${statusIcons[skill.status]}</button>
+                <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </button>
+            </div>
+        </div>
+    `).join('') || '<p class="text-sm text-gray-500">No skills found.</p>';
+}
+
+function filterPortfolio(query) {
+    if (!query) {
+        renderPortfolio();
+        return;
+    }
+    const lowerQuery = query.toLowerCase();
+    // Only filter by title, not by link
+    const filtered = portfolioEntries.filter(item =>
+        item.title && item.title.toLowerCase().includes(lowerQuery)
+    );
+    // Split into top3 and rest as in renderPortfolio
+    const top3 = filtered.filter(e => e.isTop).slice(0, 3);
+    const rest = filtered.filter(e => !e.isTop);
+    const topCount = top3.length;
+    portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
+        let embedHtml = '';
+        if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
+            let videoId = getYouTubeId(e.link) || e.videoId;
+            if (videoId) {
+                embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
             } else {
                 embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
             }
-            return (
-                `<div class=\"flex flex-col items-center bg-gray-50 rounded p-2 border relative\">` +
-                `<div class=\"w-full aspect-w-16 aspect-h-9 mb-2\">` +
-                embedHtml +
-                `</div>` +
-                `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
-                `<div class=\"flex gap-2\">` +
-                `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
-                `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
-                `</div>` +
-                `</div>`
-            );
-        }).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
-        portfolioList.innerHTML = rest.length > 0 ? rest.map(e => `
+        } else if (e.type === 'soundcloud') {
+            embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(e.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+        } else {
+            embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
+        }
+        return (
+            `<div class=\"flex flex-col items-center bg-gray-50 rounded p-2 border relative\">` +
+            `<div class=\"w-full aspect-w-16 aspect-h-9 mb-2\">` +
+            embedHtml +
+            `</div>` +
+            `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
+            `<div class=\"flex gap-2\">` +
+            `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
+            `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
+            `</div>` +
+            `</div>`
+        );
+    }).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+    if (rest.length > 0) {
+        portfolioList.innerHTML = rest.map(e => `
             <div class="flex items-center justify-between p-2 border rounded">
                 <div class="flex flex-col">
                     <span class="font-medium">${e.title}</span>
@@ -1481,298 +1390,420 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
                 </div>
             </div>
-        `).join('') : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
+        `).join('');
+    } else {
+        portfolioList.innerHTML = '<div class="text-sm text-gray-500">No portfolio results found.</div>';
     }
+}
 
-    // Portfolio form submit
-    if (portfolioForm) portfolioForm.addEventListener('submit', addPortfolioEntry);
-    // Portfolio actions (feature/unfeature/delete)
-    if (portfolioTop3) portfolioTop3.addEventListener('click', e => {
-        const btn = e.target.closest('button[data-action]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-id');
-        if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
-        if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
-    });
-    if (portfolioList) portfolioList.addEventListener('click', e => {
-        const btn = e.target.closest('button[data-action]');
-        if (!btn) return;
-        const id = btn.getAttribute('data-id');
-        if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
-        if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
-    });
+// --- PORTFOLIO TAB LOGIC ---
+const portfolioForm = document.getElementById('portfolioForm');
+const portfolioTitle = document.getElementById('portfolioTitle');
+const portfolioLink = document.getElementById('portfolioLink');
+const portfolioTop3 = document.getElementById('portfolioTop3');
+const portfolioList = document.getElementById('portfolioList');
 
-    // Load portfolio after user data
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            loadPortfolio();
+// Helper: Extract YouTube video ID (robust for all YouTube URLs)
+function getYouTubeId(url) {
+    // Handles: youtu.be, youtube.com/watch?v=, youtube.com/embed/, youtube.com/v/, youtube.com/shorts/
+    const regex = /(?:youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|(?:v|embed|shorts)\/)|youtu\.be\/)([\w-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+// Helper: Extract SoundCloud track URL (basic validation)
+function isSoundCloudUrl(url) {
+    return /^https?:\/\/(soundcloud\.com|snd\.sc)\//.test(url);
+}
+// Helper: Get portfolio type
+function getPortfolioType(url) {
+    if (getYouTubeId(url)) return 'youtube';
+    if (isSoundCloudUrl(url)) return 'soundcloud';
+    return null;
+}
+
+// Load portfolio entries from Firestore
+async function loadPortfolio() {
+    if (!currentUser) return;
+    const snapshot = await db.collection('users').doc(currentUser.uid).collection('portfolio').orderBy('dateAdded').get();
+    portfolioEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderPortfolio();
+}
+
+// Save a new portfolio entry
+async function addPortfolioEntry(e) {
+    e.preventDefault();
+    const title = portfolioTitle.value.trim();
+    const link = portfolioLink.value.trim();
+    if (!title || !link) return;
+    const type = getPortfolioType(link);
+    if (!type) {
+        alert('Please enter a valid YouTube or SoundCloud link.');
+        return;
+    }
+    let videoId = null;
+    if (type === 'youtube') videoId = getYouTubeId(link);
+    await db.collection('users').doc(currentUser.uid).collection('portfolio').add({
+        title,
+        link,
+        type,
+        videoId,
+        isTop: false,
+        dateAdded: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    portfolioTitle.value = '';
+    portfolioLink.value = '';
+    await loadPortfolio();
+}
+
+// Delete a portfolio entry
+async function deletePortfolioEntry(id) {
+    if (!confirm('Delete this portfolio entry?')) return;
+    await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
+    await loadPortfolio();
+}
+
+// Toggle top 3 selection
+async function toggleTopPortfolio(id) {
+    // Count current top 3
+    const topCount = portfolioEntries.filter(e => e.isTop).length;
+    const entry = portfolioEntries.find(e => e.id === id);
+    if (!entry) return;
+    if (!entry.isTop && topCount >= 3) {
+        alert('You can only select up to 3 top portfolio entries.');
+        return;
+    }
+    await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).update({ isTop: !entry.isTop });
+    await loadPortfolio();
+}
+
+// Render portfolio UI
+function renderPortfolio() {
+    if (!portfolioTop3 || !portfolioList) return;
+    const top3 = portfolioEntries.filter(e => e.isTop).slice(0, 3);
+    const rest = portfolioEntries.filter(e => !e.isTop);
+    const topCount = top3.length;
+    portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => {
+        let embedHtml = '';
+        if (e.type === 'youtube' || (!e.type && getYouTubeId(e.link))) {
+            let videoId = getYouTubeId(e.link) || e.videoId;
+            if (videoId) {
+                embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+            } else {
+                embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
+            }
+        } else if (e.type === 'soundcloud') {
+            embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(e.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+        } else {
+            embedHtml = `<a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>`;
+        }
+        return (
+            `<div class=\"flex flex-col items-center bg-gray-50 rounded p-2 border relative\">` +
+            `<div class=\"w-full aspect-w-16 aspect-h-9 mb-2\">` +
+            embedHtml +
+            `</div>` +
+            `<div class=\"font-semibold text-center mb-1\">${e.title}</div>` +
+            `<div class=\"flex gap-2\">` +
+            `<button class=\"feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300\" data-action=\"toggleTop\" data-id=\"${e.id}\">Unfeature</button>` +
+            `<button class=\"delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100\" data-action=\"delete\" data-id=\"${e.id}\">Delete</button>` +
+            `</div>` +
+            `</div>`
+        );
+    }).join('') : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+    portfolioList.innerHTML = rest.length > 0 ? rest.map(e => `
+        <div class="flex items-center justify-between p-2 border rounded">
+            <div class="flex flex-col">
+                <span class="font-medium">${e.title}</span>
+                <a href="${e.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${e.link}</a>
+            </div>
+            <div class="flex gap-2">
+                <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" data-action="toggleTop" data-id="${e.id}" ${topCount >= 3 ? 'disabled title=\"You can only feature 3 items\"' : ''}>Feature</button>
+                <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" data-action="delete" data-id="${e.id}">Delete</button>
+            </div>
+        </div>
+    `).join('') : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
+}
+
+// Portfolio form submit
+if (portfolioForm) portfolioForm.addEventListener('submit', addPortfolioEntry);
+// Portfolio actions (feature/unfeature/delete)
+if (portfolioTop3) portfolioTop3.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
+    if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
+});
+if (portfolioList) portfolioList.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (btn.getAttribute('data-action') === 'toggleTop') toggleTopPortfolio(id);
+    if (btn.getAttribute('data-action') === 'delete') deletePortfolioEntry(id);
+});
+
+// Load portfolio after user data
+auth.onAuthStateChanged(user => {
+    if (user) {
+        loadPortfolio();
+    }
+});
+
+// Mentor View Form Logic
+const mentorViewForm = document.getElementById('mentorViewForm');
+if (mentorViewForm) {
+    mentorViewForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const codeInput = document.getElementById('mentorCodeInput');
+        const errorDiv = document.getElementById('mentorViewError');
+        const code = codeInput.value.trim().toUpperCase();
+        if (!/^[A-Z0-9]{5}$/.test(code)) {
+            errorDiv.textContent = 'Please enter a valid 5-digit code.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        // Check Firestore for code validity before redirecting
+        errorDiv.classList.add('hidden');
+        try {
+            const doc = await db.collection('mentorCodes').doc(code).get();
+            if (!doc.exists) {
+                errorDiv.textContent = 'Invalid mentor code.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            // Valid code, redirect
+            window.location.href = window.location.pathname + '?mentor=' + code;
+        } catch (err) {
+            errorDiv.textContent = 'Error checking code. Please try again.';
+            errorDiv.classList.remove('hidden');
         }
     });
+}
 
-    // Mentor View Form Logic
-    const mentorViewForm = document.getElementById('mentorViewForm');
-    if (mentorViewForm) {
-        mentorViewForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const codeInput = document.getElementById('mentorCodeInput');
-            const errorDiv = document.getElementById('mentorViewError');
-            const code = codeInput.value.trim().toUpperCase();
-            if (!/^[A-Z0-9]{5}$/.test(code)) {
-                errorDiv.textContent = 'Please enter a valid 5-digit code.';
-                errorDiv.classList.remove('hidden');
-                return;
+// Change Email functionality
+const changeEmailBtn = document.getElementById('changeEmailBtn');
+const changeEmailInput = document.getElementById('changeEmailInput');
+const changeEmailMsg = document.getElementById('changeEmailMsg');
+if (changeEmailBtn && changeEmailInput && changeEmailMsg) {
+    changeEmailBtn.addEventListener('click', async () => {
+        if (!currentUser) return;
+        const newEmail = changeEmailInput.value.trim();
+        changeEmailMsg.textContent = '';
+        if (!newEmail) {
+            changeEmailMsg.textContent = 'Please enter an email address.';
+            changeEmailMsg.className = 'text-sm mt-2 text-red-600';
+            return;
+        }
+        if (newEmail === currentUser.email) {
+            changeEmailMsg.textContent = 'You entered your current email. Please enter a different email address.';
+            changeEmailMsg.className = 'text-sm mt-2 text-red-600';
+            return;
+        }
+        try {
+            await currentUser.verifyBeforeUpdateEmail(newEmail);
+            changeEmailMsg.textContent = 'A verification link has been sent to your new email address. Please check your inbox and click the link to complete the email change.';
+            changeEmailMsg.className = 'text-sm mt-2 text-blue-600';
+        } catch (error) {
+            let msg = 'Error: ' + (error.message || error);
+            if (error.code) msg += ` (code: ${error.code})`;
+            if (error.code === 'auth/requires-recent-login') {
+                msg = 'Please log out and log in again, then try changing your email.';
+            } else if (error.code === 'auth/email-already-in-use') {
+                msg = 'This email is already in use by another account.';
+            } else if (error.code === 'auth/invalid-email') {
+                msg = 'The email address is not valid.';
+            } else if (error.code === 'auth/operation-not-allowed') {
+                msg = 'Email change is not allowed. Check your Firebase Authentication settings.';
             }
-            // Check Firestore for code validity before redirecting
-            errorDiv.classList.add('hidden');
-            try {
-                const doc = await db.collection('mentorCodes').doc(code).get();
-                if (!doc.exists) {
-                    errorDiv.textContent = 'Invalid mentor code.';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                // Valid code, redirect
-                window.location.href = window.location.pathname + '?mentor=' + code;
-            } catch (err) {
-                errorDiv.textContent = 'Error checking code. Please try again.';
-                errorDiv.classList.remove('hidden');
-            }
-        });
-    }
+            changeEmailMsg.textContent = msg;
+            changeEmailMsg.className = 'text-sm mt-2 text-red-600';
+        }
+    });
+}
 
-    // Change Email functionality
-    const changeEmailBtn = document.getElementById('changeEmailBtn');
-    const changeEmailInput = document.getElementById('changeEmailInput');
-    const changeEmailMsg = document.getElementById('changeEmailMsg');
-    if (changeEmailBtn && changeEmailInput && changeEmailMsg) {
-        changeEmailBtn.addEventListener('click', async () => {
-            if (!currentUser) return;
-            const newEmail = changeEmailInput.value.trim();
-            changeEmailMsg.textContent = '';
-            if (!newEmail) {
-                changeEmailMsg.textContent = 'Please enter an email address.';
-                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
-                return;
-            }
-            if (newEmail === currentUser.email) {
-                changeEmailMsg.textContent = 'You entered your current email. Please enter a different email address.';
-                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
-                return;
-            }
-            try {
-                await currentUser.verifyBeforeUpdateEmail(newEmail);
-                changeEmailMsg.textContent = 'A verification link has been sent to your new email address. Please check your inbox and click the link to complete the email change.';
-                changeEmailMsg.className = 'text-sm mt-2 text-blue-600';
-            } catch (error) {
-                let msg = 'Error: ' + (error.message || error);
-                if (error.code) msg += ` (code: ${error.code})`;
-                if (error.code === 'auth/requires-recent-login') {
-                    msg = 'Please log out and log in again, then try changing your email.';
-                } else if (error.code === 'auth/email-already-in-use') {
-                    msg = 'This email is already in use by another account.';
-                } else if (error.code === 'auth/invalid-email') {
-                    msg = 'The email address is not valid.';
-                } else if (error.code === 'auth/operation-not-allowed') {
-                    msg = 'Email change is not allowed. Check your Firebase Authentication settings.';
-                }
-                changeEmailMsg.textContent = msg;
-                changeEmailMsg.className = 'text-sm mt-2 text-red-600';
-            }
-        });
-    }
+// Toggle between Change Email and Reset Password sections
+const toggleChangeEmail = document.getElementById("toggleChangeEmail");
+const toggleResetPassword = document.getElementById("toggleResetPassword");
+const changeEmailSection = document.getElementById("changeEmailSection");
+const resetPasswordSection = document.getElementById("resetPasswordSection");
 
-    // Toggle between Change Email and Reset Password sections
-    const toggleChangeEmail = document.getElementById("toggleChangeEmail");
-    const toggleResetPassword = document.getElementById("toggleResetPassword");
-    const changeEmailSection = document.getElementById("changeEmailSection");
-    const resetPasswordSection = document.getElementById("resetPasswordSection");
+// Event listeners for toggling
+if (toggleChangeEmail && toggleResetPassword && changeEmailSection && resetPasswordSection) {
+    toggleChangeEmail.addEventListener("click", () => {
+        changeEmailSection.classList.remove("hidden");
+        resetPasswordSection.classList.add("hidden");
+    });
 
-    // Event listeners for toggling
-    if (toggleChangeEmail && toggleResetPassword && changeEmailSection && resetPasswordSection) {
-        toggleChangeEmail.addEventListener("click", () => {
-            changeEmailSection.classList.remove("hidden");
-            resetPasswordSection.classList.add("hidden");
-        });
+    toggleResetPassword.addEventListener("click", () => {
+        resetPasswordSection.classList.remove("hidden");
+        changeEmailSection.classList.add("hidden");
+    });
+}
 
-        toggleResetPassword.addEventListener("click", () => {
-            resetPasswordSection.classList.remove("hidden");
-            changeEmailSection.classList.add("hidden");
-        });
-    }
+// Disable translation input box for mentor mode
+if (window.isMentorView) {
+    translationInput.disabled = true;
+}
 
-    // Disable translation input box for mentor mode
-    if (window.isMentorView) {
-        translationInput.disabled = true;
-    }
+// Disable mentor code input and button for mentor mode
+if (window.isMentorView) {
+    const mentorCodeInput = document.getElementById('mentorCodeInput');
+    const viewAsMentorBtn = document.querySelector('#mentorViewForm button[type="submit"]');
+    if (mentorCodeInput) mentorCodeInput.disabled = true;
+    if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
+}
 
-    // Disable mentor code input and button for mentor mode
-    if (window.isMentorView) {
-        const mentorCodeInput = document.getElementById('mentorCodeInput');
-        const viewAsMentorBtn = document.querySelector('#mentorViewForm button[type="submit"]');
-        if (mentorCodeInput) mentorCodeInput.disabled = true;
-        if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
-    }
+// Logic to toggle Google Sign-In
+const toggleGoogleSignIn = document.getElementById('toggleGoogleSignIn');
+if (toggleGoogleSignIn) {
+    toggleGoogleSignIn.addEventListener('change', (event) => {
+        const isEnabled = event.target.checked;
+        if (isEnabled) {
+            console.log('Google Sign-In enabled');
+            // Add logic to enable Google Sign-In
+        } else {
+            console.log('Google Sign-In disabled');
+            // Add logic to disable Google Sign-In
+        }
+    });
+}
 
-    // Logic to toggle Google Sign-In
-    const toggleGoogleSignIn = document.getElementById('toggleGoogleSignIn');
-    if (toggleGoogleSignIn) {
-        toggleGoogleSignIn.addEventListener('change', (event) => {
-            const isEnabled = event.target.checked;
-            if (isEnabled) {
-                console.log('Google Sign-In enabled');
-                // Add logic to enable Google Sign-In
-            } else {
-                console.log('Google Sign-In disabled');
-                // Add logic to disable Google Sign-In
-            }
-        });
-    }
-
-    // Logic to link or unlink Google Sign-In
-    const googleSignInToggleBtn = document.getElementById('googleSignInToggleBtn');
-    if (googleSignInToggleBtn) {
-        googleSignInToggleBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
-
-            const providerData = user.providerData;
-            const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
-
-            if (googleProvider) {
-                // Unlink Google Sign-In
-                try {
-                    await user.unlink('google.com');
-                    googleSignInToggleBtn.textContent = 'Link Google Sign-In';
-                    console.log('Google Sign-In unlinked');
-                } catch (error) {
-                    console.error('Error unlinking Google Sign-In:', error);
-                }
-            } else {
-                // Link Google Sign-In
-                const provider = new firebase.auth.GoogleAuthProvider();
-                try {
-                    await user.linkWithPopup(provider);
-                    googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
-                    console.log('Google Sign-In linked');
-                } catch (error) {
-                    console.error('Error linking Google Sign-In:', error);
-                }
-            }
-        });
-    }
-
-    // Update button text based on Google Sign-In status
-    const updateGoogleSignInButton = async () => {
+// Logic to link or unlink Google Sign-In
+const googleSignInToggleBtn = document.getElementById('googleSignInToggleBtn');
+if (googleSignInToggleBtn) {
+    googleSignInToggleBtn.addEventListener('click', async () => {
+        const user = auth.currentUser;
 
         const providerData = user.providerData;
         const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
 
         if (googleProvider) {
-            googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+            // Unlink Google Sign-In
+            try {
+                await user.unlink('google.com');
+
+                googleSignInToggleBtn.textContent = 'Link Google Sign-In';
+                console.log('Google Sign-In unlinked');
+            } catch (error) {
+                console.error('Error unlinking Google Sign-In:', error);
+            }
         } else {
-            googleSignInToggleBtn.textContent = 'Link Google Sign-In';
-        }
-    };
-
-    // Ensure user is initialized before updating the button
-
-
-
-
-
-
-
-
-
-    firebase.auth().onAuthStateChanged((authUser) => {
-        if (authUser) {
-            const user = authUser; // Assign the authenticated user
-
-            // Update button text based on Google Sign-In status
-            const updateGoogleSignInButton = async () => {
-                const providerData = user.providerData;
-                const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
-
-                if (googleProvider) {
-                    googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
-                } else {
-                    googleSignInToggleBtn.textContent = 'Link Google Sign-In';
-                }
-            };
-
-            if (googleSignInToggleBtn) {
-                updateGoogleSignInButton();
+            // Link Google Sign-In
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await user.linkWithPopup(provider);
+                googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+                console.log('Google Sign-In linked');
+            } catch (error) {
+                console.error('Error linking Google Sign-In:', error);
             }
         }
     });
+}
 
-    // Add language selection dropdown logic
-    if (languageSelect) {
-        languageSelect.addEventListener('change', async (e) => {
-            const selectedLanguage = e.target.value;
-            if (!currentUser) return;
+// Update button text based on Google Sign-In status
+const updateGoogleSignInButton = async () => {
 
-            try {
-                // Save selected language to Firebase
-                await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({
-                    languageLearning: selectedLanguage
-                }, { merge: true });
+    const providerData = user.providerData;
+    const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
 
-                // Fetch and display links for the selected language
-                const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
-                if (linksSnapshot.exists) {
-                    const links = linksSnapshot.data().links;
-                    languageLinksContainer.innerHTML = links.map(link => `
-                        <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
-                    `).join('<br>');
-                } else {
-                    languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
-                }
-            } catch (error) {
-                console.error('Error updating language or fetching links:', error);
-            }
-        });
+    if (googleProvider) {
+        googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+    } else {
+        googleSignInToggleBtn.textContent = 'Link Google Sign-In';
     }
+};
 
-    // Update logic to restore user's language selection
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) return;
+// Ensure user is initialized before updating the button
+firebase.auth().onAuthStateChanged((authUser) => {
+    if (authUser) {
+        const user = authUser; // Assign the authenticated user
+
+        // Update button text based on Google Sign-In status
+        const updateGoogleSignInButton = async () => {
+            const providerData = user.providerData;
+            const googleProvider = providerData.find(provider => provider.providerId === 'google.com');
+
+            if (googleProvider) {
+                googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
+            } else {
+                googleSignInToggleBtn.textContent = 'Link Google Sign-In';
+            }
+        };
+
+        if (googleSignInToggleBtn) {
+            updateGoogleSignInButton();
+        }
+    }
+});
+
+// Add language selection dropdown logic
+if (languageSelect) {
+    languageSelect.addEventListener('change', async (e) => {
+        const selectedLanguage = e.target.value;
+        if (!currentUser) return;
 
         try {
-            // Fetch user's language from Firestore
-            const settingsDoc = await db.collection('users').doc(user.uid).collection('metadata').doc('settings').get();
-            if (settingsDoc.exists) {
-                const userData = settingsDoc.data();
-                if (userData.languageLearning) {
-                    const languageSelect = document.getElementById('languageSelect');
-                    const languageLinksContainer = document.getElementById('languageLinksContainer');
+            // Save selected language to Firebase
+            await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set({
+                languageLearning: selectedLanguage
+            }, { merge: true });
 
-                    if (languageSelect) {
-                        languageSelect.value = userData.languageLearning;
+            // Fetch and display links for the selected language
+            const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
+            if (linksSnapshot.exists) {
+                const links = linksSnapshot.data().links;
+                languageLinksContainer.innerHTML = links.map(link => `
+                    <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
+                `).join('<br>');
+            } else {
+                languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
+            }
+        } catch (error) {
+            console.error('Error updating language or fetching links:', error);
+        }
+    });
+}
 
-                        // Trigger change event to load links
-                        const event = new Event('change');
-                        languageSelect.dispatchEvent(event);
-                    }
+// Update logic to restore user's language selection
+auth.onAuthStateChanged(async (user) => {
+    if (!user) return;
 
-                    if (languageLinksContainer) {
-                        // Fetch and display links for the selected language
-                        const linksSnapshot = await db.collection('languageLinks').doc(userData.languageLearning).get();
-                        if (linksSnapshot.exists) {
-                            const links = linksSnapshot.data().links;
-                            languageLinksContainer.innerHTML = links.map(link => `
-                                <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
-                            `).join('<br>');
-                        } else {
-                            languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
-                        }
+    try {
+        // Fetch user's language from Firestore
+        const settingsDoc = await db.collection('users').doc(user.uid).collection('metadata').doc('settings').get();
+        if (settingsDoc.exists) {
+            const userData = settingsDoc.data();
+            if (userData.languageLearning) {
+                const languageSelect = document.getElementById('languageSelect');
+                const languageLinksContainer = document.getElementById('languageLinksContainer');
+
+                if (languageSelect) {
+                    languageSelect.value = userData.languageLearning;
+
+                    // Trigger change event to load links
+                    const event = new Event('change');
+                    languageSelect.dispatchEvent(event);
+                }
+
+                if (languageLinksContainer) {
+                    // Fetch and display links for the selected language
+                    const linksSnapshot = await db.collection('languageLinks').doc(userData.languageLearning).get();
+                    if (linksSnapshot.exists) {
+                        const links = linksSnapshot.data().links;
+                        languageLinksContainer.innerHTML = links.map(link => `
+                            <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
+                        `).join('<br>');
+                    } else {
+                        languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
                     }
                 }
             }
-        } catch (error) {
-            console.error('Error restoring user language and links:', error);
         }
-    });
+    } catch (error) {
+        console.error('Error restoring user language and links:', error);
+    }
 });
+
 
 // Update category select options
 function updateCategorySelect() {
