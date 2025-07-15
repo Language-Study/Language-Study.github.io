@@ -1861,3 +1861,18 @@ function generateMentorCode() {
     }
     return code;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Tab switching logic for blue active tab
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            tabButtons.forEach(b => {
+                b.classList.remove('active', 'bg-blue-500', 'text-white');
+                b.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            this.classList.add('active', 'bg-blue-500', 'text-white');
+            this.classList.remove('bg-gray-200', 'text-gray-700');
+        });
+    });
+});

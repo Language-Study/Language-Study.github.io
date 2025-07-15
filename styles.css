@@ -18,6 +18,8 @@
 }
 
 .tab-button.active {
+    background-color: #3b82f6 !important;
+    color: #fff !important;
     font-weight: 500;
 }
 
@@ -277,8 +279,8 @@
         background-color: #e5e7eb !important;
     }
 
-        #settingsModal button:hover[data-tab-target="#changeEmailSection"],
-        #settingsModal button:hover[data-tab-target="#resetPasswordSection"] {
+    #settingsModal button:hover[data-tab-target="#changeEmailSection"],
+    #settingsModal button:hover[data-tab-target="#resetPasswordSection"] {
         background-color: #d1d5db !important;
     }
 
