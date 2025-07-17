@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.language_study.twa",
-        "sha256_cert_fingerprints": ["55:BA:3B:57:EF:D3:05:18:19:0C:B3:B1:E6:64:42:BF:0D:9E:FE:E4:1D:B2:48:F1:32:31:9C:47:23:11:30:06"]
+        "sha256_cert_fingerprints": ["16:50:8C:E3:8B:2F:FD:74:BB:50:5A:84:1F:22:7B:7E:C1:BB:BE:37:4B:F1:10:F6:2B:96:58:F9:2E:23:51:CA"]
       }
     }]
