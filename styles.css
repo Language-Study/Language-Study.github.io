@@ -80,6 +80,21 @@
     background-color: inherit;
 }
 
+/* ===== ACCESSIBILITY: BUTTON STATES ===== */
+button:focus-visible,
+.tab-button:focus-visible,
+.category-header:focus-visible,
+.feature-button:focus-visible,
+.delete-button:focus-visible,
+.progress-button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
 /* ===== DARK MODE STYLES ===== */
 @media (prefers-color-scheme: dark) {
 
@@ -136,16 +151,24 @@
 
     /* Button colors */
     .settings,
-    .btn-secondary {
-        border: 1px solid #888 !important;
+    .btn-secondary,
+    .bg-gray-200,
+    .bg-gray-100,
+    .bg-gray-50 {
+        background-color: #374151 !important;
+        color: #e5e7eb !important;
+        border: 1px solid #4b5563 !important;
     }
 
     .logout,
     .btn-danger,
-    .Delete {
-        background-color: #e74c3c !important;
+    .Delete,
+    .bg-red-500,
+    .bg-red-600,
+    .bg-red-700 {
+        background-color: #ef4444 !important;
         color: #fff !important;
-        border: 1px solid #c0392b !important;
+        border: 1px solid #b91c1c !important;
     }
 
     .progress-button,
@@ -153,7 +176,10 @@
     .plus-btn,
     .blue-btn,
     .modal-footer button,
-    .modal-footer .btn {
+    .modal-footer .btn,
+    .bg-blue-500,
+    .bg-blue-600,
+    .bg-blue-700 {
         background-color: #2563eb !important;
         color: #fff !important;
         border: 1px solid #1e40af !important;
@@ -207,6 +233,8 @@
     .empty-message,
     .text-gray-500,
     .text-gray-600,
+    .text-gray-700,
+    .text-gray-900,
     .hint,
     .tip,
     .text-xs,
@@ -230,6 +258,26 @@
     .mentor-access *,
     .mentor-section * {
         color: #e8e6e3 !important;
+    }
+
+    /* Ensure inline translation text stays readable in dark mode */
+    .translation-text {
+        color: #e8e6e3 !important;
+    }
+
+    /* Improve disabled button contrast in dark mode */
+    button:disabled,
+    .tab-button:disabled,
+    .feature-button:disabled,
+    .delete-button:disabled,
+    .progress-button:disabled {
+        background-color: #374151 !important;
+        color: #9ca3af !important;
+        border-color: #4b5563 !important;
+    }
+
+    button:disabled svg {
+        color: #9ca3af !important;
     }
 
     .text-gray-800 {
