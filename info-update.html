@@ -11,26 +11,27 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
     <script src="js/config.js" defer></script>
     <script src="js/auth.js" defer></script>
     <script src="js/ui-utils.js" defer></script>
     <script src="js/pages/info-update-page.js" defer></script>
 </head>
 
-<body class="bg-gray-100">
-    <div class="flex items-center justify-center min-h-screen bg-gray-100">
-        <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
-            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Reset Your Password or Change Email</h1>
+<body class="bg-gray-900">
+    <div class="flex items-center justify-center min-h-screen bg-gray-900">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md border border-gray-700">
+            <h1 class="text-2xl font-bold text-center text-white mb-6">Reset Your Password or Change Email</h1>
             <div id="resetPasswordMsg" class="text-sm mb-4 text-center"></div>
             <form id="resetPasswordForm" class="space-y-4">
                 <input type="password" id="newPassword" placeholder="Enter new password" required
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit"
-                    class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Reset Password
                 </button>
             </form>
-            <a href="index.html" class="block text-center text-blue-500 hover:underline mt-4">Back to Site</a>
+            <a href="index.html" class="block text-center text-blue-400 hover:text-blue-300 mt-4">Back to Site</a>
         </div>
     </div>
 </body>

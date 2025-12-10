@@ -69,12 +69,12 @@ async function handlePasswordReset(oobCode, h1Element, titleElement, resetPasswo
 
             try {
                 await updateAuth.confirmPasswordReset(oobCode, newPassword);
-                resetPasswordMsg.textContent = 'Password has been reset successfully! Redirecting to login...';
+                resetPasswordMsg.textContent = 'Password has been reset successfully! Redirecting to app...';
                 resetPasswordMsg.classList.add('text-green-500');
                 resetPasswordMsg.classList.remove('text-red-500');
 
                 setTimeout(() => {
-                    window.location.href = 'login.html';
+                    window.location.href = 'index.html';
                 }, 3000);
             } catch (error) {
                 console.error('Error resetting password:', error);
