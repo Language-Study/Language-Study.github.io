@@ -386,6 +386,46 @@ if (toggleProgress) {
     });
 }
 
+// Mentor view form submission
+const mentorViewForm = document.getElementById('mentorViewForm');
+if (mentorViewForm) {
+    mentorViewForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const mentorCodeInput = document.getElementById('mentorCodeInput');
+        const mentorViewError = document.getElementById('mentorViewError');
+
+        if (!mentorCodeInput || !mentorCodeInput.value.trim()) {
+            mentorViewError.textContent = 'Please enter a mentor code.';
+            mentorViewError.classList.remove('hidden');
+            return;
+        }
+
+        const code = mentorCodeInput.value.toUpperCase().trim();
+
+        try {
+            // Validate mentor code format (5 alphanumeric)
+            if (!/^[A-Z0-9]{5}$/.test(code)) {
+                throw new Error('Please enter a valid 5-digit code.');
+            }
+
+            // Validate code exists in Firestore
+            const doc = await db.collection('mentorCodes').doc(code).get();
+            if (!doc.exists) {
+                throw new Error('Invalid mentor code.');
+            }
+
+            // Redirect to current page with mentor code as query parameter
+            const url = new URL(window.location.href);
+            url.searchParams.set('mentor', code);
+            window.location.href = url.toString();
+        } catch (error) {
+            mentorViewError.textContent = error.message || 'Error validating code. Please try again.';
+            mentorViewError.classList.remove('hidden');
+            console.error('Mentor code validation error:', error);
+        }
+    });
+}
+
 // Mentor code toggle with confirmation
 const mentorToggle = document.getElementById('toggleMentorCode');
 if (mentorToggle) {
