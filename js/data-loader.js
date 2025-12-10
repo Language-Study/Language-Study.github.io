@@ -16,6 +16,11 @@ let dataCache = {
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Track in-flight loads to avoid duplicate Firestore requests
+let loadUserDataPromise = null;
+let refreshTimer = null;
+let refreshPromise = null;
+
 /**
  * Check if cache is still valid
  * @returns {boolean}
@@ -50,7 +55,30 @@ function clearDataCache() {
 async function loadUserData() {
     if (!currentUser) return;
 
-    try {
+    // Serve from cache if still valid to avoid extra reads
+    if (isCacheValid() && dataCache.vocabularyList.length) {
+        vocabularyList = [...dataCache.vocabularyList];
+        skills = [...dataCache.skills];
+        categories = [...dataCache.categories];
+        portfolioEntries = [...dataCache.portfolioEntries];
+        if (Array.isArray(dataCache.earnedBadges)) {
+            earnedBadges = [...dataCache.earnedBadges];
+        }
+
+        updateCategorySelect();
+        renderVocabularyList();
+        renderSkillsList();
+        renderPortfolio();
+        await renderBadges();
+        await updateAchievementsVisibility();
+        await updateProgressVisibility();
+        renderProgressMetrics();
+        return;
+    }
+
+    if (loadUserDataPromise) return loadUserDataPromise;
+
+    const runLoad = async () => {
         showLoadingSpinner(true, 'Loading your data...');
 
         // Load in parallel for better performance
@@ -84,13 +112,26 @@ async function loadUserData() {
         // Mark cache as valid
         dataCache.isCached = true;
         dataCache.lastLoadTime = Date.now();
+        dataCache.vocabularyList = [...vocabularyList];
+        dataCache.skills = [...skills];
+        dataCache.categories = [...categories];
+        dataCache.portfolioEntries = [...portfolioEntries];
+        dataCache.earnedBadges = Array.isArray(earnedBadges) ? [...earnedBadges] : [];
 
         showLoadingSpinner(false);
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        showToast('Error loading your data. Please refresh the page.');
-        showLoadingSpinner(false);
-    }
+    };
+
+    loadUserDataPromise = runLoad()
+        .catch((error) => {
+            console.error('Error loading user data:', error);
+            showToast('Error loading your data. Please refresh the page.');
+            showLoadingSpinner(false);
+        })
+        .finally(() => {
+            loadUserDataPromise = null;
+        });
+
+    return loadUserDataPromise;
 }
 
 /**
@@ -100,7 +141,25 @@ async function loadUserData() {
  */
 async function refreshUserData() {
     clearDataCache();
-    await loadUserData();
+
+    if (refreshPromise) return refreshPromise;
+
+    refreshPromise = new Promise((resolve, reject) => {
+        if (refreshTimer) clearTimeout(refreshTimer);
+
+        // Debounce rapid calls (e.g., multiple status toggles)
+        refreshTimer = setTimeout(() => {
+            refreshTimer = null;
+            loadUserData()
+                .then(resolve)
+                .catch(reject)
+                .finally(() => {
+                    refreshPromise = null;
+                });
+        }, 150);
+    });
+
+    return refreshPromise;
 }
 
 /**
@@ -179,7 +238,6 @@ async function batchUpdateItems(updates) {
         });
 
         await batch.commit();
-        clearDataCache();
         await refreshUserData();
     } catch (error) {
         console.error('Error batch updating items:', error);

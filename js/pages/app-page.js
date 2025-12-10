@@ -174,7 +174,11 @@ vocabularyListEl.addEventListener('click', async (e) => {
             const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
             await updateVocabularyStatus(itemId, newStatus);
-            await refreshUserData();
+            item.status = newStatus;
+            if (dataCache?.isCached) {
+                dataCache.vocabularyList = [...vocabularyList];
+            }
+            renderVocabularyWithCurrentFilter();
         } catch (error) {
             showToast('Error: ' + error.message);
         }
@@ -183,7 +187,11 @@ vocabularyListEl.addEventListener('click', async (e) => {
         if (confirm(`Delete "${item.word}"?`)) {
             try {
                 await deleteVocabularyItem(itemId);
-                await refreshUserData();
+                vocabularyList = vocabularyList.filter(v => v.id !== itemId);
+                if (dataCache?.isCached) {
+                    dataCache.vocabularyList = [...vocabularyList];
+                }
+                renderVocabularyWithCurrentFilter();
                 showToast('✓ Item deleted!');
             } catch (error) {
                 showToast('Error: ' + error.message);
@@ -229,7 +237,11 @@ skillsList.addEventListener('click', async (e) => {
             const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
             await updateSkillStatus(itemId, newStatus);
-            await refreshUserData();
+            skill.status = newStatus;
+            if (dataCache?.isCached) {
+                dataCache.skills = [...skills];
+            }
+            renderSkillsWithCurrentFilter();
         } catch (error) {
             showToast('Error: ' + error.message);
         }
@@ -238,7 +250,11 @@ skillsList.addEventListener('click', async (e) => {
         if (confirm(`Delete "${skill.name}"?`)) {
             try {
                 await deleteSkill(itemId);
-                await refreshUserData();
+                skills = skills.filter(s => s.id !== itemId);
+                if (dataCache?.isCached) {
+                    dataCache.skills = [...skills];
+                }
+                renderSkillsWithCurrentFilter();
                 showToast('✓ Skill deleted!');
             } catch (error) {
                 showToast('Error: ' + error.message);
@@ -301,12 +317,34 @@ if (portfolioForm) {
 // ===== SEARCH FUNCTIONALITY =====
 const searchInput = document.getElementById('searchInput');
 if (searchInput) {
-    searchInput.addEventListener('input', () => {
+    const runSearch = debounce(() => {
         const query = searchInput.value.trim().toLowerCase();
         filterVocabulary(query);
         filterSkills(query);
         filterPortfolio(query);
-    });
+    }, 180);
+
+    searchInput.addEventListener('input', runSearch);
+}
+
+function renderVocabularyWithCurrentFilter() {
+    const query = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    if (query) {
+        filterVocabulary(query);
+    } else {
+        renderVocabularyList();
+    }
+    renderProgressMetrics();
+}
+
+function renderSkillsWithCurrentFilter() {
+    const query = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+    if (query) {
+        filterSkills(query);
+    } else {
+        renderSkillsList();
+    }
+    renderProgressMetrics();
 }
 
 // ===== SETTINGS & UI =====

@@ -388,3 +388,17 @@ async function updateMentorCodeToggle() {
         };
     }
 }
+
+/**
+ * Debounce helper for rapid-fire events
+ * @param {Function} fn - Function to debounce
+ * @param {number} delay - Delay in ms
+ * @returns {Function}
+ */
+function debounce(fn, delay = 150) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
