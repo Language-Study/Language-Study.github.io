@@ -414,6 +414,11 @@ if (mentorViewForm) {
                 throw new Error('Invalid mentor code.');
             }
 
+            // Check if mentor code is enabled
+            if (doc.data().enabled === false) {
+                throw new Error('This mentor code has been disabled.');
+            }
+
             // Redirect to current page with mentor code as query parameter
             const url = new URL(window.location.href);
             url.searchParams.set('mentor', code);

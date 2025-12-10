@@ -33,6 +33,13 @@ async function tryMentorView() {
             return;
         }
 
+        // Check if mentor code is enabled
+        if (doc.data().enabled === false) {
+            alert('This mentor code has been disabled.');
+            window.location.href = 'index.html';
+            return;
+        }
+
         window.isMentorView = true;
         window.mentorUid = doc.data().uid;
 
@@ -236,6 +243,12 @@ async function validateMentorCode(code) {
         if (!doc.exists) {
             throw new Error('Invalid mentor code.');
         }
+
+        // Check if mentor code is enabled
+        if (doc.data().enabled === false) {
+            throw new Error('This mentor code has been disabled.');
+        }
+
         return true;
     } catch (error) {
         throw new Error(error.message || 'Error checking code. Please try again.');

@@ -279,15 +279,23 @@ async function setMentorCodeEnabled(val) {
             { merge: true }
         );
 
-        if (!val) {
-            // Delete mentor code if disabling
+        try {
             const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
             if (!codeDoc.empty) {
-                await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
+                const docId = codeDoc.docs[0].id;
+                // Update enabled flag based on val
+                await db.collection('mentorCodes').doc(docId).update({
+                    enabled: val
+                });
+                console.log('Mentor code enabled status updated to:', val);
             }
+        } catch (updateError) {
+            console.warn('Could not update mentor code status:', updateError);
+            // Don't throw - continue with settings update
         }
     } catch (e) {
         console.error('Error setting mentor code:', e);
+        throw e;
     }
 }
 
@@ -308,6 +316,7 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
         }
 
         if (!codeDoc.empty && forceRegenerate) {
+            // Delete old code on regeneration
             await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
         }
 
@@ -323,7 +332,7 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
             throw new Error('Could not generate a unique mentor code. Please try again.');
         }
 
-        await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid });
+        await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid, enabled: true });
         return code;
     } catch (e) {
         console.error('Error managing mentor code:', e);
