@@ -425,7 +425,7 @@ function renderSkillItem(skill) {
     `).join('') : '';
 
     const subtasksContainerHtml = `
-        <div id="${subtasksContainerId}" class="subtasks-container ${!hasSubtasks ? '' : 'hidden'} mt-2">
+        <div id="${subtasksContainerId}" class="subtasks-container hidden mt-2">
             ${subtasksHtml}
             ${window.isMentorView ? '' : `<div class="mt-2 ml-4">
                 <input type="text" class="subtask-input w-full p-2 border rounded text-sm" placeholder="Add a subtask (improvement goal)..." data-skill-id="${skill.id}" />

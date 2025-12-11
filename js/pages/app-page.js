@@ -207,9 +207,26 @@ const skillsList = document.getElementById('skillsList');
 
 addSkillBtn.addEventListener('click', async () => {
     try {
+        // Save expanded state
+        const expandedSkills = new Set();
+        document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+            expandedSkills.add(btn.dataset.skillId);
+        });
+
         await addSkills(skillsInput.value);
         skillsInput.value = '';
         await refreshUserData();
+
+        // Restore expanded state
+        expandedSkills.forEach(id => {
+            const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+            const container = document.getElementById(`subtasks-${id}`);
+            if (btn && container) {
+                container.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        });
+
         showToast('✓ Skills added!');
     } catch (error) {
         showToast('Error: ' + error.message);
@@ -232,6 +249,9 @@ skillsList.addEventListener('click', async (e) => {
         const subtasksContainer = document.getElementById(`subtasks-${skillId}`);
         if (subtasksContainer) {
             subtasksContainer.classList.toggle('hidden');
+            // Update aria-expanded for accessibility and CSS rotation
+            const isExpanded = !subtasksContainer.classList.contains('hidden');
+            expandButton.setAttribute('aria-expanded', isExpanded);
         }
         return;
     }
@@ -243,9 +263,27 @@ skillsList.addEventListener('click', async (e) => {
         const input = document.querySelector(`.subtask-input[data-skill-id="${skillId}"]`);
         if (input && input.value.trim()) {
             try {
+                // Save expanded state before refresh
+                const expandedSkills = new Set();
+                document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                    expandedSkills.add(btn.dataset.skillId);
+                });
+
                 await addSubtask(skillId, input.value);
                 input.value = '';
                 await refreshUserData();
+                renderSkillsWithCurrentFilter();
+
+                // Restore expanded state
+                expandedSkills.forEach(id => {
+                    const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                    const container = document.getElementById(`subtasks-${id}`);
+                    if (btn && container) {
+                        container.classList.remove('hidden');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
                 showToast('✓ Subtask added!');
             } catch (error) {
                 showToast('Error: ' + error.message);
@@ -263,6 +301,12 @@ skillsList.addEventListener('click', async (e) => {
 
         if (skillId && subtaskId) {
             try {
+                // Save expanded state before refresh
+                const expandedSkills = new Set();
+                document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                    expandedSkills.add(btn.dataset.skillId);
+                });
+
                 const skill = skills.find(s => s.id === skillId);
                 const subtask = (skill.subtasks || []).find(st => st.id === subtaskId);
                 const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
@@ -272,6 +316,16 @@ skillsList.addEventListener('click', async (e) => {
                 await updateSubtaskStatus(skillId, subtaskId, newStatus);
                 await refreshUserData();
                 renderSkillsWithCurrentFilter();
+
+                // Restore expanded state
+                expandedSkills.forEach(id => {
+                    const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                    const container = document.getElementById(`subtasks-${id}`);
+                    if (btn && container) {
+                        container.classList.remove('hidden');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
             } catch (error) {
                 showToast('Error: ' + error.message);
             }
@@ -291,8 +345,26 @@ skillsList.addEventListener('click', async (e) => {
                 const skill = skills.find(s => s.id === skillId);
                 const subtask = (skill.subtasks || []).find(st => st.id === subtaskId);
                 if (confirm(`Delete subtask "${subtask.text}"?`)) {
+                    // Save expanded state before refresh
+                    const expandedSkills = new Set();
+                    document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                        expandedSkills.add(btn.dataset.skillId);
+                    });
+
                     await deleteSubtask(skillId, subtaskId);
                     await refreshUserData();
+                    renderSkillsWithCurrentFilter();
+
+                    // Restore expanded state
+                    expandedSkills.forEach(id => {
+                        const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                        const container = document.getElementById(`subtasks-${id}`);
+                        if (btn && container) {
+                            container.classList.remove('hidden');
+                            btn.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+
                     showToast('✓ Subtask deleted!');
                 }
             } catch (error) {
@@ -309,6 +381,12 @@ skillsList.addEventListener('click', async (e) => {
 
     if (statusButton && itemId) {
         try {
+            // Save expanded state
+            const expandedSkills = new Set();
+            document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                expandedSkills.add(btn.dataset.skillId);
+            });
+
             const skill = skills.find(s => s.id === itemId);
             const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
             const currentIndex = statusOrder.indexOf(skill.status);
@@ -320,6 +398,16 @@ skillsList.addEventListener('click', async (e) => {
                 dataCache.skills = [...skills];
             }
             renderSkillsWithCurrentFilter();
+
+            // Restore expanded state
+            expandedSkills.forEach(id => {
+                const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                const container = document.getElementById(`subtasks-${id}`);
+                if (btn && container) {
+                    container.classList.remove('hidden');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
         } catch (error) {
             showToast('Error: ' + error.message);
         }
@@ -327,12 +415,29 @@ skillsList.addEventListener('click', async (e) => {
         const skill = skills.find(s => s.id === itemId);
         if (confirm(`Delete "${skill.name}"?`)) {
             try {
+                // Save expanded state
+                const expandedSkills = new Set();
+                document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                    expandedSkills.add(btn.dataset.skillId);
+                });
+
                 await deleteSkill(itemId);
                 skills = skills.filter(s => s.id !== itemId);
                 if (dataCache?.isCached) {
                     dataCache.skills = [...skills];
                 }
                 renderSkillsWithCurrentFilter();
+
+                // Restore expanded state (excluding deleted skill)
+                expandedSkills.forEach(id => {
+                    const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                    const container = document.getElementById(`subtasks-${id}`);
+                    if (btn && container) {
+                        container.classList.remove('hidden');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
                 showToast('✓ Skill deleted!');
             } catch (error) {
                 showToast('Error: ' + error.message);

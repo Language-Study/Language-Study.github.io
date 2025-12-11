@@ -238,8 +238,8 @@ button:focus-visible {
     transition: transform var(--transition-normal);
 }
 
-/* Rotate arrow when subtasks are expanded (when container is not hidden) */
-.expand-button:not(.hidden) svg {
+/* Rotate arrow when subtasks are visible (container is not hidden) */
+.expand-button[aria-expanded="true"] svg {
     transform: rotate(90deg);
 }
 
