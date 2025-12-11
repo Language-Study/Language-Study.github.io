@@ -1,3 +1,257 @@
+/* ===== DESIGN SYSTEM TOKENS ===== */
+:root {
+    /* Light mode colors */
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f3f4f6;
+    --color-bg-tertiary: #e5e7eb;
+    --color-text-primary: #1f2937;
+    --color-text-secondary: #6b7280;
+    --color-text-light: #9ca3af;
+    --color-border: #d1d5db;
+    --color-border-light: #e5e7eb;
+
+    /* Action colors */
+    --color-primary: #3b82f6;
+    --color-primary-dark: #2563eb;
+    --color-primary-darker: #1e40af;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-error-light: #fee2e2;
+
+    /* Interactive states */
+    --hover-opacity: 0.9;
+    --focus-ring: 2px solid #2563eb;
+    --focus-ring-offset: 2px;
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+    --transition-slow: 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark mode colors */
+        --color-bg-primary: #181a1b;
+        --color-bg-secondary: #23272a;
+        --color-bg-tertiary: #2c2f33;
+        --color-text-primary: #e8e6e3;
+        --color-text-secondary: #b0b3b8;
+        --color-text-light: #7a7d81;
+        --color-border: #404447;
+        --color-border-light: #555555;
+
+        /* Action colors - adjust for dark mode */
+        --color-primary: #2563eb;
+        --color-primary-dark: #1e40af;
+        --color-primary-darker: #1e3a8a;
+        --color-success: #10b981;
+        --color-warning: #f59e0b;
+        --color-error: #ef4444;
+        --color-error-light: #7f1d1d;
+    }
+}
+
+/* Dark mode class support (for manual dark mode toggle if needed) */
+body.dark {
+    --color-bg-primary: #181a1b;
+    --color-bg-secondary: #23272a;
+    --color-bg-tertiary: #2c2f33;
+    --color-text-primary: #e8e6e3;
+    --color-text-secondary: #b0b3b8;
+    --color-text-light: #7a7d81;
+    --color-border: #404447;
+    --color-border-light: #555555;
+}
+
+/* ===== GLOBAL BASE STYLES ===== */
+body {
+    background-color: var(--color-bg-primary) !important;
+    color: var(--color-text-primary) !important;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Override Tailwind utility classes */
+body.bg-gray-50 {
+    background-color: var(--color-bg-primary) !important;
+}
+
+html {
+    background-color: var(--color-bg-primary) !important;
+}
+
+input,
+textarea,
+select {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-fast);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-text-light);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===== BUTTON SYSTEM ===== */
+
+/* Base button styles */
+button {
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* Primary buttons (blue) */
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700,
+.btn-primary,
+#addSkillBtn,
+#addVocabBtn,
+.progress-button,
+.subtask-add-button {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+}
+
+.bg-blue-500:hover,
+.bg-blue-600:hover,
+.bg-blue-700:hover,
+.btn-primary:hover,
+#addSkillBtn:hover,
+#addVocabBtn:hover,
+.progress-button:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.subtask-add-button:hover {
+    background-color: var(--color-primary-dark);
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+}
+
+/* Secondary buttons (gray) */
+.bg-gray-200,
+.bg-gray-100,
+.btn-secondary,
+#openSettingsBtn,
+.tab-button,
+[data-tab-target],
+.feature-button {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+.bg-gray-200:hover,
+.bg-gray-100:hover,
+.btn-secondary:hover,
+#openSettingsBtn:hover,
+[data-tab-target]:hover:not(.active),
+.feature-button:hover {
+    background-color: var(--color-border-light);
+    border-color: var(--color-border);
+}
+
+/* Danger buttons (red) */
+.bg-red-500,
+.bg-red-600,
+.btn-danger,
+#logoutBtn,
+#deleteAccountBtn {
+    background-color: var(--color-error);
+    color: white;
+    border: none;
+}
+
+.bg-red-500:hover,
+.bg-red-600:hover,
+.btn-danger:hover,
+#logoutBtn:hover,
+#deleteAccountBtn:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+}
+
+/* Icon/action buttons */
+.delete-button,
+.progress-button,
+.status-button,
+.subtask-status-button,
+.subtask-delete-button,
+.expand-button {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    border-radius: 9999px;
+}
+
+.delete-button {
+    color: var(--color-error);
+}
+
+.delete-button:hover,
+.subtask-delete-button:hover {
+    background-color: var(--color-error-light);
+    transform: scale(1.15);
+}
+
+.progress-button:hover,
+.status-button:hover,
+.subtask-status-button:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+    transform: scale(1.1);
+}
+
+.expand-button {
+    transition: all var(--transition-normal);
+}
+
+.expand-button:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.expand-button svg {
+    transition: transform var(--transition-normal);
+}
+
+/* Rotate arrow when subtasks are expanded (when container is not hidden) */
+.expand-button:not(.hidden) svg {
+    transform: rotate(90deg);
+}
+
+/* Active/selected state */
+.tab-button.active,
+[data-tab-target].active {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    font-weight: 600;
+}
+
 /* ===== TAB SYSTEM ===== */
 .tab-content {
     display: none;
@@ -8,20 +262,7 @@
 }
 
 .tab-button {
-    transition: all 0.2s ease-in-out;
     position: relative;
-    outline: none;
-}
-
-.tab-button:focus {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-}
-
-.tab-button.active {
-    background-color: #3b82f6 !important;
-    color: #fff !important;
-    font-weight: 500;
 }
 
 /* ===== CATEGORY SYSTEM ===== */
@@ -35,623 +276,128 @@
 
 .category-header {
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-normal);
+    padding: 0.5rem;
+    border-radius: 0.375rem;
 }
 
 .category-header:hover {
-    background-color: #f3f4f6;
+    background-color: var(--color-border-light);
 }
 
 .category-header svg {
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-normal);
 }
 
+/* ===== CONTAINER & CARD STYLES ===== */
+.bg-white,
+.rounded-lg,
+.shadow,
+.card,
+.tracker-card,
+.vocab-item,
+.skill-item,
+.portfolio-item,
+.subtask-item {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    transition: all var(--transition-normal);
+}
+
+.vocab-item:hover,
+.skill-item:hover,
+.portfolio-item:hover,
+.subtask-item:hover {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-border-light);
+}
+
+/* ===== FORM ELEMENTS ===== */
+select {
+    padding: 0.5rem;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+/* ===== UTILITY CLASSES ===== */
 .min-h-40 {
     min-height: 40px;
 }
 
-/* ===== BUTTON STYLES ===== */
-.progress-button {
-    transition: transform 0.2s ease;
-    background: none;
-    box-shadow: none;
+.hidden {
+    display: none;
 }
 
-.progress-button:hover {
-    transform: scale(1.1);
+/* ===== STATUS COLORS ===== */
+.bg-green-200,
+.text-green-600 {
+    color: var(--color-success);
+    background-color: rgba(16, 185, 129, 0.1);
 }
 
-.delete-button {
-    transition: all 0.2s ease;
-    background: none;
-    box-shadow: none;
+.bg-yellow-100,
+.text-yellow-500 {
+    color: var(--color-warning);
+    background-color: rgba(245, 158, 11, 0.1);
 }
 
-.delete-button:hover {
-    background-color: #fee2e2;
-    transform: scale(1.1);
+.bg-gray-200,
+.text-gray-400 {
+    color: var(--color-text-light);
 }
 
-.feature-button {
-    transition: all 0.2s ease;
+.text-gray-500,
+.text-gray-600,
+.text-gray-700 {
+    color: var(--color-text-secondary);
 }
 
-.feature-button:hover {
-    background-color: inherit;
+.text-gray-900 {
+    color: var(--color-text-primary);
 }
 
-/* ===== ACCESSIBILITY: BUTTON STATES ===== */
-button:focus-visible,
-.tab-button:focus-visible,
-.category-header:focus-visible,
-.feature-button:focus-visible,
-.delete-button:focus-visible,
-.progress-button:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
+.text-blue-600 {
+    color: var(--color-primary);
 }
 
-button:disabled {
-    cursor: not-allowed;
+.text-blue-600:hover,
+a.text-blue-600:hover {
+    opacity: var(--hover-opacity);
 }
 
-/* ===== DARK MODE STYLES ===== */
-@media (prefers-color-scheme: dark) {
-
-    /* Base colors */
-    body,
-    html,
-    .main-bg,
-    .bg-gray-50,
-    .bg-white,
-    body.bg-gray-100,
-    header,
-    .header,
-    .top-bar {
-        background-color: #181a1b !important;
-        color: #e8e6e3 !important;
-    }
-
-    /* Generic containers */
-    .tab-button,
-    .category-header,
-    .category-content.expanded,
-    .settings,
-    .btn-secondary,
-    .white-bg,
-    .bg-blue-50,
-    .bg-yellow-50,
-    .bg-info,
-    .bg-warning,
-    .progress-legend,
-    .legend,
-    .status-legend,
-    .mentor-access,
-    .mentor-section,
-    .container,
-    .vocab-tracker,
-    .tracker-card,
-    .tracker-container,
-    .card {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border-color: #23272a !important;
-    }
-
-    /* Tab and active states */
-    .tab-button.active {
-        background-color: #2c2f33;
-        color: #fff;
-    }
-
-    .tab.active {
-        background-color: #2563eb !important;
-        color: #fff !important;
-    }
-
-    /* Button colors */
-    .settings,
-    .btn-secondary,
-    .bg-gray-200,
-    .bg-gray-100,
-    .bg-gray-50 {
-        background-color: #374151 !important;
-        color: #e5e7eb !important;
-        border: 1px solid #4b5563 !important;
-    }
-
-    .logout,
-    .btn-danger,
-    .Delete,
-    .bg-red-500,
-    .bg-red-600,
-    .bg-red-700 {
-        background-color: #ef4444 !important;
-        color: #fff !important;
-        border: 1px solid #b91c1c !important;
-    }
-
-    .progress-button,
-    .add-btn,
-    .plus-btn,
-    .blue-btn,
-    .modal-footer button,
-    .modal-footer .btn,
-    .bg-blue-500,
-    .bg-blue-600,
-    .bg-blue-700 {
-        background-color: #2563eb !important;
-        color: #fff !important;
-        border: 1px solid #1e40af !important;
-    }
-
-    /* Form inputs */
-    input,
-    textarea,
-    select,
-    .search-box,
-    .search-input,
-    .modal input,
-    .modal textarea,
-    .modal select,
-    .modal-content input,
-    .modal-content textarea {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #444 !important;
-    }
-
-    input::placeholder,
-    textarea::placeholder {
-        color: #b0b3b8 !important;
-        opacity: 1;
-    }
-
-    input[type="password"],
-    input[type="password"]::placeholder {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #444 !important;
-    }
-
-    input[type="password"]::placeholder {
-        color: #b0b3b8 !important;
-    }
-
-    /* Checkboxes */
-    input[type="checkbox"],
-    .modal input[type="checkbox"],
-    .modal-content input[type="checkbox"],
-    #settingsModal input[type="checkbox"] {
-        accent-color: #2563eb !important;
-        background-color: #23272a !important;
-        border: 1px solid #444 !important;
-    }
-
-    /* Text colors */
-    .no-items,
-    .empty-message,
-    .text-gray-500,
-    .text-gray-600,
-    .text-gray-700,
-    .text-gray-900,
-    .hint,
-    .tip,
-    .text-xs,
-    .text-sm {
-        color: #b0b3b8 !important;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    .header-title,
-    .vocab-title,
-    .card *,
-    .container *,
-    .vocab-tracker *,
-    .tracker-card *,
-    .tracker-container *,
-    .mentor-access *,
-    .mentor-section * {
-        color: #e8e6e3 !important;
-    }
-
-    /* Ensure inline translation text stays readable in dark mode */
-    .translation-text {
-        color: #e8e6e3 !important;
-    }
-
-    /* Improve disabled button contrast in dark mode */
-    button:disabled,
-    .tab-button:disabled,
-    .feature-button:disabled,
-    .delete-button:disabled,
-    .progress-button:disabled {
-        background-color: #374151 !important;
-        color: #9ca3af !important;
-        border-color: #4b5563 !important;
-    }
-
-    button:disabled svg {
-        color: #9ca3af !important;
-    }
-
-    .text-gray-800 {
-        color: #e8e6e3 !important;
-    }
-
-    .text-blue-500 {
-        color: #6cb4ff !important;
-    }
-
-    .text-blue-500:hover,
-    a.text-blue-500:hover {
-        text-decoration: underline;
-    }
-
-    /* Badge and achievement styles */
-    .earned-badge,
-    .badge-item,
-    #badgesContainer .achieved,
-    .achievements-badge {
-        background-color: #1a3a2a !important;
-        border: 2px solid #4ade80 !important;
-        color: #e0e6ed !important;
-    }
-
-    .earned-badge .text-green-600,
-    .badge-item .text-green-600,
-    .achievements-badge .text-green-600 {
-        color: #86efac !important;
-    }
-
-    .unearned-badge,
-    .badge-item.locked,
-    #badgesContainer .not-achieved {
-        background-color: #2c2f33 !important;
-        border: 2px solid #4b5563 !important;
-        opacity: 0.6;
-    }
-
-    .unearned-badge .text-gray-500,
-    .badge-item.locked .text-gray-500 {
-        color: #888888 !important;
-    }
-
-    /* Search and filter bars */
-    .search-bar,
-    .filter-bar,
-    .search-container,
-    .vocab-search,
-    .portfolio-search {
-        background-color: #23272a !important;
-        border: 1px solid #444 !important;
-    }
-
-    .search-bar input,
-    .filter-bar input,
-    .search-container input {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #444 !important;
-    }
-
-    /* Language selection dropdown */
-    #languageSelect,
-    .language-select,
-    select[name="language"] {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #444 !important;
-    }
-
-    /* Specific component backgrounds */
-    .vocab-item-container,
-    .portfolio-item-container,
-    .portfolio-item,
-    .skill-item,
-    .vocab-item {
-        background-color: #2c2f33 !important;
-        border: 1px solid #404447 !important;
-        color: #e8e6e3 !important;
-    }
-
-    .vocab-item-container:hover,
-    .portfolio-item-container:hover,
-    .portfolio-item:hover,
-    .skill-item:hover,
-    .vocab-item:hover {
-        background-color: #35393d !important;
-        border-color: #555555 !important;
-    }
-
-    /* Category and tab system */
-    .category-item,
-    .category-tab,
-    .tab-list li,
-    .category-selector option {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #404447 !important;
-    }
-
-    .category-item.active,
-    .category-tab.active,
-    .tab-list li.active {
-        background-color: #2563eb !important;
-        border-color: #2563eb !important;
-        color: #fff !important;
-    }
-
-    /* Mentor view and access controls */
-    .mentor-access-container,
-    .mentor-view-indicator,
-    .mentor-badge {
-        background-color: #2d2017 !important;
-        border: 1px solid #6b5d47 !important;
-        color: #e8e6e3 !important;
-    }
-
-    .mentor-access-container .text-sm,
-    .mentor-view-indicator .text-sm {
-        color: #d4af37 !important;
-    }
-
-    /* Specific modal overrides for settingsModal */
-    #settingsModal {
-        background-color: rgba(0, 0, 0, 0.8) !important;
-    }
-
-    #settingsModal .modal-body,
-    #settingsModal .rounded-lg,
-    #settingsModal .bg-white {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-    }
-
-    #settingsModal .border,
-    #settingsModal input:focus,
-    #settingsModal textarea:focus {
-        border-color: #2563eb !important;
-    }
-
-    #settingsModal #closeSettingsBtn {
-        color: #b0b3b8 !important;
-    }
-
-    #settingsModal #closeSettingsBtn:hover {
-        color: #e8e6e3 !important;
-    }
-
-    #settingsModal h2 {
-        color: #e8e6e3 !important;
-    }
-
-    #settingsModal label {
-        color: #e8e6e3 !important;
-    }
-
-    #settingsModal textarea {
-        background-color: #181a1b !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #444 !important;
-    }
-
-    /* Settings modal buttons */
-    #settingsModal button,
-    #settingsModal [data-tab-target] {
-        background-color: #2c2f33 !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #404447 !important;
-    }
-
-    #settingsModal button:hover,
-    #settingsModal [data-tab-target]:hover {
-        background-color: #35393d !important;
-        border-color: #555555 !important;
-    }
-
-    #settingsModal #googleSignInToggleBtn,
-    #settingsModal #changeEmailBtn,
-    #settingsModal #resetPasswordBtn {
-        background-color: #2563eb !important;
-        color: #fff !important;
-        border: 1px solid #1e40af !important;
-    }
-
-    #settingsModal #googleSignInToggleBtn:hover,
-    #settingsModal #changeEmailBtn:hover,
-    #settingsModal #resetPasswordBtn:hover {
-        background-color: #1e40af !important;
-        border-color: #1e3a8a !important;
-    }
-
-    #settingsModal #regenerateMentorCodeBtn {
-        background-color: #223355 !important;
-        color: #a3cbff !important;
-        border: 1px solid #395b8c !important;
-    }
-
-    #settingsModal #regenerateMentorCodeBtn:hover {
-        background-color: #2d4266 !important;
-    }
-
-    #settingsModal #deleteAccountBtn {
-        background-color: #3a1a1a !important;
-        color: #ff6b6b !important;
-        border: 1px solid #8b3a3a !important;
-    }
-
-    #settingsModal #deleteAccountBtn:hover {
-        background-color: #4d2020 !important;
-        border-color: #a85555 !important;
-    }
-
-    #settingsModal [data-tab-target].active {
-        background-color: #2563eb !important;
-        color: #fff !important;
-        border-color: #2563eb !important;
-    }
-
-    /* Welcome modal */
-    .welcome-modal,
-    .welcome-modal-content {
-        background-color: #23272a !important;
-        color: #e8e6e3 !important;
-        border: 1px solid #404447 !important;
-    }
-
-    .welcome-modal h2,
-    .welcome-modal-content h2 {
-        color: #6cb4ff !important;
-    }
-
-    .welcome-modal p,
-    .welcome-modal-content p {
-        color: #b0b3b8 !important;
-    }
-
-    /* Notifications and status */
-    .notification,
-    .message,
-    .alert,
-    .status-message {
-        background-color: #2c2f33 !important;
-        color: #e8e6e3 !important;
-        border-color: #404447 !important;
-    }
-
-    .notification.success,
-    .message.success,
-    .alert.success {
-        border-color: #4ade80 !important;
-        background-color: #1a3a2a !important;
-    }
-
-    .notification.success .text-sm,
-    .message.success .text-sm {
-        color: #86efac !important;
-    }
-
-    .notification.error,
-    .message.error,
-    .alert.error {
-        border-color: #f87171 !important;
-        background-color: #3a1a1a !important;
-    }
-
-    .notification.error .text-sm,
-    .message.error .text-sm {
-        color: #fca5a5 !important;
-    }
-
-    /* Loading and spinner styles */
-    .loading-spinner,
-    .spinner,
-    .loader {
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        border-top-color: #2563eb !important;
-    }
-
-    .loading-text,
-    .spinner-text {
-        color: #b0b3b8 !important;
-    }
-
-    /* Progress bars */
-    .progress-bar,
-    .progress-container,
-    .progress-track {
-        background-color: #404447 !important;
-    }
-
-    .progress-fill,
-    .progress-bar.active {
-        background-color: #2563eb !important;
-    }
-
-    .progress-bar.success {
-        background-color: #4ade80 !important;
-    }
-
-    .progress-bar.warning {
-        background-color: #facc15 !important;
-    }
-
-    .progress-bar.error {
-        background-color: #f87171 !important;
-    }
-
-    /* Scrollbars */
-    ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: #181a1b;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: #404447;
-        border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: #555555;
-    }
-
-    /* Focus states for better keyboard navigation */
-    button:focus,
-    input:focus,
-    select:focus,
-    textarea:focus {
-        outline: 2px solid #2563eb !important;
-        outline-offset: 2px !important;
-    }
-
-    /* Link styles */
-    a {
-        color: #6cb4ff !important;
-    }
-
-    a:hover {
-        text-decoration: underline;
-        color: #a3cbff !important;
-    }
-
-    a:visited {
-        color: #9fb3ff !important;
-    }
+/* ===== INFO/ALERT BOXES ===== */
+.bg-blue-50,
+.bg-yellow-50,
+.bg-red-50 {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    padding: 1rem;
 }
 
-/* ===== SUBTASK STYLES ===== */
+.border-l-4 {
+    border-left-width: 4px;
+}
+
+/* ===== SUBTASK SPECIFIC STYLES ===== */
 .subtasks-container {
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
 }
 
 .subtasks-container.hidden {
     display: none;
 }
 
-.expand-button {
-    transition: all 0.2s ease;
-}
-
-.expand-button:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-}
-
-.expand-button svg {
-    transition: transform 0.2s ease;
-}
-
 .subtask-item {
-    animation: slideIn 0.2s ease;
+    animation: slideIn var(--transition-normal);
+    border-left: 2px solid var(--color-primary);
+    margin-left: 1rem;
+    background-color: var(--color-bg-secondary);
 }
 
 @keyframes slideIn {
@@ -668,69 +414,209 @@ button:disabled {
 
 .subtask-input {
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: border-color 0.2s ease;
 }
 
 .subtask-input:focus {
-    border-color: #3b82f6;
+    border-color: var(--color-primary);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.subtask-add-button {
-    transition: all 0.2s ease;
-    font-weight: 500;
+/* ===== BADGES/ACHIEVEMENTS ===== */
+.badge-item,
+.earned-badge {
+    background-color: var(--color-bg-secondary);
+    border: 2px solid var(--color-success);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all var(--transition-normal);
 }
 
-.subtask-add-button:hover {
-    background-color: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.badge-item.locked,
+.unearned-badge {
+    background-color: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+    opacity: 0.6;
 }
 
-.subtask-status-button {
-    transition: all 0.2s ease;
+/* ===== SEARCH & FILTER ===== */
+#searchInput {
+    transition: all var(--transition-fast);
 }
 
-.subtask-status-button:hover {
-    transform: scale(1.1);
-    background-color: rgba(59, 130, 246, 0.15);
+#searchInput:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.subtask-delete-button {
-    transition: all 0.2s ease;
+/* ===== MODAL STYLES ===== */
+.fixed {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.4);
+    transition: opacity var(--transition-normal);
 }
 
-.subtask-delete-button:hover {
-    transform: scale(1.15);
+#settingsModal .bg-white,
+#welcomeModal .bg-white {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
 }
 
-/* Dark mode specific styles */
+#settingsModal button,
+#welcomeModal button {
+    transition: all var(--transition-normal);
+}
+
+/* ===== DARK MODE ENHANCEMENTS ===== */
 @media (prefers-color-scheme: dark) {
-    .subtask-input {
-        background-color: #1f2937;
-        border-color: #374151;
-        color: #f3f4f6;
+
+    .delete-button:hover,
+    .subtask-delete-button:hover {
+        background-color: rgba(239, 68, 68, 0.2);
     }
 
-    .subtask-input:focus {
-        background-color: #1f2937;
-        border-color: #3b82f6;
-    }
-
-    .subtask-add-button {
-        background-color: #3b82f6;
-    }
-
-    .subtask-add-button:hover {
-        background-color: #2563eb;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-    }
-
+    .progress-button:hover,
+    .status-button:hover,
     .subtask-status-button:hover {
-        background-color: rgba(59, 130, 246, 0.25) !important;
+        background-color: rgba(59, 130, 246, 0.25);
     }
 
     .expand-button:hover {
-        background-color: rgba(59, 130, 246, 0.15) !important;
+        background-color: rgba(59, 130, 246, 0.15);
     }
+
+    .bg-blue-50,
+    .bg-yellow-50 {
+        background-color: var(--color-bg-secondary);
+        border-color: var(--color-border);
+    }
+
+    #settingsModal .bg-white {
+        background-color: var(--color-bg-secondary);
+    }
+
+    #settingsModal input,
+    #settingsModal textarea,
+    #settingsModal select {
+        background-color: var(--color-bg-tertiary);
+        color: var(--color-text-primary);
+        border-color: var(--color-border);
+    }
+
+    .vocab-item,
+    .skill-item,
+    .portfolio-item,
+    .subtask-item {
+        background-color: var(--color-bg-secondary);
+        border-color: var(--color-border);
+    }
+
+    .vocab-item:hover,
+    .skill-item:hover,
+    .portfolio-item:hover,
+    .subtask-item:hover {
+        background-color: var(--color-bg-tertiary);
+        border-color: var(--color-border-light);
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+}
+
+/* ===== DARK MODE STYLES ===== */
+@media (prefers-color-scheme: dark) {
+
+    /* Base colors for legacy support */
+    body,
+    html {
+        background-color: var(--color-bg-primary);
+        color: var(--color-text-primary);
+    }
+
+    nav {
+        background-color: var(--color-bg-primary);
+        border-bottom-color: var(--color-border);
+    }
+}
+
+/* ===== LEGACY DARK MODE (Consolidated into design system above) ===== */
+/* All dark mode styles are now handled through CSS custom properties in @media (prefers-color-scheme: dark) */
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-light);
+}
+
+/* Navigation bar */
+nav {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* Links */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    opacity: var(--hover-opacity);
+}
+
+a:visited {
+    color: var(--color-primary-dark);
+}
+
+/* Progress bar legend */
+.progress-bar,
+.progress-container,
+.progress-track {
+    background-color: var(--color-border);
+}
+
+.progress-fill,
+.progress-bar.active {
+    background-color: var(--color-primary);
+}
+
+.progress-bar.success {
+    background-color: var(--color-success);
+}
+
+.progress-bar.warning {
+    background-color: var(--color-warning);
+}
+
+.progress-bar.error {
+    background-color: var(--color-error);
 }

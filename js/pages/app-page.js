@@ -232,11 +232,6 @@ skillsList.addEventListener('click', async (e) => {
         const subtasksContainer = document.getElementById(`subtasks-${skillId}`);
         if (subtasksContainer) {
             subtasksContainer.classList.toggle('hidden');
-            // Rotate arrow icon
-            const svg = expandButton.querySelector('svg');
-            if (svg) {
-                svg.style.transform = subtasksContainer.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(90deg)';
-            }
         }
         return;
     }
