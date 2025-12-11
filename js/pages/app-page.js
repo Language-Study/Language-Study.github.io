@@ -225,6 +225,89 @@ skillsInput.addEventListener('keydown', (e) => {
 
 // Delegate skills item events
 skillsList.addEventListener('click', async (e) => {
+    // Handle expand/collapse subtasks
+    const expandButton = e.target.closest('.expand-button');
+    if (expandButton) {
+        const skillId = expandButton.dataset.skillId;
+        const subtasksContainer = document.getElementById(`subtasks-${skillId}`);
+        if (subtasksContainer) {
+            subtasksContainer.classList.toggle('hidden');
+            // Rotate arrow icon
+            const svg = expandButton.querySelector('svg');
+            if (svg) {
+                svg.style.transform = subtasksContainer.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(90deg)';
+            }
+        }
+        return;
+    }
+
+    // Handle add subtask
+    const addSubtaskBtn = e.target.closest('.subtask-add-button');
+    if (addSubtaskBtn) {
+        const skillId = addSubtaskBtn.dataset.skillId;
+        const input = document.querySelector(`.subtask-input[data-skill-id="${skillId}"]`);
+        if (input && input.value.trim()) {
+            try {
+                await addSubtask(skillId, input.value);
+                input.value = '';
+                await refreshUserData();
+                showToast('✓ Subtask added!');
+            } catch (error) {
+                showToast('Error: ' + error.message);
+            }
+        }
+        return;
+    }
+
+    // Handle subtask status change
+    const subtaskStatusButton = e.target.closest('.subtask-status-button');
+    if (subtaskStatusButton) {
+        const subtaskItem = e.target.closest('.subtask-item');
+        const skillId = e.target.closest('.skill-item')?.dataset.id;
+        const subtaskId = subtaskItem?.dataset.subtaskId;
+
+        if (skillId && subtaskId) {
+            try {
+                const skill = skills.find(s => s.id === skillId);
+                const subtask = (skill.subtasks || []).find(st => st.id === subtaskId);
+                const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
+                const currentIndex = statusOrder.indexOf(subtask.status);
+                const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+
+                await updateSubtaskStatus(skillId, subtaskId, newStatus);
+                await refreshUserData();
+                renderSkillsWithCurrentFilter();
+            } catch (error) {
+                showToast('Error: ' + error.message);
+            }
+        }
+        return;
+    }
+
+    // Handle subtask delete
+    const subtaskDeleteButton = e.target.closest('.subtask-delete-button');
+    if (subtaskDeleteButton) {
+        const subtaskItem = e.target.closest('.subtask-item');
+        const skillId = e.target.closest('.skill-item')?.dataset.id;
+        const subtaskId = subtaskItem?.dataset.subtaskId;
+
+        if (skillId && subtaskId) {
+            try {
+                const skill = skills.find(s => s.id === skillId);
+                const subtask = (skill.subtasks || []).find(st => st.id === subtaskId);
+                if (confirm(`Delete subtask "${subtask.text}"?`)) {
+                    await deleteSubtask(skillId, subtaskId);
+                    await refreshUserData();
+                    showToast('✓ Subtask deleted!');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message);
+            }
+        }
+        return;
+    }
+
+    // Handle main skill status and delete
     const statusButton = e.target.closest('.status-button');
     const deleteButton = e.target.closest('.delete-button');
     const itemId = e.target.closest('.skill-item')?.dataset.id;
@@ -259,6 +342,19 @@ skillsList.addEventListener('click', async (e) => {
             } catch (error) {
                 showToast('Error: ' + error.message);
             }
+        }
+    }
+});
+
+// Handle Enter key in subtask input
+skillsList.addEventListener('keydown', (e) => {
+    const subtaskInput = e.target.closest('.subtask-input');
+    if (subtaskInput && e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const skillId = subtaskInput.dataset.skillId;
+        const addBtn = document.querySelector(`.subtask-add-button[data-skill-id="${skillId}"]`);
+        if (addBtn) {
+            addBtn.click();
         }
     }
 });

@@ -144,6 +144,7 @@ async function addSkills(skillsText) {
         const newItems = skillsToAdd.map(skill => ({
             name: skill.trim(),
             status: PROGRESS_STATUS.NOT_STARTED,
+            subtasks: [],
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
         }));
 
@@ -188,6 +189,107 @@ async function updateSkillStatus(itemId, newStatus) {
         });
     } catch (error) {
         console.error('Error updating skill status:', error);
+        throw error;
+    }
+}
+
+/**
+ * Add subtask to a skill
+ * @async
+ * @param {string} skillId - Skill document ID
+ * @param {string} subtaskText - Subtask text/goal
+ * @returns {Promise<void>}
+ */
+async function addSubtask(skillId, subtaskText) {
+    const trimmedText = subtaskText.trim();
+    if (!trimmedText) {
+        throw new Error('Please enter a subtask.');
+    }
+
+    try {
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) {
+            throw new Error('Skill not found.');
+        }
+
+        const subtasks = skill.subtasks || [];
+        const newSubtask = {
+            id: Date.now().toString(),
+            text: trimmedText,
+            status: PROGRESS_STATUS.NOT_STARTED,
+            dateAdded: new Date().toISOString()
+        };
+
+        subtasks.push(newSubtask);
+
+        await db.collection('users').doc(currentUser.uid).collection('skills').doc(skillId).update({
+            subtasks: subtasks
+        });
+
+        skill.subtasks = subtasks;
+    } catch (error) {
+        console.error('Error adding subtask:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete subtask from a skill
+ * @async
+ * @param {string} skillId - Skill document ID
+ * @param {string} subtaskId - Subtask ID
+ * @returns {Promise<void>}
+ */
+async function deleteSubtask(skillId, subtaskId) {
+    try {
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) {
+            throw new Error('Skill not found.');
+        }
+
+        const subtasks = (skill.subtasks || []).filter(st => st.id !== subtaskId);
+
+        await db.collection('users').doc(currentUser.uid).collection('skills').doc(skillId).update({
+            subtasks: subtasks
+        });
+
+        skill.subtasks = subtasks;
+    } catch (error) {
+        console.error('Error deleting subtask:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update subtask status
+ * @async
+ * @param {string} skillId - Skill document ID
+ * @param {string} subtaskId - Subtask ID
+ * @param {string} newStatus - New status
+ * @returns {Promise<void>}
+ */
+async function updateSubtaskStatus(skillId, subtaskId, newStatus) {
+    try {
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) {
+            throw new Error('Skill not found.');
+        }
+
+        const subtasks = skill.subtasks || [];
+        const subtask = subtasks.find(st => st.id === subtaskId);
+        if (!subtask) {
+            throw new Error('Subtask not found.');
+        }
+
+        subtask.status = newStatus;
+
+        await db.collection('users').doc(currentUser.uid).collection('skills').doc(skillId).update({
+            subtasks: subtasks
+        });
+
+        skill.subtasks = subtasks;
+    } catch (error) {
+        console.error('Error updating subtask status:', error);
         throw error;
     }
 }
@@ -288,23 +390,77 @@ function renderSkillsList() {
         return;
     }
 
-    skillsList.innerHTML = skills.map(skill => `
-        <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}">
-            <div class="font-medium">${escapeHtml(skill.name)}</div>
-            <div class="flex items-center gap-2">
-                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
-                    title="Status (view only)" aria-label="Status: ${skill.status}">${statusIcons[skill.status]}</span>`
-            : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
-                        ${statusIcons[skill.status]}
-                    </button>`}
-                ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill" title="Delete">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    skillsList.innerHTML = skills.map(skill => renderSkillItem(skill)).join('');
+}
+
+/**
+ * Render a single skill item with subtasks
+ * @param {Object} skill - Skill object
+ * @returns {string} HTML
+ */
+function renderSkillItem(skill) {
+    const subtasks = skill.subtasks || [];
+    const hasSubtasks = subtasks.length > 0;
+    const expandButtonId = `expand-${skill.id}`;
+    const subtasksContainerId = `subtasks-${skill.id}`;
+
+    const subtasksHtml = hasSubtasks ? subtasks.map(subtask => `
+        <div class="subtask-item flex items-center justify-between p-2 ml-4 bg-gray-50 border-l-2 border-blue-300 rounded mb-2 mt-2" data-subtask-id="${subtask.id}">
+            <div class="flex-1">
+                <div class="text-sm text-gray-700">${escapeHtml(subtask.text)}</div>
+            </div>
+            <div class="flex items-center gap-2 ml-2">
+                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${subtask.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : subtask.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                    title="Status (view only)">${statusIcons[subtask.status]}</span>`
+            : `<button class="subtask-status-button p-1 rounded-full hover:bg-gray-100 transition-transform" aria-label="Toggle subtask status" title="Click to change status">
+                    ${statusIcons[subtask.status]}
+                </button>`}
+                ${window.isMentorView ? '' : `<button class="subtask-delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete subtask" title="Delete">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>`}
             </div>
         </div>
-    `).join('');
+    `).join('') : '';
+
+    const subtasksContainerHtml = `
+        <div id="${subtasksContainerId}" class="subtasks-container ${!hasSubtasks ? '' : 'hidden'} mt-2">
+            ${subtasksHtml}
+            ${window.isMentorView ? '' : `<div class="mt-2 ml-4">
+                <input type="text" class="subtask-input w-full p-2 border rounded text-sm" placeholder="Add a subtask (improvement goal)..." data-skill-id="${skill.id}" />
+                <button class="subtask-add-button mt-1 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600" data-skill-id="${skill.id}">Add Subtask</button>
+            </div>`}
+        </div>
+    `;
+
+    return `
+        <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center flex-1 gap-2">
+                    ${!window.isMentorView ? `<button class="expand-button p-1 rounded hover:bg-gray-100" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks">
+                        <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>` : `<div style="width: 24px;"></div>`}
+                    <div class="font-medium flex-1">${escapeHtml(skill.name)}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                        title="Status (view only)" aria-label="Status: ${skill.status}">${statusIcons[skill.status]}</span>`
+            : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
+                            ${statusIcons[skill.status]}
+                        </button>`}
+                    ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill" title="Delete">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>`}
+                </div>
+            </div>
+            ${subtasksContainerHtml}
+        </div>
+    `;
 }
 
 /**
@@ -324,19 +480,7 @@ function filterSkills(query) {
     const lowerQuery = query.toLowerCase();
     const filtered = skills.filter(skill => skill.name.toLowerCase().includes(lowerQuery));
 
-    skillsList.innerHTML = filtered.length > 0 ? filtered.map(skill => `
-        <div class="skill-item flex items-center justify-between p-2 border rounded mb-2" data-id="${skill.id}">
-            <div class="font-medium">${escapeHtml(skill.name)}</div>
-            <div class="flex items-center gap-2">
-                <button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status">${statusIcons[skill.status]}</button>
-                <button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-    `).join('') : '<p class="text-sm text-gray-500">No skills found.</p>';
+    skillsList.innerHTML = filtered.length > 0 ? filtered.map(skill => renderSkillItem(skill)).join('') : '<p class="text-sm text-gray-500">No skills found.</p>';
 }
 
 /**
