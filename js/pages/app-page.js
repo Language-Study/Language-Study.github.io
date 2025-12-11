@@ -580,10 +580,14 @@ function activateTab(tabId) {
         const activeContent = document.querySelector(`#${tabId}`);
 
         if (activeButton && activeContent) {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
             tabContents.forEach(content => content.classList.add('hidden'));
 
-            activeButton.classList.add('active');
+            activeButton.classList.add('active', 'bg-blue-500', 'text-white');
+            activeButton.classList.remove('bg-gray-200', 'text-gray-700');
             activeContent.classList.remove('hidden');
         }
     }
