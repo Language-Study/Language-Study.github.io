@@ -740,6 +740,10 @@ const startTutorialBtn = document.getElementById('startTutorialBtn');
 if (startTutorialBtn) {
     startTutorialBtn.addEventListener('click', () => {
         if (typeof startWalkthrough === 'function') {
+            // Close settings before showing the overlay so it doesn't overlap
+            if (typeof closeModal === 'function') {
+                closeModal('settingsModal');
+            }
             startWalkthrough();
             if (typeof markWalkthroughSeen === 'function') {
                 markWalkthroughSeen();
