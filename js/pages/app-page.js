@@ -256,6 +256,23 @@ skillsList.addEventListener('click', async (e) => {
         return;
     }
 
+    // Handle expand/collapse when clicking the skill header (excluding status/delete buttons)
+    const skillHeader = e.target.closest('.skill-header');
+    const headerBlocked = e.target.closest('.status-button') || e.target.closest('.delete-button') || e.target.closest('.expand-button');
+    if (skillHeader && !headerBlocked) {
+        const skillId = skillHeader.dataset.skillId || skillHeader.closest('.skill-item')?.dataset.id;
+        if (skillId) {
+            const subtasksContainer = document.getElementById(`subtasks-${skillId}`);
+            const headerExpandButton = document.querySelector(`.expand-button[data-skill-id="${skillId}"]`);
+            if (subtasksContainer && headerExpandButton) {
+                subtasksContainer.classList.toggle('hidden');
+                const isExpanded = !subtasksContainer.classList.contains('hidden');
+                headerExpandButton.setAttribute('aria-expanded', isExpanded);
+            }
+        }
+        return;
+    }
+
     // Handle add subtask
     const addSubtaskBtn = e.target.closest('.subtask-add-button');
     if (addSubtaskBtn) {

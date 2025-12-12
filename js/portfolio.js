@@ -436,7 +436,7 @@ function renderSkillItem(skill) {
 
     return `
         <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}">
-            <div class="flex items-center justify-between">
+            <div class="skill-header flex items-center justify-between" data-skill-id="${skill.id}">
                 <div class="flex items-center flex-1 gap-2">
                     ${!window.isMentorView ? `<button class="expand-button p-1 rounded hover:bg-gray-100" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks">
                         <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor">
