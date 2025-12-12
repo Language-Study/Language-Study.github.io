@@ -576,6 +576,16 @@ document.getElementById('settingsModal').addEventListener('click', (e) => {
     }
 });
 
+// Progress metrics toggle
+const toggleProgress = document.getElementById('toggleProgress');
+if (toggleProgress) {
+    toggleProgress.addEventListener('change', async (e) => {
+        await setProgressEnabled(e.target.checked);
+        await updateProgressVisibility();
+        renderProgressMetrics();
+    });
+}
+
 // Achievements toggle
 const toggleAchievements = document.getElementById('toggleAchievements');
 if (toggleAchievements) {
@@ -586,16 +596,6 @@ if (toggleAchievements) {
         if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
             renderASLClubAchievements();
         }
-    });
-}
-
-// Progress metrics toggle
-const toggleProgress = document.getElementById('toggleProgress');
-if (toggleProgress) {
-    toggleProgress.addEventListener('change', async (e) => {
-        await setProgressEnabled(e.target.checked);
-        await updateProgressVisibility();
-        renderProgressMetrics();
     });
 }
 
