@@ -15,6 +15,19 @@ let currentUser = null;
 // Watch auth state
 onAuthStateChanged(async (user) => {
     if (user) {
+        const isPasswordAccount = user.providerData?.some(p => p.providerId === 'password');
+        if (isPasswordAccount && !user.emailVerified) {
+            // Block unverified users from accessing data
+            try {
+                await user.sendEmailVerification();
+            } catch (err) {
+                console.warn('Failed to resend verification email:', err);
+            }
+            await logoutUser();
+            window.location.href = 'login.html?verify=required';
+            return;
+        }
+
         currentUser = user;
         const userEmailEl = document.getElementById('userEmail');
 

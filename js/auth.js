@@ -16,7 +16,22 @@ async function loginWithEmailPassword(email, password) {
     }
 
     try {
-        await auth.signInWithEmailAndPassword(email, password);
+        const credential = await auth.signInWithEmailAndPassword(email, password);
+        const user = credential.user;
+
+        // Block access until email is verified for password-based accounts
+        const isPasswordAccount = user?.providerData?.some(p => p.providerId === 'password');
+        if (user && isPasswordAccount && !user.emailVerified) {
+            // Best-effort resend to avoid locking users out if they missed the first email
+            try {
+                await user.sendEmailVerification();
+            } catch (err) {
+                console.warn('Failed to resend verification email:', err);
+            }
+
+            await auth.signOut();
+            throw new Error('Please verify your email. We just sent you a verification link.');
+        }
     } catch (error) {
         throw new Error(error.message || 'Login failed');
     }
@@ -36,7 +51,14 @@ async function registerUser(email, password, confirmPassword) {
     }
 
     try {
-        await auth.createUserWithEmailAndPassword(email, password);
+        const credential = await auth.createUserWithEmailAndPassword(email, password);
+
+        // Send verification email and sign out so the user must verify before using the app
+        if (credential?.user) {
+            await credential.user.sendEmailVerification();
+            await auth.signOut();
+        }
+        return { verificationSent: true };
     } catch (error) {
         throw new Error(error.message || 'Registration failed');
     }

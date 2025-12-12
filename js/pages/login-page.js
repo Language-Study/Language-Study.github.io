@@ -11,6 +11,7 @@ const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const errorMessage = document.getElementById('errorMessage');
 const registerErrorMessage = document.getElementById('registerErrorMessage');
+const registerSuccessMessage = document.getElementById('registerSuccessMessage');
 const resetPasswordModal = document.getElementById('resetPasswordModal');
 const resetPasswordBtn = document.getElementById('resetPasswordBtn');
 const resetEmail = document.getElementById('resetEmail');
@@ -21,12 +22,24 @@ const resetSuccessMessage = document.getElementById('resetSuccessMessage');
 document.getElementById('showRegisterBtn').addEventListener('click', () => {
     loginForm.classList.add('hidden');
     registerForm.classList.remove('hidden');
+    errorMessage.classList.add('hidden');
+    registerErrorMessage.classList.add('hidden');
+    registerSuccessMessage?.classList.add('hidden');
 });
 
 document.getElementById('showLoginBtn').addEventListener('click', () => {
     registerForm.classList.add('hidden');
     loginForm.classList.remove('hidden');
+    registerErrorMessage.classList.add('hidden');
+    registerSuccessMessage?.classList.add('hidden');
 });
+
+// Surface verification requirement messages from redirects
+const params = new URLSearchParams(window.location.search);
+if (params.get('verify') === 'required' && errorMessage) {
+    errorMessage.textContent = 'Please verify your email before signing in. Check your inbox for the verification link.';
+    errorMessage.classList.remove('hidden');
+}
 
 // Email/Password Login
 document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -50,10 +63,17 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
     try {
         await registerUser(email, password, confirmPassword);
-        window.location.href = 'index.html';
+        if (registerSuccessMessage) {
+            registerSuccessMessage.textContent = 'Account created! Check your email to verify, then sign in.';
+            registerSuccessMessage.classList.remove('hidden');
+        }
+        registerErrorMessage.classList.add('hidden');
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
     } catch (error) {
         registerErrorMessage.textContent = error.message;
         registerErrorMessage.classList.remove('hidden');
+        registerSuccessMessage?.classList.add('hidden');
     }
 });
 
@@ -135,8 +155,23 @@ if (googleLoginBtn) {
 }
 
 // Auto-redirect if already logged in
-onAuthStateChanged((user) => {
-    if (user) {
-        window.location.href = 'index.html';
+onAuthStateChanged(async (user) => {
+    if (!user) return;
+
+    const isPasswordAccount = user.providerData?.some(p => p.providerId === 'password');
+    if (isPasswordAccount && !user.emailVerified) {
+        try {
+            await user.sendEmailVerification();
+        } catch (err) {
+            console.warn('Failed to resend verification email:', err);
+        }
+        await logoutUser();
+        if (errorMessage) {
+            errorMessage.textContent = 'Please verify your email before signing in. We just sent you a new link.';
+            errorMessage.classList.remove('hidden');
+        }
+        return;
     }
+
+    window.location.href = 'index.html';
 });

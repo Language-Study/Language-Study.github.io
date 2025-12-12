@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             await handleEmailVerification(oobCode, h1Element, titleElement, resetPasswordMsg);
             break;
 
+        case 'verifyEmail':
+            await handleVerifyEmail(oobCode, h1Element, titleElement, resetPasswordMsg);
+            break;
+
         case 'recoverEmail':
             await handleEmailRecovery(oobCode, h1Element, titleElement, resetPasswordMsg);
             break;
@@ -105,6 +109,30 @@ async function handleEmailVerification(oobCode, h1Element, titleElement, resetPa
     } catch (error) {
         console.error('Error verifying and updating email:', error);
         resetPasswordMsg.textContent = `Failed to verify and update email: ${error.message}`;
+        resetPasswordMsg.classList.add('text-red-500');
+        resetPasswordMsg.classList.remove('text-green-500');
+    }
+}
+
+/**
+ * Handle email verification (standard verifyEmail mode)
+ */
+async function handleVerifyEmail(oobCode, h1Element, titleElement, resetPasswordMsg) {
+    h1Element.textContent = 'Verify Your Email';
+    titleElement.textContent = 'Verify Email';
+
+    try {
+        await updateAuth.applyActionCode(oobCode);
+        resetPasswordMsg.textContent = 'Email verified successfully! You can now sign in.';
+        resetPasswordMsg.classList.add('text-green-500');
+        resetPasswordMsg.classList.remove('text-red-500');
+
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 3000);
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        resetPasswordMsg.textContent = `Failed to verify email: ${error.message}`;
         resetPasswordMsg.classList.add('text-red-500');
         resetPasswordMsg.classList.remove('text-green-500');
     }
