@@ -143,17 +143,19 @@ async function renderBadges() {
     }
 
     // Render badges HTML
-    badgesContainer.innerHTML = BADGES.map(badge => `
-        <div class="flex flex-col items-center p-2 rounded border ${earnedBadges.includes(badge.id) ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-200'} w-32" 
-             role="img" aria-label="${badge.name}: ${badge.description}" title="${badge.description}">
-            <div class="text-3xl mb-1" aria-hidden="true">${badge.icon}</div>
-            <div class="font-semibold text-center text-sm">${badge.name}</div>
-            <div class="text-xs text-gray-500 text-center">${badge.description}</div>
-            <div class="mt-1 text-xs ${earnedBadges.includes(badge.id) ? 'text-green-600' : 'text-gray-400'}">
-                ${earnedBadges.includes(badge.id) ? '✓ Earned' : 'Locked'}
+    badgesContainer.innerHTML = BADGES.map(badge => {
+        const earned = earnedBadges.includes(badge.id);
+        return `
+            <div class="badge-card ${earned ? 'badge-earned' : 'badge-locked'}" role="img" aria-label="${badge.name}: ${badge.description}" title="${badge.description}">
+                <div class="badge-icon" aria-hidden="true">${badge.icon}</div>
+                <div class="badge-title">${badge.name}</div>
+                <div class="badge-description">${badge.description}</div>
+                <div class="badge-status ${earned ? 'status-earned' : 'status-locked'}">
+                    ${earned ? '✓ Earned' : 'Locked'}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
