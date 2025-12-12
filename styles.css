@@ -546,6 +546,26 @@ a.text-blue-600:hover {
     color: var(--color-text-primary);
 }
 
+#welcomeModal .bg-white>h2,
+#welcomeModal .bg-white>div {
+    color: var(--color-text-primary);
+}
+
+#welcomeModal .bg-white>div {
+    background-color: var(--color-bg-secondary);
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+#welcomeModal .bg-white>div p,
+#welcomeModal .bg-white>div ul {
+    color: var(--color-text-primary);
+}
+
+#welcomeModal .bg-white>div span {
+    color: var(--color-text-secondary);
+}
+
 #settingsModal button,
 #welcomeModal button {
     transition: all var(--transition-normal);
