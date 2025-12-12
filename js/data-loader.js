@@ -109,6 +109,15 @@ async function loadUserData() {
             );
         }
 
+        // Offer optional walkthrough for first-time users
+        if (typeof shouldOfferWalkthrough === 'function' && typeof showWalkthroughPrompt === 'function') {
+            if (shouldOfferWalkthrough(settingsDoc)) {
+                setTimeout(() => {
+                    showWalkthroughPrompt();
+                }, 500);
+            }
+        }
+
         // Mark cache as valid
         dataCache.isCached = true;
         dataCache.lastLoadTime = Date.now();

@@ -400,6 +400,23 @@ a.text-blue-600:hover {
     background-color: var(--color-bg-secondary);
 }
 
+/* ===== WALKTHROUGH ===== */
+#tourOverlay {
+    z-index: 50;
+}
+
+#tourCard {
+    z-index: 70;
+    max-width: 420px;
+}
+
+.tour-highlight {
+    position: relative;
+    z-index: 60 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.45), 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+}
+
 @keyframes slideIn {
     from {
         opacity: 0;

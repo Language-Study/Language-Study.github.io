@@ -735,6 +735,19 @@ if (googleSignInToggleBtn) {
     }
 }
 
+// Manual walkthrough start from Settings
+const startTutorialBtn = document.getElementById('startTutorialBtn');
+if (startTutorialBtn) {
+    startTutorialBtn.addEventListener('click', () => {
+        if (typeof startWalkthrough === 'function') {
+            startWalkthrough();
+            if (typeof markWalkthroughSeen === 'function') {
+                markWalkthroughSeen();
+            }
+        }
+    });
+}
+
 // Language selection
 const languageSelect = document.getElementById('languageSelect');
 if (languageSelect) {
