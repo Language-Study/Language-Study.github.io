@@ -193,22 +193,28 @@ async function renderBadges() {
             </div>
         `).join('');
 
-        return `
-            <section class="mb-6">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-bold">${groupTitles[groupKey] || groupKey}</h3>
-                    <div class="text-sm text-gray-600">${slides.filter(b => earnedBadges.includes(b.id)).length}/${slides.length} earned</div>
-                </div>
+        const controls = slides.length > 1 ? `
                 <div class="flex items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
                     <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
-                    <div class="w-full">
-                        ${slidesHTML}
-                    </div>
+                    <div class="w-full">${slidesHTML}</div>
                     <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
                 </div>
                 <div class="flex justify-center gap-1 mt-2" role="tablist" aria-label="Slide indicators">
                     ${slides.map((_, i) => `<button class="w-2 h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
                 </div>
+        ` : `
+                <div class="w-full" id="${carouselId}" aria-label="${groupTitles[groupKey] || groupKey} badge">
+                    ${slidesHTML}
+                </div>
+        `;
+
+        return `
+            <section class="mb-4 bg-gray-50 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-semibold text-gray-800">${groupTitles[groupKey] || groupKey}</h3>
+                    <div class="text-xs text-gray-600">${slides.filter(b => earnedBadges.includes(b.id)).length}/${slides.length} earned</div>
+                </div>
+                ${controls}
             </section>
         `;
     }).join('');
