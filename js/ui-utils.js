@@ -229,6 +229,7 @@ function renderProgressMetrics() {
 
     const vocabStats = getVocabularyStats();
     const skillsStats = getSkillsStats();
+    const portfolioStats = getPortfolioStats();
 
     metricsEl.innerHTML = `
         <div class="flex flex-col items-center bg-gray-100 rounded p-3 min-w-[120px]" role="status" aria-label="Vocabulary Progress">
@@ -240,6 +241,11 @@ function renderProgressMetrics() {
             <div class="font-bold text-green-700">Skills</div>
             <div class="text-sm">${skillsStats.mastered} / ${skillsStats.total} Mastered</div>
             <div class="text-xs text-gray-500">${skillsStats.inProgress} In Progress</div>
+        </div>
+        <div class="flex flex-col items-center bg-gray-100 rounded p-3 min-w-[120px]" role="status" aria-label="Portfolio Progress">
+            <div class="font-bold text-purple-700">Portfolio</div>
+            <div class="text-sm">${portfolioStats.featured} Featured</div>
+            <div class="text-xs text-gray-500">${portfolioStats.total} Total</div>
         </div>
     `;
 }

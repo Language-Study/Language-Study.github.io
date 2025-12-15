@@ -530,6 +530,13 @@ function getSkillsStats() {
     return { total, mastered, inProgress, notStarted };
 }
 
+function getPortfolioStats() {
+    const total = portfolioEntries.length;
+    const featured = portfolioEntries.filter(e => e.isTop).length;
+
+    return { total, featured };
+}
+
 // Helper functions
 
 function getYouTubeId(url) {
