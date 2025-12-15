@@ -471,6 +471,7 @@ a.text-blue-600:hover {
     align-items: center;
     gap: 0.3rem;
     width: 8rem;
+    min-width: 8rem;
     padding: 0.9rem;
     border-radius: 0.75rem;
     background-color: var(--color-bg-secondary);
@@ -478,6 +479,7 @@ a.text-blue-600:hover {
     color: var(--color-text-primary);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-normal), border-color var(--transition-normal);
+    flex-shrink: 0;
 }
 
 .badge-card:hover {
@@ -521,6 +523,96 @@ a.text-blue-600:hover {
 
 .status-locked {
     color: var(--color-text-secondary);
+}
+
+/* ===== BADGE CAROUSEL STYLES ===== */
+.badge-carousel-group {
+    margin-bottom: 2rem;
+}
+
+.badge-group-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.badge-carousel-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.badge-carousel-track {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    flex: 1;
+    padding: 0.5rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-light) transparent;
+}
+
+.badge-carousel-track::-webkit-scrollbar {
+    height: 6px;
+}
+
+.badge-carousel-track::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.badge-carousel-track::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 3px;
+}
+
+.badge-carousel-track::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border);
+}
+
+.carousel-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.carousel-arrow:hover:not(:disabled) {
+    background-color: var(--color-primary);
+    color: white;
+    transform: scale(1.05);
+    border-color: var(--color-primary);
+}
+
+.carousel-arrow:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.carousel-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.carousel-arrow span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 /* ===== SEARCH & FILTER ===== */

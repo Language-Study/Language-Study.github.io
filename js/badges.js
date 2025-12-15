@@ -103,13 +103,46 @@ const BADGES = [
 let earnedBadges = [];
 
 /**
- * Render badges UI
+ * Groups badges by type (e.g., "Words Added", "Words Mastered", "Skills Added", etc.)
+ * @returns {Object} Object with badge type as key and array of badges as value
+ */
+function groupBadgesByType() {
+    const groups = {};
+
+    BADGES.forEach(badge => {
+        let type = 'Other';
+
+        if (badge.id.includes('_word') && !badge.id.includes('_mastered')) {
+            type = 'Words Added';
+        } else if (badge.id.includes('_mastered') && !badge.id.includes('_skill')) {
+            type = 'Words Mastered';
+        } else if (badge.id.includes('_skill') && !badge.id.includes('_mastered')) {
+            type = 'Skills Added';
+        } else if (badge.id.includes('_mastered_skill')) {
+            type = 'Skills Mastered';
+        } else if (badge.id.includes('_portfolio')) {
+            type = 'Portfolio';
+        } else if (badge.id === 'all_categories') {
+            type = 'Exploration';
+        }
+
+        if (!groups[type]) {
+            groups[type] = [];
+        }
+        groups[type].push(badge);
+    });
+
+    return groups;
+}
+
+/**
+ * Render badges UI with carousel functionality
  * @async
  * @returns {Promise<void>}
  */
 async function renderBadges() {
-    const badgesContainer = document.getElementById('badgesContainer');
-    if (!badgesContainer) return;
+    const badgesCarouselContainer = document.getElementById('badgesCarouselContainer');
+    if (!badgesCarouselContainer) return;
 
     // Fetch previously earned badges from Firestore
     let previouslyEarned = [];
@@ -142,139 +175,46 @@ async function renderBadges() {
         console.error('Error saving earned badges:', e);
     }
 
-    // Group badges by type for carousel rendering
-    const groups = {
-        words_added: ['first_word', 'ten_words', 'fifty_words'],
-        words_mastered: ['ten_mastered', 'fifty_mastered'],
-        skills_added: ['first_skill', 'five_skills', 'ten_skills'],
-        skills_mastered: ['five_mastered_skills', 'ten_mastered_skills'],
-        categories: ['all_categories'],
-        portfolio: ['first_portfolio', 'five_portfolio']
-    };
+    // Group badges by type and render carousels
+    const groupedBadges = groupBadgesByType();
 
-    const groupTitles = {
-        words_added: 'Vocabulary Added',
-        words_mastered: 'Vocabulary Mastered',
-        skills_added: 'Skills Added',
-        skills_mastered: 'Skills Mastered',
-        categories: 'Explorer',
-        portfolio: 'Portfolio'
-    };
-
-    // Helper to build a single badge card HTML
-    const renderBadgeCard = (badge) => {
-        const earned = earnedBadges.includes(badge.id);
+    badgesCarouselContainer.innerHTML = Object.entries(groupedBadges).map(([type, badges]) => {
         return `
-            <div class="rounded-lg border ${earned ? 'border-green-300' : 'border-gray-200'} bg-white shadow-sm p-3 sm:p-4 flex items-center gap-3">
-                <div class="text-xl sm:text-2xl" aria-hidden="true">${badge.icon}</div>
-                <div class="flex-1">
-                    <div class="font-semibold ${earned ? 'text-green-700' : 'text-gray-800'} text-base sm:text-lg">${badge.name}</div>
-                    <div class="text-sm text-gray-600">${badge.description}</div>
-                </div>
-                <div class="text-xs px-2 py-1 rounded ${earned ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                    ${earned ? '✓ Earned' : 'Locked'}
-                </div>
-            </div>
-        `;
-    };
-
-    // Build carousels per group
-    const allBadgesById = BADGES.reduce((acc, b) => { acc[b.id] = b; return acc; }, {});
-
-    const carouselsHTML = Object.keys(groups).map(groupKey => {
-        const badgeIds = groups[groupKey];
-        const slides = badgeIds.map(id => allBadgesById[id]).filter(Boolean);
-        if (slides.length === 0) return '';
-
-        const carouselId = `carousel-${groupKey}`;
-        const slidesHTML = slides.map((b, idx) => `
-            <div class="carousel-slide ${idx === 0 ? 'active block' : 'hidden'}" data-index="${idx}" aria-hidden="${idx === 0 ? 'false' : 'true'}">
-                ${renderBadgeCard(b)}
-            </div>
-        `).join('');
-
-        const controls = slides.length > 1 ? `
-                <div class="flex flex-col sm:flex-row items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
-                    <button class="hidden sm:block px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
-                    <div class="w-full flex flex-col gap-2">${slidesHTML}
-                        <div class="flex justify-center gap-2 w-full sm:hidden mt-2">
-                            <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
-                            <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
-                        </div>
+            <div class="badge-carousel-group">
+                <h3 class="badge-group-title">${type}</h3>
+                <div class="badge-carousel-wrapper">
+                    <button class="carousel-arrow carousel-arrow-left" data-group="${type}" aria-label="Previous badges">
+                        <span>❮</span>
+                    </button>
+                    <div class="badge-carousel-track" data-group="${type}">
+                        ${badges.map(badge => {
+            const earned = earnedBadges.includes(badge.id);
+            return `
+                                <div class="badge-card ${earned ? 'badge-earned' : 'badge-locked'}" 
+                                     role="img" 
+                                     aria-label="${badge.name}: ${badge.description}" 
+                                     title="${badge.description}"
+                                     data-badge-id="${badge.id}">
+                                    <div class="badge-icon" aria-hidden="true">${badge.icon}</div>
+                                    <div class="badge-title">${badge.name}</div>
+                                    <div class="badge-description">${badge.description}</div>
+                                    <div class="badge-status ${earned ? 'status-earned' : 'status-locked'}">
+                                        ${earned ? '✓ Earned' : 'Locked'}
+                                    </div>
+                                </div>
+                            `;
+        }).join('')}
                     </div>
-                    <button class="hidden sm:block px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
+                    <button class="carousel-arrow carousel-arrow-right" data-group="${type}" aria-label="Next badges">
+                        <span>❯</span>
+                    </button>
                 </div>
-                <div class="flex justify-center gap-3 sm:gap-2 mt-3 sm:mt-2" role="tablist" aria-label="Slide indicators">
-                    ${slides.map((_, i) => `<button class="w-3 h-3 sm:w-2 sm:h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
-                </div>
-        ` : `
-                <div class="w-full" id="${carouselId}" aria-label="${groupTitles[groupKey] || groupKey} badge">
-                    ${slidesHTML}
-                </div>
-        `;
-
-        return `
-            <section class="mb-4 bg-gray-50 rounded-lg p-3">
-                <div class="flex items-center justify-between mb-1">
-                    <h3 class="font-semibold text-gray-800">${groupTitles[groupKey] || groupKey}</h3>
-                    <div class="text-xs text-gray-600">${slides.filter(b => earnedBadges.includes(b.id)).length}/${slides.length} earned</div>
-                </div>
-                ${controls}
-            </section>
+            </div>
         `;
     }).join('');
 
-    // Wrap groups in a responsive grid: 1 column on mobile, 2 on md+
-    badgesContainer.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${carouselsHTML}</div>
-    `;
-
-    // Minimal carousel behavior (no external deps)
-    const initCarousel = (root) => {
-        const track = root.querySelector(':scope > .w-full');
-        const slides = Array.from(track.querySelectorAll('.carousel-slide'));
-        const prevBtn = root.querySelector('[data-action="prev"]');
-        const nextBtn = root.querySelector('[data-action="next"]');
-        const dots = Array.from(root.parentElement.querySelectorAll('[role="tablist"] button'));
-        let current = slides.findIndex(s => s.classList.contains('active'));
-
-        const update = (index) => {
-            current = (index + slides.length) % slides.length;
-            slides.forEach((s, i) => {
-                // Tailwind swap: use hidden/block
-                if (i === current) {
-                    s.classList.add('active');
-                    s.classList.remove('hidden');
-                    s.classList.add('block');
-                    s.setAttribute('aria-hidden', 'false');
-                } else {
-                    s.classList.remove('active');
-                    s.classList.remove('block');
-                    s.classList.add('hidden');
-                    s.setAttribute('aria-hidden', 'true');
-                }
-            });
-            dots.forEach((d, i) => {
-                d.classList.toggle('bg-blue-500', i === current);
-                d.classList.toggle('bg-gray-200', i !== current);
-                d.setAttribute('aria-selected', i === current ? 'true' : 'false');
-            });
-        };
-
-        prevBtn?.addEventListener('click', () => update(current - 1));
-        nextBtn?.addEventListener('click', () => update(current + 1));
-        dots.forEach((d, i) => d.addEventListener('click', () => update(i)));
-
-        // Keyboard navigation
-        root.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') update(current - 1);
-            else if (e.key === 'ArrowRight') update(current + 1);
-        });
-    };
-
-    document.querySelectorAll('[role="region"][aria-label$="badge carousel"]').forEach(initCarousel);
-
-    // Use Tailwind utility classes; no injected styles needed
+    // Attach event listeners to carousel arrows
+    attachCarouselListeners();
 }
 
 /**
@@ -301,3 +241,54 @@ function getEarnedBadgeObjects() {
 function getBadgeProgress() {
     return Math.round((earnedBadges.length / BADGES.length) * 100);
 }
+/**
+ * Attach event listeners to carousel navigation arrows
+ */
+function attachCarouselListeners() {
+    document.querySelectorAll('.carousel-arrow').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const groupName = e.currentTarget.dataset.group;
+            const track = document.querySelector(`.badge-carousel-track[data-group="${groupName}"]`);
+            if (!track) return;
+
+            const isLeftArrow = e.currentTarget.classList.contains('carousel-arrow-left');
+            const scrollAmount = 140; // badge width (128px) + gap (12px)
+
+            if (isLeftArrow) {
+                track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        });
+    });
+}
+
+/**
+ * Update carousel arrow visibility based on scroll position
+ */
+function updateCarouselArrowVisibility() {
+    document.querySelectorAll('.badge-carousel-track').forEach(track => {
+        const groupName = track.dataset.group;
+        const leftArrow = document.querySelector(`.carousel-arrow-left[data-group="${groupName}"]`);
+        const rightArrow = document.querySelector(`.carousel-arrow-right[data-group="${groupName}"]`);
+
+        if (leftArrow) {
+            leftArrow.style.opacity = track.scrollLeft > 0 ? '1' : '0.3';
+            leftArrow.style.pointerEvents = track.scrollLeft > 0 ? 'auto' : 'none';
+        }
+
+        if (rightArrow) {
+            const canScrollRight = track.scrollLeft < track.scrollWidth - track.clientWidth - 10;
+            rightArrow.style.opacity = canScrollRight ? '1' : '0.3';
+            rightArrow.style.pointerEvents = canScrollRight ? 'auto' : 'none';
+        }
+    });
+}
+
+// Update arrow visibility on scroll
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.badge-carousel-track').forEach(track => {
+        track.addEventListener('scroll', updateCarouselArrowVisibility);
+    });
+    updateCarouselArrowVisibility();
+});
