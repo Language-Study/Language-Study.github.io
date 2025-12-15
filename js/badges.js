@@ -252,7 +252,7 @@ function attachCarouselListeners() {
             if (!track) return;
 
             const isLeftArrow = e.currentTarget.classList.contains('carousel-arrow-left');
-            const scrollAmount = 140; // badge width (128px) + gap (12px)
+            const scrollAmount = 112; // badge width (112px) + gap (12px)
 
             if (isLeftArrow) {
                 track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
