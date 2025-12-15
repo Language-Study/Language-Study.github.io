@@ -142,20 +142,125 @@ async function renderBadges() {
         console.error('Error saving earned badges:', e);
     }
 
-    // Render badges HTML
-    badgesContainer.innerHTML = BADGES.map(badge => {
+    // Group badges by type for carousel rendering
+    const groups = {
+        words_added: ['first_word', 'ten_words', 'fifty_words'],
+        words_mastered: ['ten_mastered', 'fifty_mastered'],
+        skills_added: ['first_skill', 'five_skills', 'ten_skills'],
+        skills_mastered: ['five_mastered_skills', 'ten_mastered_skills'],
+        categories: ['all_categories'],
+        portfolio: ['first_portfolio', 'five_portfolio']
+    };
+
+    const groupTitles = {
+        words_added: 'Vocabulary Added',
+        words_mastered: 'Vocabulary Mastered',
+        skills_added: 'Skills Added',
+        skills_mastered: 'Skills Mastered',
+        categories: 'Explorer',
+        portfolio: 'Portfolio'
+    };
+
+    // Helper to build a single badge card HTML
+    const renderBadgeCard = (badge) => {
         const earned = earnedBadges.includes(badge.id);
         return `
-            <div class="badge-card ${earned ? 'badge-earned' : 'badge-locked'}" role="img" aria-label="${badge.name}: ${badge.description}" title="${badge.description}">
-                <div class="badge-icon" aria-hidden="true">${badge.icon}</div>
-                <div class="badge-title">${badge.name}</div>
-                <div class="badge-description">${badge.description}</div>
-                <div class="badge-status ${earned ? 'status-earned' : 'status-locked'}">
+            <div class="rounded-lg border ${earned ? 'border-green-300' : 'border-gray-200'} bg-white shadow-sm p-4 flex items-center gap-3">
+                <div class="text-2xl" aria-hidden="true">${badge.icon}</div>
+                <div class="flex-1">
+                    <div class="font-semibold ${earned ? 'text-green-700' : 'text-gray-800'}">${badge.name}</div>
+                    <div class="text-sm text-gray-600">${badge.description}</div>
+                </div>
+                <div class="text-xs px-2 py-1 rounded ${earned ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
                     ${earned ? '✓ Earned' : 'Locked'}
                 </div>
             </div>
         `;
+    };
+
+    // Build carousels per group
+    const allBadgesById = BADGES.reduce((acc, b) => { acc[b.id] = b; return acc; }, {});
+
+    const carouselsHTML = Object.keys(groups).map(groupKey => {
+        const badgeIds = groups[groupKey];
+        const slides = badgeIds.map(id => allBadgesById[id]).filter(Boolean);
+        if (slides.length === 0) return '';
+
+        const carouselId = `carousel-${groupKey}`;
+        const slidesHTML = slides.map((b, idx) => `
+            <div class="carousel-slide ${idx === 0 ? 'active block' : 'hidden'}" data-index="${idx}" aria-hidden="${idx === 0 ? 'false' : 'true'}">
+                ${renderBadgeCard(b)}
+            </div>
+        `).join('');
+
+        return `
+            <section class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-bold">${groupTitles[groupKey] || groupKey}</h3>
+                    <div class="text-sm text-gray-600">${slides.filter(b => earnedBadges.includes(b.id)).length}/${slides.length} earned</div>
+                </div>
+                <div class="flex items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
+                    <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
+                    <div class="w-full">
+                        ${slidesHTML}
+                    </div>
+                    <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
+                </div>
+                <div class="flex justify-center gap-1 mt-2" role="tablist" aria-label="Slide indicators">
+                    ${slides.map((_, i) => `<button class="w-2 h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
+                </div>
+            </section>
+        `;
     }).join('');
+
+    badgesContainer.innerHTML = carouselsHTML;
+
+    // Minimal carousel behavior (no external deps)
+    const initCarousel = (root) => {
+        const track = root.querySelector(':scope > .w-full');
+        const slides = Array.from(track.querySelectorAll('.carousel-slide'));
+        const prevBtn = root.querySelector('[data-action="prev"]');
+        const nextBtn = root.querySelector('[data-action="next"]');
+        const dots = Array.from(root.parentElement.querySelectorAll('[role="tablist"] button'));
+        let current = slides.findIndex(s => s.classList.contains('active'));
+
+        const update = (index) => {
+            current = (index + slides.length) % slides.length;
+            slides.forEach((s, i) => {
+                // Tailwind swap: use hidden/block
+                if (i === current) {
+                    s.classList.add('active');
+                    s.classList.remove('hidden');
+                    s.classList.add('block');
+                    s.setAttribute('aria-hidden', 'false');
+                } else {
+                    s.classList.remove('active');
+                    s.classList.remove('block');
+                    s.classList.add('hidden');
+                    s.setAttribute('aria-hidden', 'true');
+                }
+            });
+            dots.forEach((d, i) => {
+                d.classList.toggle('bg-blue-500', i === current);
+                d.classList.toggle('bg-gray-200', i !== current);
+                d.setAttribute('aria-selected', i === current ? 'true' : 'false');
+            });
+        };
+
+        prevBtn?.addEventListener('click', () => update(current - 1));
+        nextBtn?.addEventListener('click', () => update(current + 1));
+        dots.forEach((d, i) => d.addEventListener('click', () => update(i)));
+
+        // Keyboard navigation
+        root.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') update(current - 1);
+            else if (e.key === 'ArrowRight') update(current + 1);
+        });
+    };
+
+    document.querySelectorAll('[role="region"][aria-label$="badge carousel"]').forEach(initCarousel);
+
+    // Use Tailwind utility classes; no injected styles needed
 }
 
 /**
