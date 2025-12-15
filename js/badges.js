@@ -165,10 +165,10 @@ async function renderBadges() {
     const renderBadgeCard = (badge) => {
         const earned = earnedBadges.includes(badge.id);
         return `
-            <div class="rounded-lg border ${earned ? 'border-green-300' : 'border-gray-200'} bg-white shadow-sm p-4 flex items-center gap-3">
-                <div class="text-2xl" aria-hidden="true">${badge.icon}</div>
+            <div class="rounded-lg border ${earned ? 'border-green-300' : 'border-gray-200'} bg-white shadow-sm p-3 sm:p-4 flex items-center gap-3">
+                <div class="text-xl sm:text-2xl" aria-hidden="true">${badge.icon}</div>
                 <div class="flex-1">
-                    <div class="font-semibold ${earned ? 'text-green-700' : 'text-gray-800'}">${badge.name}</div>
+                    <div class="font-semibold ${earned ? 'text-green-700' : 'text-gray-800'} text-base sm:text-lg">${badge.name}</div>
                     <div class="text-sm text-gray-600">${badge.description}</div>
                 </div>
                 <div class="text-xs px-2 py-1 rounded ${earned ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
@@ -194,12 +194,17 @@ async function renderBadges() {
         `).join('');
 
         const controls = slides.length > 1 ? `
-                <div class="flex items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
-                    <button class="px-3 py-2 sm:px-2 sm:py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
-                    <div class="w-full">${slidesHTML}</div>
-                    <button class="px-3 py-2 sm:px-2 sm:py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
+                <div class="flex flex-col sm:flex-row items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
+                    <button class="hidden sm:block px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
+                    <div class="w-full flex flex-col gap-2">${slidesHTML}
+                        <div class="flex justify-center gap-2 w-full sm:hidden mt-2">
+                            <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
+                            <button class="px-4 py-2 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
+                        </div>
+                    </div>
+                    <button class="hidden sm:block px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
                 </div>
-                <div class="flex justify-center gap-2 mt-2" role="tablist" aria-label="Slide indicators">
+                <div class="flex justify-center gap-3 sm:gap-2 mt-3 sm:mt-2" role="tablist" aria-label="Slide indicators">
                     ${slides.map((_, i) => `<button class="w-3 h-3 sm:w-2 sm:h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
                 </div>
         ` : `
