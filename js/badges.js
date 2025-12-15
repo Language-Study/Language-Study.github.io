@@ -195,12 +195,12 @@ async function renderBadges() {
 
         const controls = slides.length > 1 ? `
                 <div class="flex items-center gap-2" id="${carouselId}" role="region" aria-label="${groupTitles[groupKey] || groupKey} badge carousel">
-                    <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
+                    <button class="px-3 py-2 sm:px-2 sm:py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Previous badge" data-action="prev">◀</button>
                     <div class="w-full">${slidesHTML}</div>
-                    <button class="px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
+                    <button class="px-3 py-2 sm:px-2 sm:py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Next badge" data-action="next">▶</button>
                 </div>
-                <div class="flex justify-center gap-1 mt-2" role="tablist" aria-label="Slide indicators">
-                    ${slides.map((_, i) => `<button class="w-2 h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
+                <div class="flex justify-center gap-2 mt-2" role="tablist" aria-label="Slide indicators">
+                    ${slides.map((_, i) => `<button class="w-3 h-3 sm:w-2 sm:h-2 rounded-full ${i === 0 ? 'bg-blue-500' : 'bg-gray-300'}" role="tab" aria-selected="${i === 0}" aria-controls="${carouselId}" data-index="${i}"></button>`).join('')}
                 </div>
         ` : `
                 <div class="w-full" id="${carouselId}" aria-label="${groupTitles[groupKey] || groupKey} badge">
@@ -219,7 +219,10 @@ async function renderBadges() {
         `;
     }).join('');
 
-    badgesContainer.innerHTML = carouselsHTML;
+    // Wrap groups in a responsive grid: 1 column on mobile, 2 on md+
+    badgesContainer.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${carouselsHTML}</div>
+    `;
 
     // Minimal carousel behavior (no external deps)
     const initCarousel = (root) => {
