@@ -26,6 +26,20 @@ const BADGES = [
         check: () => vocabularyList.length >= 50
     },
     {
+        id: 'first_mastered',
+        name: 'First Word Mastered',
+        description: 'Master your first vocabulary word.',
+        icon: '⭐',
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 1
+    },
+    {
+        id: 'five_mastered',
+        name: '5 Words Mastered',
+        description: 'Master 5 vocabulary words.',
+        icon: '🎯',
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 5
+    },
+    {
         id: 'ten_mastered',
         name: '10 Words Mastered',
         description: 'Master 10 vocabulary words.',
@@ -59,6 +73,13 @@ const BADGES = [
         description: 'Add 10 skills.',
         icon: '🔟',
         check: () => skills.length >= 10
+    },
+    {
+        id: 'first_mastered_skill',
+        name: 'First Skill Mastered',
+        description: 'Master your first skill.',
+        icon: '⭐',
+        check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 1
     },
     {
         id: 'five_mastered_skills',
