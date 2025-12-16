@@ -7,6 +7,7 @@
     --color-text-primary: #1f2937;
     --color-text-secondary: #6b7280;
     --color-text-light: #9ca3af;
+    --color-text-inverse: #ffffff;
     --color-border: #d1d5db;
     --color-border-light: #e5e7eb;
 
@@ -37,6 +38,7 @@
         --color-text-primary: #e8e6e3;
         --color-text-secondary: #b0b3b8;
         --color-text-light: #7a7d81;
+        --color-text-inverse: #ffffff;
         --color-border: #404447;
         --color-border-light: #555555;
 
@@ -176,6 +178,12 @@ button:focus-visible {
 }
 
 /* Danger buttons (red) */
+/* Quick Review button (gradient) */
+#startReviewBtn {
+    color: var(--color-text-inverse);
+}
+
+/* Danger buttons (red) */
 .bg-red-500,
 .bg-red-600,
 .btn-danger,
@@ -194,6 +202,73 @@ button:focus-visible {
     background-color: #dc2626;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+}
+
+/* ===== FLASHCARD STYLES ===== */
+.flashcard-container {
+    perspective: 1000px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flashcard-container.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard-front {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.flashcard-back {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    transform: rotateY(180deg);
+}
+
+.flashcard-front .text-gray-800 {
+    color: white !important;
+}
+
+.flashcard-back .text-indigo-600 {
+    color: white !important;
+}
+
+.flashcard-front .text-gray-500,
+.flashcard-back .text-gray-500 {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Keyboard shortcut badges */
+kbd {
+    font-family: monospace;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
 }
 
 /* Icon/action buttons */

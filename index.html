@@ -214,6 +214,18 @@
                     </p>
                 </div>
 
+                <!-- Quick Review Button -->
+                <div class="mb-4 flex justify-center">
+                    <button id="startReviewBtn"
+                        class="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2 font-semibold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Quick Review
+                    </button>
+                </div>
+
                 <div id="vocabularyList" class="space-y-4 text-base sm:text-lg"></div>
                 <!-- Language Selection Section -->
                 <div class="mb-4">
@@ -330,6 +342,89 @@
             <div id="mentorViewError" class="text-red-500 text-sm mt-2 hidden"></div>
         </div>
 
+        <!-- Flashcard Review Modal -->
+        <div id="flashcardModal"
+            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 hidden">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 relative">
+                <button id="closeFlashcardBtn"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-3xl z-10">&times;</button>
+
+                <!-- Progress Bar -->
+                <div class="bg-gray-200 h-2 rounded-t-lg">
+                    <div id="flashcardProgress"
+                        class="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-t-lg transition-all duration-300"
+                        style="width: 0%"></div>
+                </div>
+
+                <div class="p-8">
+                    <!-- Header -->
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold mb-2">Vocabulary Review</h2>
+                        <p id="flashcardCounter" class="text-gray-600">Card 1 of 10</p>
+                    </div>
+
+                    <!-- Flashcard -->
+                    <div id="flashcard" class="flashcard-container mb-6 cursor-pointer" tabindex="0">
+                        <div class="flashcard-inner">
+                            <div class="flashcard-front">
+                                <div class="text-4xl font-bold text-gray-800 mb-4" id="flashcardWord">Word</div>
+                                <p class="text-sm text-gray-500">Click or press Space to flip</p>
+                            </div>
+                            <div class="flashcard-back">
+                                <div class="text-3xl font-semibold text-indigo-600 mb-4" id="flashcardTranslation">
+                                    Translation</div>
+                                <p class="text-sm text-gray-500">Click or press Space to flip back</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <button id="flashcardNotStarted"
+                            class="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex flex-col items-center gap-1">
+                            <svg class="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10" stroke-width="2" />
+                            </svg>
+                            <span class="text-sm font-medium">Not Started</span>
+                        </button>
+                        <button id="flashcardInProgress"
+                            class="px-4 py-3 bg-yellow-100 hover:bg-yellow-200 rounded-lg transition-colors flex flex-col items-center gap-1">
+                            <svg class="w-6 h-6 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10" stroke-width="2" />
+                                <path d="M12 6v6l4 4" stroke-width="2" />
+                            </svg>
+                            <span class="text-sm font-medium">In Progress</span>
+                        </button>
+                        <button id="flashcardMastered"
+                            class="px-4 py-3 bg-green-100 hover:bg-green-200 rounded-lg transition-colors flex flex-col items-center gap-1">
+                            <svg class="w-6 h-6 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2" />
+                                <path d="M22 4L12 14.01l-3-3" stroke-width="2" />
+                            </svg>
+                            <span class="text-sm font-medium">Mastered</span>
+                        </button>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="flex justify-between items-center">
+                        <button id="flashcardPrev"
+                            class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            ← Previous
+                        </button>
+                        <div class="text-sm text-gray-500">
+                            <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">←/→</kbd> Navigate
+                            <kbd class="px-2 py-1 bg-gray-100 rounded text-xs ml-2">Space</kbd> Flip
+                            <kbd class="px-2 py-1 bg-gray-100 rounded text-xs ml-2">1/2/3</kbd> Status
+                        </div>
+                        <button id="flashcardNext"
+                            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors">
+                            Next →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast"
             class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded shadow-lg z-50 hidden transition-opacity duration-300">
@@ -363,6 +458,7 @@
     <script src="js/ui-utils.js" defer></script>
     <script src="js/data-loader.js" defer></script>
     <script src="js/mentor-view.js" defer></script>
+    <script src="js/flashcard.js" defer></script>
     <script src="js/pages/app-page.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
