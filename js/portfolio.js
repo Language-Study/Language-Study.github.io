@@ -50,7 +50,7 @@ async function loadSkills() {
  */
 async function addPortfolioEntry(title, link) {
     const trimmedTitle = title.trim();
-    const trimmedLink = link.trim();
+    let trimmedLink = link.trim();
 
     if (!trimmedTitle || !trimmedLink) {
         throw new Error('Please enter both title and link.');
@@ -62,6 +62,9 @@ async function addPortfolioEntry(title, link) {
     }
 
     try {
+        if (type === 'soundcloud') {
+            trimmedLink = await resolveSoundCloudPortfolioLink(trimmedLink);
+        }
         let videoId = null;
         if (type === 'youtube') {
             videoId = getYouTubeId(trimmedLink);
@@ -546,7 +549,7 @@ function getYouTubeId(url) {
 }
 
 function isSoundCloudUrl(url) {
-    return /^https?:\/\/(soundcloud\.com|snd\.sc)\//.test(url);
+    return /^https?:\/\/(soundcloud\.com|snd\.sc|on\.soundcloud\.com)\//.test(url);
 }
 
 function getPortfolioType(url) {
@@ -564,4 +567,38 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+async function resolveSoundCloudPortfolioLink(rawUrl) {
+    // Resolve on.soundcloud.com and snd.sc links to their canonical track URL via oEmbed when possible
+    try {
+        const url = new URL(rawUrl);
+        const host = url.hostname;
+        const needsResolve = host.includes('on.soundcloud.com') || host.includes('snd.sc');
+        if (!needsResolve) return rawUrl;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const response = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(rawUrl)}&iframe=true`, {
+            method: 'GET',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) return rawUrl;
+
+        const data = await response.json();
+        if (!data?.html) return rawUrl;
+
+        const srcMatch = data.html.match(/src="([^"]+)"/);
+        if (srcMatch && srcMatch[1]) {
+            const playerUrl = new URL(srcMatch[1]);
+            const resolved = playerUrl.searchParams.get('url');
+            if (resolved) return resolved;
+        }
+
+        return rawUrl;
+    } catch (e) {
+        return rawUrl;
+    }
 }

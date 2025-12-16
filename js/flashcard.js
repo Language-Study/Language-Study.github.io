@@ -6,6 +6,7 @@
 let flashcardReviewList = [];
 let currentFlashcardIndex = 0;
 let isFlashcardFlipped = false;
+let flashcardRenderToken = 0;
 
 const flashcardModal = document.getElementById('flashcardModal');
 const flashcard = document.getElementById('flashcard');
@@ -13,6 +14,9 @@ const flashcardWord = document.getElementById('flashcardWord');
 const flashcardTranslation = document.getElementById('flashcardTranslation');
 const flashcardMedia = document.getElementById('flashcardMedia');
 const flashcardVideo = document.getElementById('flashcardVideo');
+const flashcardVideoWrap = document.getElementById('flashcardVideoWrap');
+const flashcardAudioWrap = document.getElementById('flashcardAudioWrap');
+const flashcardAudio = document.getElementById('flashcardAudio');
 const flashcardCounter = document.getElementById('flashcardCounter');
 const flashcardProgress = document.getElementById('flashcardProgress');
 const startReviewBtn = document.getElementById('startReviewBtn');
@@ -57,6 +61,9 @@ closeFlashcardBtn?.addEventListener('click', () => {
     if (flashcardVideo) {
         flashcardVideo.src = '';
     }
+    if (flashcardAudio) {
+        flashcardAudio.src = '';
+    }
     renderVocabularyWithCurrentFilter();
 });
 
@@ -66,6 +73,9 @@ document.addEventListener('keydown', (e) => {
         flashcardModal.classList.add('hidden');
         if (flashcardVideo) {
             flashcardVideo.src = '';
+        }
+        if (flashcardAudio) {
+            flashcardAudio.src = '';
         }
         renderVocabularyWithCurrentFilter();
     }
@@ -157,9 +167,11 @@ async function updateFlashcardStatus(newStatus) {
     }
 }
 
-function renderFlashcard() {
+async function renderFlashcard() {
     const currentItem = flashcardReviewList[currentFlashcardIndex];
     if (!currentItem) return;
+
+    const renderToken = ++flashcardRenderToken;
 
     flashcardWord.textContent = currentItem.word;
 
@@ -167,14 +179,42 @@ function renderFlashcard() {
     const cleanedText = translationText.replace(/https?:\/\/\S+/gi, '').trim();
     flashcardTranslation.textContent = cleanedText || '';
 
-    // Handle YouTube embed if a link is present
-    const embedUrl = getYouTubeEmbedUrl(translationText);
-    if (embedUrl) {
-        flashcardMedia.classList.remove('hidden');
-        flashcardVideo.src = embedUrl;
-    } else {
-        flashcardMedia.classList.add('hidden');
-        flashcardVideo.src = '';
+    const ytEmbed = getYouTubeEmbedUrl(translationText);
+    const hasVideo = Boolean(ytEmbed);
+
+    if (flashcardVideoWrap) {
+        flashcardVideoWrap.classList.toggle('hidden', !hasVideo);
+    }
+    if (flashcardVideo) {
+        flashcardVideo.src = hasVideo ? ytEmbed : '';
+    }
+
+    // Reset audio while resolving shortened SoundCloud links asynchronously
+    if (flashcardAudioWrap) {
+        flashcardAudioWrap.classList.add('hidden');
+    }
+    if (flashcardAudio) {
+        flashcardAudio.src = '';
+    }
+
+    if (flashcardMedia) {
+        flashcardMedia.classList.toggle('hidden', !hasVideo);
+    }
+
+    const scEmbed = await getSoundCloudEmbedUrl(translationText);
+    if (renderToken !== flashcardRenderToken) return;
+
+    const hasAudio = Boolean(scEmbed);
+    const hasMedia = hasVideo || hasAudio;
+
+    if (flashcardAudioWrap) {
+        flashcardAudioWrap.classList.toggle('hidden', !hasAudio);
+    }
+    if (flashcardAudio) {
+        flashcardAudio.src = hasAudio ? scEmbed : '';
+    }
+    if (flashcardMedia) {
+        flashcardMedia.classList.toggle('hidden', !hasMedia);
     }
     flashcardCounter.textContent = `Card ${currentFlashcardIndex + 1} of ${flashcardReviewList.length}`;
 
@@ -194,6 +234,61 @@ function renderFlashcard() {
         flashcardNotStarted.classList.add('ring-2', 'ring-gray-400');
     } else if (currentItem.status === PROGRESS_STATUS.IN_PROGRESS) {
         flashcardInProgress.classList.add('ring-2', 'ring-yellow-500');
+    }
+}
+
+async function getSoundCloudEmbedUrl(text) {
+    if (!text) return null;
+
+    const urlMatch = text.match(/https?:\/\/[^\s]+/);
+    if (!urlMatch) return null;
+
+    try {
+        const rawUrl = urlMatch[0];
+        const url = new URL(rawUrl);
+        const host = url.hostname;
+        const isSoundCloud = host.includes('soundcloud.com') || host.includes('snd.sc') || host.includes('on.soundcloud.com');
+        if (!isSoundCloud) return null;
+
+        // Expand shortened SoundCloud links via oEmbed when possible
+        const needsResolve = host.includes('on.soundcloud.com') || host.includes('snd.sc');
+        const resolvedUrl = needsResolve ? await resolveSoundCloudUrl(rawUrl) : rawUrl;
+        const encoded = encodeURIComponent(resolvedUrl);
+
+        return `https://w.soundcloud.com/player/?url=${encoded}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true`;
+    } catch (e) {
+        return null;
+    }
+}
+
+async function resolveSoundCloudUrl(rawUrl) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        const response = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(rawUrl)}&iframe=true`, {
+            method: 'GET',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            return rawUrl;
+        }
+
+        const data = await response.json();
+        if (!data?.html) return rawUrl;
+
+        const srcMatch = data.html.match(/src="([^"]+)"/);
+        if (srcMatch && srcMatch[1]) {
+            const playerUrl = new URL(srcMatch[1]);
+            const resolved = playerUrl.searchParams.get('url');
+            if (resolved) return resolved;
+        }
+
+        return rawUrl;
+    } catch (e) {
+        return rawUrl;
     }
 }
 
