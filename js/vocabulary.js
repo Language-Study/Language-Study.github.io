@@ -81,12 +81,13 @@ async function addVocabularyWords(wordsText, translation, category) {
     }
 
     try {
+        const normalizedTranslation = await normalizeTranslationLink(translation || '');
         const batch = db.batch();
         const vocabRef = db.collection('users').doc(currentUser.uid).collection('vocabulary');
 
         const newItems = words.map(word => ({
             word: word.trim(),
-            translation: translation || '',
+            translation: normalizedTranslation,
             category: category === 'new' ? 'General' : category,
             status: PROGRESS_STATUS.NOT_STARTED,
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
@@ -133,6 +134,43 @@ async function updateVocabularyStatus(itemId, newStatus) {
         });
     } catch (error) {
         console.error('Error updating vocabulary status:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update vocabulary word/translation
+ * @async
+ * @param {string} itemId - Document ID
+ * @param {{word?: string, translation?: string}} updates - Fields to update
+ * @returns {Promise<void>}
+ */
+async function updateVocabularyItem(itemId, updates) {
+    const payload = {};
+
+    if (updates.word !== undefined) {
+        const trimmed = updates.word.trim();
+        if (!trimmed) {
+            throw new Error('Word cannot be empty.');
+        }
+        payload.word = trimmed;
+    }
+
+    if (updates.translation !== undefined) {
+        payload.translation = await normalizeTranslationLink(updates.translation || '');
+    }
+
+    if (Object.keys(payload).length === 0) return;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(itemId).update(payload);
+
+        const idx = vocabularyList.findIndex(item => item.id === itemId);
+        if (idx !== -1) {
+            vocabularyList[idx] = { ...vocabularyList[idx], ...payload };
+        }
+    } catch (error) {
+        console.error('Error updating vocabulary item:', error);
         throw error;
     }
 }
@@ -278,7 +316,7 @@ function renderVocabItem(item) {
     let translationHtml = '';
     if (item.translation) {
         const ytRegex = /(?:youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|(?:v|embed|shorts)\/)|youtu\.be\/)([\w-]{11})/;
-        const scRegex = /^https?:\/\/(soundcloud\.com|snd\.sc)\//;
+        const scRegex = /^https?:\/\/(soundcloud\.com|snd\.sc|on\.soundcloud\.com)\//;
 
         if (ytRegex.test(item.translation)) {
             translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline" aria-label="YouTube link">YouTube Link</a>`;
@@ -302,6 +340,9 @@ function renderVocabItem(item) {
                 ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
             </div>
             <div class="flex items-center gap-2">
+                ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit vocabulary item" title="Edit">
+                    Edit
+                </button>`}
                 ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)" aria-label="Status: ${item.status}">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle status" title="Click to change status">
                     ${statusIcons[item.status]}
                 </button>`}
@@ -430,4 +471,58 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+async function normalizeTranslationLink(translation) {
+    let normalizedTranslation = translation || '';
+    const scMatch = normalizedTranslation.match(/https?:\/\/[^\s]+/);
+
+    if (scMatch) {
+        const rawUrl = scMatch[0];
+        let urlHost = '';
+        try {
+            urlHost = new URL(rawUrl).hostname;
+        } catch (e) {
+            urlHost = '';
+        }
+
+        const isSoundCloud = urlHost.includes('soundcloud.com') || urlHost.includes('snd.sc') || urlHost.includes('on.soundcloud.com');
+        const needsResolve = urlHost.includes('snd.sc') || urlHost.includes('on.soundcloud.com');
+
+        if (isSoundCloud && needsResolve) {
+            const resolved = await resolveSoundCloudUrl(rawUrl);
+            normalizedTranslation = normalizedTranslation.replace(rawUrl, resolved);
+        }
+    }
+
+    return normalizedTranslation;
+}
+
+async function resolveSoundCloudUrl(rawUrl) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        const response = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(rawUrl)}&iframe=true`, {
+            method: 'GET',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) return rawUrl;
+
+        const data = await response.json();
+        if (!data?.html) return rawUrl;
+
+        const srcMatch = data.html.match(/src="([^"]+)"/);
+        if (srcMatch && srcMatch[1]) {
+            const playerUrl = new URL(srcMatch[1]);
+            const resolved = playerUrl.searchParams.get('url');
+            if (resolved) return resolved;
+        }
+
+        return rawUrl;
+    } catch (e) {
+        return rawUrl;
+    }
 }

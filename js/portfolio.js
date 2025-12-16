@@ -85,6 +85,54 @@ async function addPortfolioEntry(title, link) {
 }
 
 /**
+ * Update portfolio entry title/link
+ * @async
+ * @param {string} id - Portfolio entry ID
+ * @param {string} title - New title
+ * @param {string} link - New link
+ * @returns {Promise<void>}
+ */
+async function updatePortfolioEntry(id, title, link) {
+    const trimmedTitle = title.trim();
+    let trimmedLink = link.trim();
+
+    if (!trimmedTitle || !trimmedLink) {
+        throw new Error('Please enter both title and link.');
+    }
+
+    const type = getPortfolioType(trimmedLink);
+    if (!type) {
+        throw new Error('Please enter a valid YouTube or SoundCloud link.');
+    }
+
+    try {
+        if (type === 'soundcloud') {
+            trimmedLink = await resolveSoundCloudPortfolioLink(trimmedLink);
+        }
+
+        let videoId = null;
+        if (type === 'youtube') {
+            videoId = getYouTubeId(trimmedLink);
+        }
+
+        await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).update({
+            title: trimmedTitle,
+            link: trimmedLink,
+            type,
+            videoId
+        });
+
+        const entry = portfolioEntries.find(e => e.id === id);
+        if (entry) {
+            Object.assign(entry, { title: trimmedTitle, link: trimmedLink, type, videoId });
+        }
+    } catch (error) {
+        console.error('Error updating portfolio entry:', error);
+        throw error;
+    }
+}
+
+/**
  * Delete portfolio entry
  * @async
  * @param {string} id - Portfolio entry ID
@@ -192,6 +240,29 @@ async function updateSkillStatus(itemId, newStatus) {
         });
     } catch (error) {
         console.error('Error updating skill status:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update skill name
+ * @async
+ * @param {string} itemId - Skill document ID
+ * @param {string} newName - New skill name
+ * @returns {Promise<void>}
+ */
+async function updateSkillName(itemId, newName) {
+    const trimmed = newName.trim();
+    if (!trimmed) {
+        throw new Error('Skill name cannot be empty.');
+    }
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('skills').doc(itemId).update({
+            name: trimmed
+        });
+    } catch (error) {
+        console.error('Error updating skill name:', error);
         throw error;
     }
 }
@@ -347,6 +418,8 @@ function renderPortfolioCard(entry, isFeatured) {
             </div>
             <div class="font-semibold text-center mb-1">${escapeHtml(entry.title)}</div>
             <div class="flex gap-2">
+                <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
+                        data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
                 <button class="feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300" 
                         data-action="toggleTop" data-id="${entry.id}" aria-label="Unfeature this portfolio item">Unfeature</button>
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
@@ -370,6 +443,8 @@ function renderPortfolioListItem(entry, topCount) {
                 <a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>
             </div>
             <div class="flex gap-2">
+                <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
+                    data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
                 <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" 
                         data-action="toggleTop" data-id="${entry.id}" 
                         ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''} aria-label="Feature this portfolio item">Feature</button>
@@ -454,6 +529,7 @@ function renderSkillItem(skill) {
             : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
                             ${statusIcons[skill.status]}
                         </button>`}
+                    ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>`}
                     ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill" title="Delete">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>

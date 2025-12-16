@@ -82,6 +82,109 @@ function closeModal(modalId) {
     }
 }
 
+// Simple reusable edit modal
+const editModal = {
+    element: null,
+    form: null,
+    titleEl: null,
+    subtitleEl: null,
+    fieldsEl: null,
+    cancelBtn: null,
+    closeBtn: null,
+    saveBtn: null,
+    resolver: null,
+    rejecter: null,
+    currentPayload: null,
+};
+
+function initEditModal() {
+    if (editModal.element) return;
+    editModal.element = document.getElementById('editModal');
+    editModal.form = document.getElementById('editModalForm');
+    editModal.titleEl = document.getElementById('editModalTitle');
+    editModal.subtitleEl = document.getElementById('editModalSubtitle');
+    editModal.fieldsEl = document.getElementById('editModalFields');
+    editModal.cancelBtn = document.getElementById('editModalCancel');
+    editModal.closeBtn = document.getElementById('editModalClose');
+    editModal.saveBtn = document.getElementById('editModalSave');
+
+    if (!editModal.element) return;
+
+    const close = () => {
+        editModal.element.classList.add('hidden');
+        editModal.fieldsEl.innerHTML = '';
+        editModal.form?.reset();
+        if (editModal.rejecter) {
+            editModal.rejecter('closed');
+        }
+        editModal.resolver = null;
+        editModal.rejecter = null;
+    };
+
+    editModal.cancelBtn?.addEventListener('click', close);
+    editModal.closeBtn?.addEventListener('click', close);
+
+    editModal.element?.addEventListener('click', (e) => {
+        if (e.target === editModal.element) {
+            close();
+        }
+    });
+
+    editModal.form?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = {};
+        editModal.fieldsEl.querySelectorAll('input, textarea, select').forEach(input => {
+            data[input.name] = input.value;
+        });
+        if (editModal.resolver) {
+            editModal.resolver({ ...data, payload: editModal.currentPayload });
+        }
+        editModal.element.classList.add('hidden');
+        editModal.fieldsEl.innerHTML = '';
+    });
+}
+
+/**
+ * Open edit modal with dynamic fields
+ * @param {Object} options
+ * @param {string} options.title
+ * @param {string} options.subtitle
+ * @param {Array<{name: string, label: string, type?: string, value?: string, placeholder?: string}>} options.fields
+ * @param {any} options.payload - arbitrary payload to return alongside form values
+ * @returns {Promise<Object>} Resolves with form values + payload
+ */
+function openEditModal({ title, subtitle = '', fields = [], payload = null }) {
+    initEditModal();
+    if (!editModal.element || !editModal.fieldsEl) return Promise.reject('Edit modal not initialized');
+
+    editModal.titleEl.textContent = title || 'Edit';
+    editModal.subtitleEl.textContent = subtitle || '';
+    editModal.subtitleEl.classList.toggle('hidden', !subtitle);
+
+    editModal.fieldsEl.innerHTML = fields.map(field => {
+        const type = field.type || 'text';
+        const baseClasses = 'w-full p-2 border rounded';
+        if (type === 'textarea') {
+            return `<label class="block text-sm text-gray-700">${field.label}
+                <textarea name="${field.name}" class="${baseClasses} mt-1" placeholder="${field.placeholder || ''}">${field.value || ''}</textarea>
+            </label>`;
+        }
+        return `<label class="block text-sm text-gray-700">${field.label}
+            <input name="${field.name}" type="${type}" class="${baseClasses} mt-1" value="${field.value || ''}" placeholder="${field.placeholder || ''}" />
+        </label>`;
+    }).join('');
+
+    editModal.currentPayload = payload;
+    editModal.element.classList.remove('hidden');
+
+    return new Promise((resolve, reject) => {
+        editModal.resolver = resolve;
+        editModal.rejecter = reject;
+    });
+}
+
+window.openEditModal = openEditModal;
+
 /**
  * Show welcome modal for new users
  * @returns {void}

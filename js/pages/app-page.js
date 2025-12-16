@@ -195,11 +195,46 @@ vocabularyListEl.addEventListener('click', async (e) => {
         return;
     }
 
+    const editButton = e.target.closest('.edit-button');
     const statusButton = e.target.closest('.status-button');
     const deleteButton = e.target.closest('.delete-button');
     const itemId = e.target.closest('.vocab-item')?.dataset.id;
 
-    if (statusButton && itemId) {
+    if (editButton && itemId) {
+        const item = vocabularyList.find(v => v.id === itemId);
+        if (!item) return;
+
+        try {
+            const result = await openEditModal({
+                title: 'Edit Vocabulary',
+                subtitle: 'Update the word and translation/link',
+                fields: [
+                    { name: 'word', label: 'Word or phrase', value: item.word },
+                    { name: 'translation', label: 'Translation or media link (optional)', value: item.translation || '', placeholder: 'Text, YouTube, or SoundCloud link' }
+                ],
+                payload: { itemId }
+            });
+
+            const newWord = (result.word || '').trim();
+            const newTranslation = (result.translation || '').trim();
+
+            if (!newWord) {
+                showToast('Error: Word cannot be empty.');
+                return;
+            }
+
+            await updateVocabularyItem(itemId, { word: newWord, translation: newTranslation });
+            if (dataCache?.isCached) {
+                dataCache.vocabularyList = [...vocabularyList];
+            }
+            renderVocabularyWithCurrentFilter();
+            showToast('✓ Item updated!');
+        } catch (error) {
+            if (error !== 'closed') {
+                showToast('Error: ' + error.message);
+            }
+        }
+    } else if (statusButton && itemId) {
         try {
             const item = vocabularyList.find(v => v.id === itemId);
             const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
@@ -379,7 +414,7 @@ skillsList.addEventListener('click', async (e) => {
 
     // Handle expand/collapse when clicking the skill header (excluding status/delete buttons)
     const skillHeader = e.target.closest('.skill-header');
-    const headerBlocked = e.target.closest('.status-button') || e.target.closest('.delete-button') || e.target.closest('.expand-button');
+    const headerBlocked = e.target.closest('.status-button') || e.target.closest('.delete-button') || e.target.closest('.expand-button') || e.target.closest('.edit-button');
     if (skillHeader && !headerBlocked) {
         const skillId = skillHeader.dataset.skillId || skillHeader.closest('.skill-item')?.dataset.id;
         if (skillId) {
@@ -514,10 +549,58 @@ skillsList.addEventListener('click', async (e) => {
 
     // Handle main skill status and delete
     const statusButton = e.target.closest('.status-button');
+    const editButton = e.target.closest('.edit-button');
     const deleteButton = e.target.closest('.delete-button');
     const itemId = e.target.closest('.skill-item')?.dataset.id;
 
-    if (statusButton && itemId) {
+    if (editButton && itemId) {
+        const skill = skills.find(s => s.id === itemId);
+        if (!skill) return;
+
+        try {
+            const result = await openEditModal({
+                title: 'Edit Skill',
+                subtitle: 'Update the skill name',
+                fields: [
+                    { name: 'name', label: 'Skill name', value: skill.name || '' }
+                ],
+                payload: { itemId }
+            });
+
+            const newName = (result.name || '').trim();
+            if (!newName) {
+                showToast('Error: Skill name cannot be empty.');
+                return;
+            }
+
+            const expandedSkills = new Set();
+            document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                expandedSkills.add(btn.dataset.skillId);
+            });
+
+            await updateSkillName(itemId, newName);
+            skill.name = newName;
+            if (dataCache?.isCached) {
+                dataCache.skills = [...skills];
+            }
+            renderSkillsWithCurrentFilter();
+
+            expandedSkills.forEach(id => {
+                const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                const container = document.getElementById(`subtasks-${id}`);
+                if (btn && container) {
+                    container.classList.remove('hidden');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            showToast('✓ Skill updated!');
+        } catch (error) {
+            if (error !== 'closed') {
+                showToast('Error: ' + error.message);
+            }
+        }
+    } else if (statusButton && itemId) {
         try {
             // Save expanded state
             const expandedSkills = new Set();
@@ -632,6 +715,29 @@ if (portfolioForm) {
             try {
                 if (action === 'toggleTop') {
                     await toggleTopPortfolio(id);
+                } else if (action === 'edit') {
+                    const entry = portfolioEntries.find(e => e.id === id);
+                    if (!entry) return;
+
+                    const result = await openEditModal({
+                        title: 'Edit Portfolio Item',
+                        subtitle: 'Update title and link',
+                        fields: [
+                            { name: 'title', label: 'Title', value: entry.title || '' },
+                            { name: 'link', label: 'Link (YouTube or SoundCloud)', value: entry.link || '', placeholder: 'https://...' }
+                        ],
+                        payload: { id }
+                    });
+
+                    const newTitle = (result.title || '').trim();
+                    const newLink = (result.link || '').trim();
+
+                    if (!newTitle || !newLink) {
+                        showToast('Error: Title and link are required.');
+                        return;
+                    }
+
+                    await updatePortfolioEntry(id, newTitle, newLink);
                 } else if (action === 'delete') {
                     if (confirm('Delete this portfolio entry?')) {
                         await deletePortfolioEntry(id);
