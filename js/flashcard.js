@@ -11,6 +11,8 @@ const flashcardModal = document.getElementById('flashcardModal');
 const flashcard = document.getElementById('flashcard');
 const flashcardWord = document.getElementById('flashcardWord');
 const flashcardTranslation = document.getElementById('flashcardTranslation');
+const flashcardMedia = document.getElementById('flashcardMedia');
+const flashcardVideo = document.getElementById('flashcardVideo');
 const flashcardCounter = document.getElementById('flashcardCounter');
 const flashcardProgress = document.getElementById('flashcardProgress');
 const startReviewBtn = document.getElementById('startReviewBtn');
@@ -52,6 +54,9 @@ startReviewBtn?.addEventListener('click', () => {
 // Close modal
 closeFlashcardBtn?.addEventListener('click', () => {
     flashcardModal.classList.add('hidden');
+    if (flashcardVideo) {
+        flashcardVideo.src = '';
+    }
     renderVocabularyWithCurrentFilter();
 });
 
@@ -59,6 +64,9 @@ closeFlashcardBtn?.addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !flashcardModal.classList.contains('hidden')) {
         flashcardModal.classList.add('hidden');
+        if (flashcardVideo) {
+            flashcardVideo.src = '';
+        }
         renderVocabularyWithCurrentFilter();
     }
 });
@@ -154,7 +162,20 @@ function renderFlashcard() {
     if (!currentItem) return;
 
     flashcardWord.textContent = currentItem.word;
-    flashcardTranslation.textContent = currentItem.translation || '(No translation)';
+
+    const translationText = currentItem.translation || '';
+    const cleanedText = translationText.replace(/https?:\/\/\S+/gi, '').trim();
+    flashcardTranslation.textContent = cleanedText || '';
+
+    // Handle YouTube embed if a link is present
+    const embedUrl = getYouTubeEmbedUrl(translationText);
+    if (embedUrl) {
+        flashcardMedia.classList.remove('hidden');
+        flashcardVideo.src = embedUrl;
+    } else {
+        flashcardMedia.classList.add('hidden');
+        flashcardVideo.src = '';
+    }
     flashcardCounter.textContent = `Card ${currentFlashcardIndex + 1} of ${flashcardReviewList.length}`;
 
     // Update progress bar
@@ -174,6 +195,40 @@ function renderFlashcard() {
     } else if (currentItem.status === PROGRESS_STATUS.IN_PROGRESS) {
         flashcardInProgress.classList.add('ring-2', 'ring-yellow-500');
     }
+}
+
+function getYouTubeEmbedUrl(text) {
+    if (!text) return null;
+
+    // Find first URL in the text
+    const urlMatch = text.match(/https?:\/\/[^\s]+/);
+    if (!urlMatch) return null;
+
+    try {
+        const url = new URL(urlMatch[0]);
+        // youtu.be/<id>
+        if (url.hostname.includes('youtu.be')) {
+            const id = url.pathname.split('/').filter(Boolean)[0];
+            return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+        // youtube.com/watch?v=<id>
+        if (url.hostname.includes('youtube.com')) {
+            if (url.searchParams.has('v')) {
+                const id = url.searchParams.get('v');
+                return id ? `https://www.youtube.com/embed/${id}` : null;
+            }
+            // youtube.com/embed/<id>
+            if (url.pathname.includes('/embed/')) {
+                const parts = url.pathname.split('/');
+                const id = parts[parts.indexOf('embed') + 1];
+                return id ? `https://www.youtube.com/embed/${id}` : null;
+            }
+        }
+    } catch (e) {
+        return null;
+    }
+
+    return null;
 }
 
 // Keyboard shortcuts for flashcard modal
