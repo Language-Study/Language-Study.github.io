@@ -5,6 +5,7 @@
 
 let vocabularyList = [];
 let categories = [];
+let selectedVocabIds = new Set();
 
 /**
  * Load user vocabulary from Firestore
@@ -204,6 +205,10 @@ function renderVocabularyList() {
     const vocabularyListEl = document.getElementById('vocabularyList');
     if (!vocabularyListEl) return;
 
+    // Remove selections that no longer exist (e.g., after deletions)
+    const validIds = new Set(vocabularyList.map(item => item.id));
+    selectedVocabIds = new Set([...selectedVocabIds].filter(id => validIds.has(id)));
+
     const expandedCategories = new Set(
         Array.from(document.querySelectorAll('#vocabularyList .category-content'))
             .filter(content => content.classList.contains('expanded'))
@@ -239,6 +244,8 @@ function renderVocabularyList() {
                 </div>
             `;
         }).join('');
+
+    updateBulkSelectionUI();
 
     // Attach category header listeners
     document.querySelectorAll('#vocabularyList .category-header').forEach(header => {
@@ -282,8 +289,14 @@ function renderVocabItem(item) {
         }
     }
 
+    const isSelected = selectedVocabIds.has(item.id);
+    const selectionBox = window.isMentorView ? '' : `
+        <input type="checkbox" class="vocab-select-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded" data-id="${item.id}" aria-label="Select ${escapeHtml(item.word)}" ${isSelected ? 'checked' : ''}>
+    `;
+
     return `
-        <div class="vocab-item flex items-center justify-between p-2 border rounded mb-2" data-id="${item.id}">
+        <div class="vocab-item flex items-center gap-3 p-2 border rounded mb-2" data-id="${item.id}">
+            ${selectionBox}
             <div class="flex-1">
                 <div class="font-medium">${escapeHtml(item.word)}</div>
                 ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
@@ -330,6 +343,7 @@ function filterVocabulary(query) {
     const totalResults = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
     if (totalResults === 0) {
         vocabularyListEl.innerHTML = '<p class="text-sm text-gray-500">No vocabulary results found.</p>';
+        updateBulkSelectionUI();
         return;
     }
 
@@ -348,6 +362,45 @@ function filterVocabulary(query) {
                 </div>
             `;
         }).join('');
+
+    updateBulkSelectionUI();
+}
+
+function updateBulkSelectionUI() {
+    const countEl = document.getElementById('bulkSelectedCount');
+    const selectAllEl = document.getElementById('bulkSelectAll');
+    const bulkButtons = [
+        document.getElementById('bulkMarkNotStarted'),
+        document.getElementById('bulkMarkInProgress'),
+        document.getElementById('bulkMarkMastered'),
+        document.getElementById('bulkDelete')
+    ].filter(Boolean);
+
+    const visibleIds = Array.from(document.querySelectorAll('.vocab-item')).map(el => el.dataset.id).filter(Boolean);
+    const count = selectedVocabIds.size;
+
+    if (countEl) {
+        countEl.textContent = `${count} selected`;
+    }
+
+    if (selectAllEl) {
+        const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedVocabIds.has(id));
+        selectAllEl.checked = allVisibleSelected;
+        selectAllEl.indeterminate = !allVisibleSelected && count > 0 && visibleIds.some(id => selectedVocabIds.has(id));
+    }
+
+    // Sync visible checkboxes to current selection
+    document.querySelectorAll('.vocab-select-checkbox').forEach(cb => {
+        const id = cb.dataset.id;
+        cb.checked = selectedVocabIds.has(id);
+    });
+
+    // Show bulk buttons only when selection exists
+    const shouldShowActions = count > 0;
+    bulkButtons.forEach(btn => {
+        btn.classList.toggle('hidden', !shouldShowActions);
+        btn.disabled = !shouldShowActions;
+    });
 }
 
 /**

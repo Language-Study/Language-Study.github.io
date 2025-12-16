@@ -142,6 +142,12 @@ const vocabularyInput = document.getElementById('vocabularyInput');
 const translationInput = document.getElementById('translationInput');
 const addVocabBtn = document.getElementById('addVocabBtn');
 const vocabularyListEl = document.getElementById('vocabularyList');
+const bulkSelectAll = document.getElementById('bulkSelectAll');
+const bulkClearSelectionBtn = document.getElementById('bulkClearSelection');
+const bulkMarkNotStartedBtn = document.getElementById('bulkMarkNotStarted');
+const bulkMarkInProgressBtn = document.getElementById('bulkMarkInProgress');
+const bulkMarkMasteredBtn = document.getElementById('bulkMarkMastered');
+const bulkDeleteBtn = document.getElementById('bulkDelete');
 
 addVocabBtn.addEventListener('click', async () => {
     try {
@@ -175,6 +181,20 @@ translationInput.addEventListener('keydown', (e) => {
 
 // Delegate vocabulary item events
 vocabularyListEl.addEventListener('click', async (e) => {
+    const checkbox = e.target.closest('.vocab-select-checkbox');
+    if (checkbox && checkbox.dataset.id) {
+        const itemId = checkbox.dataset.id;
+        if (checkbox.checked) {
+            selectedVocabIds.add(itemId);
+        } else {
+            selectedVocabIds.delete(itemId);
+        }
+        if (typeof updateBulkSelectionUI === 'function') {
+            updateBulkSelectionUI();
+        }
+        return;
+    }
+
     const statusButton = e.target.closest('.status-button');
     const deleteButton = e.target.closest('.delete-button');
     const itemId = e.target.closest('.vocab-item')?.dataset.id;
@@ -212,6 +232,94 @@ vocabularyListEl.addEventListener('click', async (e) => {
         }
     }
 });
+
+// ===== BULK VOCABULARY ACTIONS =====
+const getDisplayedVocabularyIds = () => Array.from(document.querySelectorAll('.vocab-item')).map(el => el.dataset.id).filter(Boolean);
+
+const syncCheckboxesToSelection = () => {
+    document.querySelectorAll('.vocab-select-checkbox').forEach(cb => {
+        const id = cb.dataset.id;
+        cb.checked = selectedVocabIds.has(id);
+    });
+};
+
+const expandAllVocabularyCategories = () => {
+    document.querySelectorAll('#vocabularyList .category-content').forEach(content => {
+        content.classList.add('expanded');
+        content.style.display = 'block';
+        const header = content.previousElementSibling;
+        if (header) {
+            header.setAttribute('aria-expanded', 'true');
+            const arrow = header.querySelector('svg');
+            if (arrow) {
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    });
+};
+
+bulkSelectAll?.addEventListener('change', () => {
+    const displayedIds = getDisplayedVocabularyIds();
+    if (bulkSelectAll.checked) {
+        displayedIds.forEach(id => selectedVocabIds.add(id));
+        expandAllVocabularyCategories();
+    } else {
+        displayedIds.forEach(id => selectedVocabIds.delete(id));
+    }
+    syncCheckboxesToSelection();
+    if (typeof updateBulkSelectionUI === 'function') {
+        updateBulkSelectionUI();
+    }
+});
+
+bulkClearSelectionBtn?.addEventListener('click', () => {
+    selectedVocabIds.clear();
+    syncCheckboxesToSelection();
+    if (typeof updateBulkSelectionUI === 'function') {
+        updateBulkSelectionUI();
+    }
+});
+
+async function bulkUpdateStatus(newStatus) {
+    const ids = Array.from(selectedVocabIds);
+    if (ids.length === 0) return;
+
+    try {
+        await Promise.all(ids.map(id => updateVocabularyStatus(id, newStatus)));
+        vocabularyList = vocabularyList.map(item => ids.includes(item.id) ? { ...item, status: newStatus } : item);
+        if (dataCache?.isCached) {
+            dataCache.vocabularyList = [...vocabularyList];
+        }
+        renderVocabularyWithCurrentFilter();
+        showToast('✓ Status updated');
+    } catch (error) {
+        showToast('Error: ' + error.message);
+    }
+}
+
+async function bulkDeleteSelected() {
+    const ids = Array.from(selectedVocabIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} selected item(s)?`)) return;
+
+    try {
+        await Promise.all(ids.map(id => deleteVocabularyItem(id)));
+        vocabularyList = vocabularyList.filter(item => !selectedVocabIds.has(item.id));
+        selectedVocabIds.clear();
+        if (dataCache?.isCached) {
+            dataCache.vocabularyList = [...vocabularyList];
+        }
+        renderVocabularyWithCurrentFilter();
+        showToast('✓ Selected items deleted');
+    } catch (error) {
+        showToast('Error: ' + error.message);
+    }
+}
+
+bulkMarkNotStartedBtn?.addEventListener('click', () => bulkUpdateStatus(PROGRESS_STATUS.NOT_STARTED));
+bulkMarkInProgressBtn?.addEventListener('click', () => bulkUpdateStatus(PROGRESS_STATUS.IN_PROGRESS));
+bulkMarkMasteredBtn?.addEventListener('click', () => bulkUpdateStatus(PROGRESS_STATUS.MASTERED));
+bulkDeleteBtn?.addEventListener('click', bulkDeleteSelected);
 
 // ===== SKILLS MANAGEMENT =====
 const skillsInput = document.getElementById('skillsInput');
