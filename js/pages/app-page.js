@@ -431,6 +431,7 @@ skillsList.addEventListener('click', async (e) => {
 
     // Handle add subtask
     const addSubtaskBtn = e.target.closest('.subtask-add-button');
+    const editSubtaskBtn = e.target.closest('.subtask-edit-button');
     if (addSubtaskBtn) {
         const skillId = addSubtaskBtn.dataset.skillId;
         const input = document.querySelector(`.subtask-input[data-skill-id="${skillId}"]`);
@@ -460,6 +461,61 @@ skillsList.addEventListener('click', async (e) => {
                 showToast('✓ Subtask added!');
             } catch (error) {
                 showToast('Error: ' + error.message);
+            }
+        }
+        return;
+    }
+
+    // Handle subtask edit
+    if (editSubtaskBtn) {
+        const subtaskItem = e.target.closest('.subtask-item');
+        const skillId = e.target.closest('.skill-item')?.dataset.id;
+        const subtaskId = subtaskItem?.dataset.subtaskId;
+
+        if (skillId && subtaskId) {
+            try {
+                const skill = skills.find(s => s.id === skillId);
+                const subtask = (skill?.subtasks || []).find(st => st.id === subtaskId);
+                if (!subtask) return;
+
+                const result = await openEditModal({
+                    title: 'Edit Subtask',
+                    subtitle: 'Update the subtask text',
+                    fields: [
+                        { name: 'text', label: 'Subtask', value: subtask.text || '', placeholder: 'Describe the subtask...' }
+                    ],
+                    payload: { skillId, subtaskId }
+                });
+
+                const newText = (result.text || '').trim();
+                if (!newText) {
+                    showToast('Error: Subtask cannot be empty.');
+                    return;
+                }
+
+                const expandedSkills = new Set();
+                document.querySelectorAll('.expand-button[aria-expanded="true"]').forEach(btn => {
+                    expandedSkills.add(btn.dataset.skillId);
+                });
+
+                await updateSubtaskText(skillId, subtaskId, newText);
+                await refreshUserData();
+                renderSkillsWithCurrentFilter();
+
+                expandedSkills.forEach(id => {
+                    const btn = document.querySelector(`.expand-button[data-skill-id="${id}"]`);
+                    const container = document.getElementById(`subtasks-${id}`);
+                    if (btn && container) {
+                        container.classList.remove('hidden');
+                        btn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                showToast('✓ Subtask updated!');
+            } catch (error) {
+                if (error !== 'closed') {
+                    showToast('Error: ' + error.message);
+                }
             }
         }
         return;

@@ -369,6 +369,43 @@ async function updateSubtaskStatus(skillId, subtaskId, newStatus) {
 }
 
 /**
+ * Update subtask text
+ * @async
+ * @param {string} skillId - Skill document ID
+ * @param {string} subtaskId - Subtask ID
+ * @param {string} newText - New subtask text
+ * @returns {Promise<void>}
+ */
+async function updateSubtaskText(skillId, subtaskId, newText) {
+    const trimmed = newText.trim();
+    if (!trimmed) {
+        throw new Error('Subtask cannot be empty.');
+    }
+
+    try {
+        const skill = skills.find(s => s.id === skillId);
+        if (!skill) {
+            throw new Error('Skill not found.');
+        }
+
+        const subtasks = skill.subtasks || [];
+        const subtask = subtasks.find(st => st.id === subtaskId);
+        if (!subtask) {
+            throw new Error('Subtask not found.');
+        }
+
+        subtask.text = trimmed;
+
+        await db.collection('users').doc(currentUser.uid).collection('skills').doc(skillId).update({
+            subtasks: subtasks
+        });
+    } catch (error) {
+        console.error('Error updating subtask text:', error);
+        throw error;
+    }
+}
+
+/**
  * Render portfolio UI
  * @returns {void}
  */
@@ -498,6 +535,9 @@ function renderSkillItem(skill) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>`}
+                    ${window.isMentorView ? '' : `<button class="subtask-edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit subtask" title="Edit">
+                        Edit
+                    </button>`}
             </div>
         </div>
     `).join('') : '';
