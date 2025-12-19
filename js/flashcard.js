@@ -52,20 +52,25 @@ startReviewBtn?.addEventListener('click', () => {
         return;
     }
 
-    // Build review list: primarily not started/in progress with occasional mastered items
-    // Aim for ~15-20% mastered items mixed in
-    flashcardReviewList = [...needsReview];
+    // Always pick exactly 10 words
+    const targetCount = 10;
+    flashcardReviewList = [];
 
-    if (mastered.length > 0) {
-        const targetMasteredCount = Math.max(1, Math.floor(flashcardReviewList.length * 0.15));
-        const masterSample = mastered.sort(() => Math.random() - 0.5).slice(0, targetMasteredCount);
-        flashcardReviewList = [...flashcardReviewList, ...masterSample];
-        console.log(`Adding ${masterSample.length} mastered items to review (target was ${targetMasteredCount})`);
+    // Start with needs review items
+    const shuffledNeedsReview = needsReview.sort(() => Math.random() - 0.5);
+    const needsReviewCount = Math.min(shuffledNeedsReview.length, Math.floor(targetCount * 0.85));
+    flashcardReviewList.push(...shuffledNeedsReview.slice(0, needsReviewCount));
+
+    // Fill remaining slots with mastered items
+    if (flashcardReviewList.length < targetCount && mastered.length > 0) {
+        const remainingSlots = targetCount - flashcardReviewList.length;
+        const shuffledMastered = mastered.sort(() => Math.random() - 0.5);
+        flashcardReviewList.push(...shuffledMastered.slice(0, remainingSlots));
     }
 
-    // Shuffle the list for variety
+    // Shuffle the final list for variety
     flashcardReviewList = flashcardReviewList.sort(() => Math.random() - 0.5);
-    console.log(`Review list has ${flashcardReviewList.length} items (${needsReview.length} need review, ${mastered.length} mastered available)`);
+    console.log(`Review list has ${flashcardReviewList.length} items`);
 
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
