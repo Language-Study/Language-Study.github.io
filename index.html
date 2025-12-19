@@ -566,6 +566,18 @@
     <script src="js/data-loader.js" defer></script>
     <script src="js/mentor-view.js" defer></script>
     <script src="js/flashcard.js" defer></script>
+    <!-- Configure AI tips: Groq API key for fast, free inference -->
+    <script>
+        // Free option: Call Groq directly from browser (generous free tier!)
+        window.GROQ_API_KEY = "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";
+        
+        // Fallback to Google Gemini if needed:
+        // window.GEMINI_API_KEY = "...";
+        
+        // Or use Cloud Functions endpoint if deployed:
+        // window.AI_TIPS_ENDPOINT = "https://...";
+    </script>
+    <script src="js/ai-tips.js" defer></script>
     <script src="js/pages/app-page.js" defer></script>
     <script src="js/pages/app-vocabulary.js" defer></script>
     <script src="js/pages/app-skills.js" defer></script>
