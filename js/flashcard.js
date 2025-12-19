@@ -36,41 +36,69 @@ startReviewBtn?.addEventListener('click', () => {
         return;
     }
 
-    // Filter for not started and in progress items
-    const needsReview = vocabularyList.filter(item =>
-        item.status === PROGRESS_STATUS.NOT_STARTED ||
+    // Separate items by status for SRS approach
+    const notStarted = vocabularyList.filter(item =>
+        item.status === PROGRESS_STATUS.NOT_STARTED
+    );
+
+    const inProgress = vocabularyList.filter(item =>
         item.status === PROGRESS_STATUS.IN_PROGRESS
     );
 
-    // Get mastered items for occasional inclusion
     const mastered = vocabularyList.filter(item =>
         item.status === PROGRESS_STATUS.MASTERED
     );
 
-    if (needsReview.length === 0) {
+    if (notStarted.length === 0 && inProgress.length === 0) {
         showToast('No words to review! All words are mastered or add some new ones.');
         return;
     }
 
-    // Always pick exactly 10 words
+    // SRS Approach: 50% Not Started / 35% In Progress / 15% Mastered from 10 words
     const targetCount = 10;
+    const targetNotStarted = Math.ceil(targetCount * 0.50); // 5 words
+    const targetInProgress = Math.ceil(targetCount * 0.35); // 4 words
+    const targetMastered = Math.floor(targetCount * 0.15);  // 1-2 words
+
     flashcardReviewList = [];
 
-    // Start with needs review items
-    const shuffledNeedsReview = needsReview.sort(() => Math.random() - 0.5);
-    const needsReviewCount = Math.min(shuffledNeedsReview.length, Math.floor(targetCount * 0.85));
-    flashcardReviewList.push(...shuffledNeedsReview.slice(0, needsReviewCount));
+    // Add Not Started items (5)
+    const shuffledNotStarted = notStarted.sort(() => Math.random() - 0.5);
+    const notStartedCount = Math.min(shuffledNotStarted.length, targetNotStarted);
+    flashcardReviewList.push(...shuffledNotStarted.slice(0, notStartedCount));
 
-    // Fill remaining slots with mastered items
-    if (flashcardReviewList.length < targetCount && mastered.length > 0) {
-        const remainingSlots = targetCount - flashcardReviewList.length;
-        const shuffledMastered = mastered.sort(() => Math.random() - 0.5);
-        flashcardReviewList.push(...shuffledMastered.slice(0, remainingSlots));
+    // Add In Progress items (3-4)
+    const shuffledInProgress = inProgress.sort(() => Math.random() - 0.5);
+    const inProgressCount = Math.min(shuffledInProgress.length, targetInProgress);
+    flashcardReviewList.push(...shuffledInProgress.slice(0, inProgressCount));
+
+    // Fill remaining slots with Mastered items if needed, or more of what we have
+    const currentCount = flashcardReviewList.length;
+    if (currentCount < targetCount) {
+        const remainingSlots = targetCount - currentCount;
+
+        // Try to add mastered items
+        if (mastered.length > 0) {
+            const shuffledMastered = mastered.sort(() => Math.random() - 0.5);
+            const masteredToAdd = Math.min(shuffledMastered.length, remainingSlots);
+            flashcardReviewList.push(...shuffledMastered.slice(0, masteredToAdd));
+        }
+
+        // If still need more, fill with whatever is available
+        if (flashcardReviewList.length < targetCount) {
+            const remaining = targetCount - flashcardReviewList.length;
+            const allItems = [...notStarted, ...inProgress, ...mastered];
+            const available = allItems.filter(item =>
+                !flashcardReviewList.some(selected => selected.id === item.id)
+            );
+            const shuffledAvailable = available.sort(() => Math.random() - 0.5);
+            flashcardReviewList.push(...shuffledAvailable.slice(0, remaining));
+        }
     }
 
     // Shuffle the final list for variety
     flashcardReviewList = flashcardReviewList.sort(() => Math.random() - 0.5);
-    console.log(`Review list has ${flashcardReviewList.length} items`);
+    console.log(`SRS Review list: ${notStartedCount} Not Started, ${inProgressCount} In Progress, ${flashcardReviewList.length - notStartedCount - inProgressCount} Mastered`);
 
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
