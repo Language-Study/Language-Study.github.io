@@ -150,7 +150,7 @@ async function changeUserEmail(newEmail) {
 }
 
 /**
- * Link Google Sign-In to current account
+ * Link Google Account to current account
  * @async
  * @returns {Promise<void>}
  */
@@ -169,7 +169,7 @@ async function linkGoogleSignIn() {
 }
 
 /**
- * Unlink Google Sign-In from current account
+ * Unlink Google Account from current account
  * @async
  * @returns {Promise<void>}
  */

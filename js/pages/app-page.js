@@ -1068,7 +1068,7 @@ if (resetPasswordBtn) {
     });
 }
 
-// Google Sign-In linking
+// Google Account linking
 const googleSignInToggleBtn = document.getElementById('googleSignInToggleBtn');
 if (googleSignInToggleBtn) {
     googleSignInToggleBtn.addEventListener('click', async () => {
