@@ -52,15 +52,9 @@ onAuthStateChanged(async (user) => {
             renderASLClubAchievements();
         }
 
-        // Activate tab from URL parameter
-        const params = new URLSearchParams(window.location.search);
-        const tabParam = params.get('tab') || 'vocabulary';
-        if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
-            setTimeout(() => {
-                if (typeof activateTab === 'function') {
-                    activateTab(tabParam);
-                }
-            }, 100);
+        // Activate tab from URL parameter AFTER all data is loaded and rendered
+        if (window.tabController) {
+            window.tabController.initializeFromURL();
         }
     } else {
         window.location.href = 'login.html';
@@ -1082,86 +1076,8 @@ onAuthStateChanged(async (user) => {
     }
 });
 
-// Tab navigation
-function activateTab(tabId) {
-    // Handle data-tab-target system
-    const tabButtons = document.querySelectorAll('[data-tab-target]');
-    const tabContents = document.querySelectorAll('[data-tab-content]');
-
-    if (tabButtons && tabContents) {
-        const activeButton = document.querySelector(`[data-tab-target="#${tabId}"]`);
-        const activeContent = document.querySelector(`#${tabId}`);
-
-        if (activeButton && activeContent) {
-            tabButtons.forEach(btn => {
-                btn.classList.remove('active', 'bg-blue-500', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
-            });
-            tabContents.forEach(content => content.classList.add('hidden'));
-
-            activeButton.classList.add('active', 'bg-blue-500', 'text-white');
-            activeButton.classList.remove('bg-gray-200', 'text-gray-700');
-            activeContent.classList.remove('hidden');
-        }
-    }
-
-    // Handle main tab button system
-    const mainTabButtons = document.querySelectorAll('.tab-button');
-    const mainTabContents = document.querySelectorAll('.tab-content');
-
-    if (mainTabButtons && mainTabContents) {
-        const activeMainButton = document.querySelector(`[data-tab="${tabId}"]`);
-        const activeMainContent = document.getElementById(tabId);
-
-        if (activeMainButton && activeMainContent) {
-            mainTabButtons.forEach(btn => {
-                btn.classList.remove('bg-blue-500', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
-            });
-
-            mainTabContents.forEach(content => {
-                content.classList.remove('active');
-            });
-
-            activeMainButton.classList.add('bg-blue-500', 'text-white');
-            activeMainButton.classList.remove('bg-gray-200', 'text-gray-700');
-            activeMainContent.classList.add('active');
-        }
-    }
-
-    // Update URL
-    if (['vocabulary', 'skills', 'portfolio'].includes(tabId)) {
-        const url = new URL(window.location);
-        url.searchParams.set('tab', tabId);
-        window.history.pushState({}, '', url);
-    }
-}
-
-// Tab button listeners
-document.querySelectorAll('[data-tab-target]').forEach(button => {
-    button.addEventListener('click', () => {
-        const tabId = button.dataset.tabTarget.replace('#', '');
-        activateTab(tabId);
-    });
-});
-
-document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-        const targetId = button.dataset.tab;
-        if (targetId) {
-            activateTab(targetId);
-        }
-    });
-});
-
-// Browser back/forward navigation
-window.addEventListener('popstate', () => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab') || 'vocabulary';
-    if (['vocabulary', 'skills', 'portfolio'].includes(tabParam)) {
-        activateTab(tabParam);
-    }
-});
+// Tab navigation is now handled by js/controllers/tab-controller.js
+// The TabController class manages all tab switching, active states, and URL routing
 
 // Mentor view handling
 window.addEventListener('DOMContentLoaded', tryMentorView);

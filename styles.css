@@ -362,14 +362,7 @@ kbd {
     transform: rotate(90deg);
 }
 
-/* Active/selected state */
-.tab-button.active,
-[data-tab-target].active {
-    background-color: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-    font-weight: 600;
-}
+/* Active/selected state - disabled for navigation items (using responsive nav styling instead) */
 
 /* ===== TAB SYSTEM ===== */
 .tab-content {
@@ -382,6 +375,12 @@ kbd {
 
 .tab-button {
     position: relative;
+}
+
+.tab-button.active {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-weight: 600;
 }
 
 /* ===== CATEGORY SYSTEM ===== */
