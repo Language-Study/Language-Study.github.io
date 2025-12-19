@@ -55,6 +55,12 @@ onAuthStateChanged(async (user) => {
         // Load data after auth state confirmed
         await loadUserData();
 
+        // Ensure settings reflect current link status
+        const btn = document.getElementById('googleSignInToggleBtn');
+        if (btn) {
+            btn.textContent = isGoogleLinked() ? 'Unlink Google Account' : 'Link Google Account';
+        }
+
         // Render ASL Club achievements if available
         const section = document.getElementById('achievementsSection');
         if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
@@ -1069,12 +1075,12 @@ if (googleSignInToggleBtn) {
         try {
             if (isGoogleLinked()) {
                 await unlinkGoogleSignIn();
-                googleSignInToggleBtn.textContent = 'Link Google Sign-In';
-                showToast('✓ Google Sign-In unlinked');
+                googleSignInToggleBtn.textContent = 'Link Google Account';
+                showToast('✓ Google Account unlinked');
             } else {
                 await linkGoogleSignIn();
-                googleSignInToggleBtn.textContent = 'Unlink Google Sign-In';
-                showToast('✓ Google Sign-In linked');
+                googleSignInToggleBtn.textContent = 'Unlink Google Account';
+                showToast('✓ Google Account linked');
             }
         } catch (error) {
             showToast('Error: ' + error.message);
@@ -1083,7 +1089,7 @@ if (googleSignInToggleBtn) {
 
     // Update button text on load
     if (currentUser) {
-        googleSignInToggleBtn.textContent = isGoogleLinked() ? 'Unlink Google Sign-In' : 'Link Google Sign-In';
+        googleSignInToggleBtn.textContent = isGoogleLinked() ? 'Unlink Google Account' : 'Link Google Account';
     }
 }
 
