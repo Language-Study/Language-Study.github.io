@@ -412,9 +412,9 @@
 
         <!-- Flashcard Review Modal -->
         <div id="flashcardModal"
-            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 hidden">
+            class="fixed inset-0 flex items-end md:items-center justify-center bg-black bg-opacity-60 z-50 hidden">
             <div
-                class="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-3 md:mx-4 relative max-h-[90vh] overflow-y-auto">
+                class="bg-white rounded-t-lg md:rounded-lg shadow-2xl w-full md:max-w-2xl mx-0 md:mx-3 relative max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
                 <button id="closeFlashcardBtn"
                     class="absolute top-3 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-600 text-2xl md:text-3xl z-10">&times;</button>
 
@@ -425,25 +425,24 @@
                         style="width: 0%"></div>
                 </div>
 
-                <div class="p-4 md:p-8">
+                <div class="p-3 md:p-8 pb-6 md:pb-8">
                     <!-- Header -->
-                    <div class="text-center mb-4 md:mb-6">
-                        <h2 class="text-xl md:text-2xl font-bold mb-2">Vocabulary Review</h2>
-                        <div class="flex items-center justify-center gap-2">
-                            <p id="flashcardCounter" class="text-sm md:text-base text-gray-600">Card 1 of 10</p>
-                        </div>
+                    <div class="text-center mb-3 md:mb-6">
+                        <h2 class="text-lg md:text-2xl font-bold mb-1 md:mb-2">Vocabulary Review</h2>
+                        <p id="flashcardCounter" class="text-xs md:text-base text-gray-600">Card 1 of 10</p>
                     </div>
 
                     <!-- Flashcard -->
-                    <div id="flashcard" class="flashcard-container mb-4 md:mb-6 cursor-pointer" tabindex="0">
+                    <div id="flashcard" class="flashcard-container mb-3 md:mb-6 cursor-pointer" tabindex="0">
                         <div class="flashcard-inner">
                             <div class="flashcard-front">
-                                <div class="text-2xl md:text-4xl font-bold text-gray-800 mb-4" id="flashcardWord">Word
+                                <div class="text-xl md:text-4xl font-bold text-gray-800 mb-3 md:mb-4 break-words"
+                                    id="flashcardWord">Word
                                 </div>
                                 <p class="text-xs md:text-sm text-gray-500">Click or press Space to flip</p>
                             </div>
                             <div class="flashcard-back">
-                                <div class="text-xl md:text-3xl font-semibold text-indigo-600 mb-4"
+                                <div class="text-lg md:text-3xl font-semibold text-indigo-600 mb-3 md:mb-4 break-words"
                                     id="flashcardTranslation">
                                     Translation</div>
                                 <div id="flashcardMedia" class="w-full max-w-xl mx-auto hidden space-y-3">
@@ -463,32 +462,32 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-6 w-full">
+                    <div class="grid grid-cols-3 gap-1.5 md:gap-3 mb-4 md:mb-6 w-full">
                         <button id="flashcardNotStarted"
-                            class="px-2 md:px-4 py-2 md:py-3 bg-gray-200 hover:bg-gray-300 border-4 border-gray-500 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
-                            <svg class="w-6 md:w-7 h-6 md:h-7 text-gray-600" viewBox="0 0 24 24" fill="none"
+                            class="px-1.5 md:px-4 py-2 md:py-3 bg-gray-200 hover:bg-gray-300 border-4 border-gray-500 rounded-lg transition-colors flex flex-col items-center gap-0.5 md:gap-1 w-full font-bold">
+                            <svg class="w-5 md:w-7 h-5 md:h-7 text-gray-600" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2.5">
                                 <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <span class="text-xs md:text-sm font-bold text-gray-700">Not Started</span>
+                            <span class="text-xs md:text-sm font-bold text-gray-700 leading-tight">Not Started</span>
                         </button>
                         <button id="flashcardInProgress"
-                            class="px-2 md:px-4 py-2 md:py-3 bg-yellow-300 hover:bg-yellow-400 border-4 border-yellow-600 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
-                            <svg class="w-6 md:w-7 h-6 md:h-7 text-yellow-700" viewBox="0 0 24 24" fill="none"
+                            class="px-1.5 md:px-4 py-2 md:py-3 bg-yellow-300 hover:bg-yellow-400 border-4 border-yellow-600 rounded-lg transition-colors flex flex-col items-center gap-0.5 md:gap-1 w-full font-bold">
+                            <svg class="w-5 md:w-7 h-5 md:h-7 text-yellow-700" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2.5">
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M12 6v6l4 4" />
                             </svg>
-                            <span class="text-xs md:text-sm font-bold text-yellow-700">In Progress</span>
+                            <span class="text-xs md:text-sm font-bold text-yellow-700 leading-tight">In Progress</span>
                         </button>
                         <button id="flashcardMastered"
-                            class="col-span-2 md:col-span-1 px-2 md:px-4 py-2 md:py-3 bg-green-400 hover:bg-green-500 border-4 border-green-700 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
-                            <svg class="w-6 md:w-7 h-6 md:h-7 text-green-700" viewBox="0 0 24 24" fill="none"
+                            class="px-1.5 md:px-4 py-2 md:py-3 bg-green-400 hover:bg-green-500 border-4 border-green-700 rounded-lg transition-colors flex flex-col items-center gap-0.5 md:gap-1 w-full font-bold">
+                            <svg class="w-5 md:w-7 h-5 md:h-7 text-green-700" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2.5">
                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                                 <path d="M22 4L12 14.01l-3-3" />
                             </svg>
-                            <span class="text-xs md:text-sm font-bold text-green-800">Mastered</span>
+                            <span class="text-xs md:text-sm font-bold text-green-800 leading-tight">Mastered</span>
                         </button>
                     </div>
 
