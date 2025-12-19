@@ -19,6 +19,7 @@ const flashcardAudioWrap = document.getElementById('flashcardAudioWrap');
 const flashcardAudio = document.getElementById('flashcardAudio');
 const flashcardCounter = document.getElementById('flashcardCounter');
 const flashcardProgress = document.getElementById('flashcardProgress');
+const masteredBadge = document.getElementById('masteredBadge');
 const startReviewBtn = document.getElementById('startReviewBtn');
 const closeFlashcardBtn = document.getElementById('closeFlashcardBtn');
 const flashcardPrev = document.getElementById('flashcardPrev');
@@ -36,18 +37,35 @@ startReviewBtn?.addEventListener('click', () => {
     }
 
     // Filter for not started and in progress items
-    flashcardReviewList = vocabularyList.filter(item =>
+    const needsReview = vocabularyList.filter(item =>
         item.status === PROGRESS_STATUS.NOT_STARTED ||
         item.status === PROGRESS_STATUS.IN_PROGRESS
     );
 
-    if (flashcardReviewList.length === 0) {
+    // Get mastered items for occasional inclusion
+    const mastered = vocabularyList.filter(item =>
+        item.status === PROGRESS_STATUS.MASTERED
+    );
+
+    if (needsReview.length === 0) {
         showToast('No words to review! All words are mastered or add some new ones.');
         return;
     }
 
+    // Build review list: primarily not started/in progress with occasional mastered items
+    // Aim for ~15-20% mastered items mixed in
+    flashcardReviewList = [...needsReview];
+
+    if (mastered.length > 0) {
+        const targetMasteredCount = Math.max(1, Math.floor(flashcardReviewList.length * 0.15));
+        const masterSample = mastered.sort(() => Math.random() - 0.5).slice(0, targetMasteredCount);
+        flashcardReviewList = [...flashcardReviewList, ...masterSample];
+        console.log(`Adding ${masterSample.length} mastered items to review (target was ${targetMasteredCount})`);
+    }
+
     // Shuffle the list for variety
     flashcardReviewList = flashcardReviewList.sort(() => Math.random() - 0.5);
+    console.log(`Review list has ${flashcardReviewList.length} items (${needsReview.length} need review, ${mastered.length} mastered available)`);
 
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
@@ -124,9 +142,27 @@ flashcardNext?.addEventListener('click', () => {
 });
 
 // Status buttons
-flashcardNotStarted?.addEventListener('click', () => updateFlashcardStatus(PROGRESS_STATUS.NOT_STARTED));
-flashcardInProgress?.addEventListener('click', () => updateFlashcardStatus(PROGRESS_STATUS.IN_PROGRESS));
-flashcardMastered?.addEventListener('click', () => updateFlashcardStatus(PROGRESS_STATUS.MASTERED));
+flashcardNotStarted?.addEventListener('click', () => {
+    updateFlashcardStatus(PROGRESS_STATUS.NOT_STARTED);
+    highlightButton(flashcardNotStarted);
+});
+flashcardInProgress?.addEventListener('click', () => {
+    updateFlashcardStatus(PROGRESS_STATUS.IN_PROGRESS);
+    highlightButton(flashcardInProgress);
+});
+flashcardMastered?.addEventListener('click', () => {
+    updateFlashcardStatus(PROGRESS_STATUS.MASTERED);
+    highlightButton(flashcardMastered);
+});
+
+function highlightButton(button) {
+    // Remove highlight from all buttons
+    [flashcardNotStarted, flashcardInProgress, flashcardMastered].forEach(btn => {
+        btn?.classList.remove('active-status-button');
+    });
+    // Add highlight to clicked button
+    button?.classList.add('active-status-button');
+}
 
 async function updateFlashcardStatus(newStatus) {
     const currentItem = flashcardReviewList[currentFlashcardIndex];
@@ -179,9 +215,26 @@ async function renderFlashcard() {
 
     flashcardWord.textContent = currentItem.word;
 
+    // Highlight the button that matches this item's current status
+    [flashcardNotStarted, flashcardInProgress, flashcardMastered].forEach(btn => {
+        btn?.classList.remove('active-status-button');
+    });
+    if (currentItem.status === PROGRESS_STATUS.NOT_STARTED) {
+        flashcardNotStarted?.classList.add('active-status-button');
+    } else if (currentItem.status === PROGRESS_STATUS.IN_PROGRESS) {
+        flashcardInProgress?.classList.add('active-status-button');
+    } else if (currentItem.status === PROGRESS_STATUS.MASTERED) {
+        flashcardMastered?.classList.add('active-status-button');
+    }
+
+    // Show mastered badge if item is already mastered
+    if (masteredBadge) {
+        masteredBadge.classList.toggle('hidden', currentItem.status !== PROGRESS_STATUS.MASTERED);
+    }
+
     const translationText = currentItem.translation || '';
     const cleanedText = translationText.replace(/https?:\/\/\S+/gi, '').trim();
-    flashcardTranslation.textContent = cleanedText || '';
+    flashcardTranslation.textContent = cleanedText || '(no translation)';
 
     const ytEmbed = getYouTubeEmbedUrl(translationText);
     const hasVideo = Boolean(ytEmbed);

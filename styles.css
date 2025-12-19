@@ -1317,3 +1317,53 @@ a:visited {
         }
     }
 }
+
+/* Active status button styling */
+.active-status-button {
+    transform: scale(1.08) !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25) !important;
+    filter: brightness(1.15) !important;
+}
+
+/* Individual button active states */
+#flashcardNotStarted.active-status-button {
+    background-color: #4b5563 !important;
+    color: white !important;
+}
+
+#flashcardNotStarted.active-status-button svg {
+    stroke: white !important;
+    color: white !important;
+}
+
+#flashcardNotStarted.active-status-button span {
+    color: white !important;
+}
+
+#flashcardInProgress.active-status-button {
+    background-color: #d97706 !important;
+    color: white !important;
+}
+
+#flashcardInProgress.active-status-button svg {
+    stroke: white !important;
+    color: white !important;
+}
+
+#flashcardInProgress.active-status-button span {
+    color: white !important;
+}
+
+#flashcardMastered.active-status-button {
+    background-color: #059669 !important;
+    color: white !important;
+}
+
+#flashcardMastered.active-status-button svg {
+    stroke: white !important;
+    color: white !important;
+}
+
+#flashcardMastered.active-status-button span {
+    color: white !important;
+}

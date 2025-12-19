@@ -429,7 +429,9 @@
                     <!-- Header -->
                     <div class="text-center mb-4 md:mb-6">
                         <h2 class="text-xl md:text-2xl font-bold mb-2">Vocabulary Review</h2>
-                        <p id="flashcardCounter" class="text-sm md:text-base text-gray-600">Card 1 of 10</p>
+                        <div class="flex items-center justify-center gap-2">
+                            <p id="flashcardCounter" class="text-sm md:text-base text-gray-600">Card 1 of 10</p>
+                        </div>
                     </div>
 
                     <!-- Flashcard -->
@@ -463,30 +465,30 @@
                     <!-- Action Buttons -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-6 w-full">
                         <button id="flashcardNotStarted"
-                            class="px-2 md:px-4 py-2 md:py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex flex-col items-center gap-1 w-full">
-                            <svg class="w-5 md:w-6 h-5 md:h-6 text-gray-400" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor">
-                                <circle cx="12" cy="12" r="10" stroke-width="2" />
+                            class="px-2 md:px-4 py-2 md:py-3 bg-gray-200 hover:bg-gray-300 border-4 border-gray-500 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
+                            <svg class="w-6 md:w-7 h-6 md:h-7 text-gray-600" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <span class="text-xs md:text-sm font-medium">Not Started</span>
+                            <span class="text-xs md:text-sm font-bold text-gray-700">Not Started</span>
                         </button>
                         <button id="flashcardInProgress"
-                            class="px-2 md:px-4 py-2 md:py-3 bg-yellow-100 hover:bg-yellow-200 rounded-lg transition-colors flex flex-col items-center gap-1 w-full">
-                            <svg class="w-5 md:w-6 h-5 md:h-6 text-yellow-500" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor">
-                                <circle cx="12" cy="12" r="10" stroke-width="2" />
-                                <path d="M12 6v6l4 4" stroke-width="2" />
+                            class="px-2 md:px-4 py-2 md:py-3 bg-yellow-300 hover:bg-yellow-400 border-4 border-yellow-600 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
+                            <svg class="w-6 md:w-7 h-6 md:h-7 text-yellow-700" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 6v6l4 4" />
                             </svg>
-                            <span class="text-xs md:text-sm font-medium">In Progress</span>
+                            <span class="text-xs md:text-sm font-bold text-yellow-700">In Progress</span>
                         </button>
                         <button id="flashcardMastered"
-                            class="col-span-2 md:col-span-1 px-2 md:px-4 py-2 md:py-3 bg-green-100 hover:bg-green-200 rounded-lg transition-colors flex flex-col items-center gap-1 w-full">
-                            <svg class="w-5 md:w-6 h-5 md:h-6 text-green-500" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2" />
-                                <path d="M22 4L12 14.01l-3-3" stroke-width="2" />
+                            class="col-span-2 md:col-span-1 px-2 md:px-4 py-2 md:py-3 bg-green-400 hover:bg-green-500 border-4 border-green-700 rounded-lg transition-colors flex flex-col items-center gap-1 w-full font-bold">
+                            <svg class="w-6 md:w-7 h-6 md:h-7 text-green-700" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <path d="M22 4L12 14.01l-3-3" />
                             </svg>
-                            <span class="text-xs md:text-sm font-medium">Mastered</span>
+                            <span class="text-xs md:text-sm font-bold text-green-800">Mastered</span>
                         </button>
                     </div>
 
