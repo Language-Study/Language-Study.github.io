@@ -15,22 +15,65 @@
 </head>
 
 <body class="bg-gray-50 overflow-x-hidden">
-    <nav class="bg-white shadow-sm mb-4">
-        <div class="max-w-4xl mx-auto px-2 sm:px-4 py-3">
-            <div class="flex flex-wrap sm:flex-nowrap justify-between items-center gap-y-2">
-                <h1 class="text-xl font-bold w-full sm:w-auto">Language Study</h1>
-                <div class="flex flex-wrap gap-2 sm:gap-4 items-center w-full sm:w-auto justify-end">
-                    <span id="userEmail" class="text-gray-600 truncate max-w-[120px] sm:max-w-none"></span>
+    <nav class="top-nav">
+        <div class="max-w-4xl mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold">Language Study</h1>
+
+                <!-- Desktop Navigation -->
+                <div class="desktop-nav-menu">
+                    <span id="userEmail" class="text-gray-600 truncate max-w-[200px]"></span>
                     <button id="openSettingsBtn"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none flex items-center justify-center gap-2 w-full sm:w-auto"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none flex items-center gap-2"
                         title="Settings">
-                        <span class="ml-1 font-medium">Settings</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Settings</span>
                     </button>
                     <button id="logoutBtn"
-                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50 w-full sm:w-auto">
+                        class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
                         Logout
                     </button>
                 </div>
+
+                <!-- Mobile Hamburger Button -->
+                <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu" aria-expanded="false">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path class="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                        <path class="close-icon hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Menu -->
+        <div id="mobileNavDropdown" class="mobile-nav-dropdown">
+            <div class="mobile-nav-content">
+                <div class="mobile-user-info">
+                    <span id="userEmailMobile" class="text-sm text-gray-600"></span>
+                </div>
+                <button id="openSettingsBtnMobile" class="mobile-nav-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
+                <button id="logoutBtnMobile" class="mobile-nav-button logout-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout</span>
+                </button>
             </div>
         </div>
     </nav>

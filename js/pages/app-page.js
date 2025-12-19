@@ -30,16 +30,25 @@ onAuthStateChanged(async (user) => {
 
         currentUser = user;
         const userEmailEl = document.getElementById('userEmail');
+        const userEmailMobileEl = document.getElementById('userEmailMobile');
 
         if (window.isMentorView) {
             const params = new URLSearchParams(window.location.search);
             const mentorCode = params.get('mentor');
+            const displayText = mentorCode ? `Mentor View: ${mentorCode}` : 'Mentor View';
             if (userEmailEl) {
                 userEmailEl.innerHTML = mentorCode ? `Mentor View: <b>(${mentorCode})</b>` : 'Mentor View';
             }
+            if (userEmailMobileEl) {
+                userEmailMobileEl.textContent = displayText;
+            }
         } else {
+            const displayText = `Logged in as: ${user.email}`;
             if (userEmailEl) {
-                userEmailEl.textContent = `Logged in as: ${user.email}`;
+                userEmailEl.textContent = displayText;
+            }
+            if (userEmailMobileEl) {
+                userEmailMobileEl.textContent = displayText;
             }
         }
 
@@ -61,17 +70,25 @@ onAuthStateChanged(async (user) => {
     }
 });
 
-// Logout functionality
+// Logout functionality (both desktop and mobile)
 const logoutBtn = document.getElementById('logoutBtn');
+const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+
+const handleLogout = async () => {
+    try {
+        await logoutUser();
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Logout error: ', error.message);
+    }
+};
+
 if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-        try {
-            await logoutUser();
-            window.location.href = 'login.html';
-        } catch (error) {
-            console.error('Logout error: ', error.message);
-        }
-    });
+    logoutBtn.addEventListener('click', handleLogout);
+}
+
+if (logoutBtnMobile) {
+    logoutBtnMobile.addEventListener('click', handleLogout);
 }
 
 // ===== CATEGORY MANAGEMENT =====
@@ -838,10 +855,44 @@ function renderSkillsWithCurrentFilter() {
 }
 
 // ===== SETTINGS & UI =====
-document.getElementById('openSettingsBtn').addEventListener('click', () => {
+
+// Mobile menu toggle
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileNavDropdown = document.getElementById('mobileNavDropdown');
+
+if (mobileMenuBtn && mobileNavDropdown) {
+    mobileMenuBtn.addEventListener('click', () => {
+        const isExpanded = mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+        mobileMenuBtn.setAttribute('aria-expanded', !isExpanded);
+        mobileNavDropdown.classList.toggle('active');
+    });
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!mobileMenuBtn.contains(e.target) && !mobileNavDropdown.contains(e.target)) {
+            mobileMenuBtn.setAttribute('aria-expanded', 'false');
+            mobileNavDropdown.classList.remove('active');
+        }
+    });
+}
+
+// Settings modal (both desktop and mobile)
+const openSettingsHandler = () => {
     openModal('settingsModal');
     updateMentorCodeToggle();
-});
+    // Close mobile menu if open
+    if (mobileNavDropdown) {
+        mobileNavDropdown.classList.remove('active');
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+};
+
+document.getElementById('openSettingsBtn').addEventListener('click', openSettingsHandler);
+
+const openSettingsBtnMobile = document.getElementById('openSettingsBtnMobile');
+if (openSettingsBtnMobile) {
+    openSettingsBtnMobile.addEventListener('click', openSettingsHandler);
+}
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     closeModal('settingsModal');
