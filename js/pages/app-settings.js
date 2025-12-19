@@ -7,6 +7,8 @@ const mobileNavDropdown = document.getElementById('mobileNavDropdown');
 // Settings modal (both desktop and mobile)
 const openSettingsHandler = () => {
     openModal('settingsModal');
+    // Gate auth-related options based on user's login providers
+    updateAuthOptionVisibility();
     updateMentorCodeToggle();
     // Close mobile menu if open
     if (mobileNavDropdown && mobileMenuBtn) {
@@ -28,6 +30,36 @@ document.getElementById('settingsModal')?.addEventListener('click', (e) => {
         closeModal('settingsModal');
     }
 });
+
+// Show or hide email/password settings based on auth provider
+function updateAuthOptionVisibility() {
+    try {
+        const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : (typeof auth !== 'undefined' ? auth.currentUser : null);
+        const providers = Array.isArray(user?.providerData) ? user.providerData.map(p => p.providerId) : [];
+        const hasPasswordProvider = providers.includes('password');
+
+        // Settings modal elements
+        const changeEmailTabBtn = document.querySelector('[data-tab-target="#changeEmailSection"]');
+        const resetPasswordTabBtn = document.querySelector('[data-tab-target="#resetPasswordSection"]');
+        const changeEmailSection = document.getElementById('changeEmailSection');
+        const resetPasswordSection = document.getElementById('resetPasswordSection');
+
+        if (!hasPasswordProvider) {
+            // Hide options that don't apply to Google-only accounts
+            changeEmailTabBtn?.classList.add('hidden');
+            resetPasswordTabBtn?.classList.add('hidden');
+            changeEmailSection?.classList.add('hidden');
+            resetPasswordSection?.classList.add('hidden');
+        } else {
+            // Ensure options are visible for email/password users
+            changeEmailTabBtn?.classList.remove('hidden');
+            resetPasswordTabBtn?.classList.remove('hidden');
+            // Leave sections hidden by default; tabs or other logic can reveal them
+        }
+    } catch (err) {
+        console.warn('Could not update auth option visibility:', err);
+    }
+}
 
 // Progress metrics toggle
 const toggleProgress = document.getElementById('toggleProgress');
