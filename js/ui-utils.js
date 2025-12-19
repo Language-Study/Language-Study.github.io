@@ -112,6 +112,7 @@ function initEditModal() {
 
     const close = () => {
         editModal.element.classList.add('hidden');
+        editModal.element.style.display = 'none';
         editModal.fieldsEl.innerHTML = '';
         editModal.form?.reset();
         if (editModal.rejecter) {
@@ -140,6 +141,7 @@ function initEditModal() {
             editModal.resolver({ ...data, payload: editModal.currentPayload });
         }
         editModal.element.classList.add('hidden');
+        editModal.element.style.display = 'none';
         editModal.fieldsEl.innerHTML = '';
     });
 }
@@ -176,6 +178,7 @@ function openEditModal({ title, subtitle = '', fields = [], payload = null }) {
 
     editModal.currentPayload = payload;
     editModal.element.classList.remove('hidden');
+    editModal.element.style.display = 'flex';
 
     return new Promise((resolve, reject) => {
         editModal.resolver = resolve;
