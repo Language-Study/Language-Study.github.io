@@ -29,7 +29,6 @@ onAuthStateChanged(async (user) => {
         }
 
         currentUser = user;
-        window.currentUser = user; // Expose globally for other modules
         const userEmailEl = document.getElementById('userEmail');
         const userEmailMobileEl = document.getElementById('userEmailMobile');
 

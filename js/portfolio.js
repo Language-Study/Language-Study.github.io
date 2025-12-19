@@ -564,7 +564,6 @@ function renderSkillItem(skill) {
                     <div class="font-medium flex-1">${escapeHtml(skill.name)}</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="tips-button px-2 py-1 text-xs bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 border border-indigo-200" aria-label="AI practice tips (limit 5/day)" title="Uses AI to suggest short, actionable ideas for this skill. Limit: 5 requests/day per user." data-skill-id="${skill.id}">Practice Tips (AI • 5/day)</button>
                     ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>`}
                     ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
                         title="Status (view only)" aria-label="Status: ${skill.status}">${statusIcons[skill.status]}</span>`
@@ -579,9 +578,6 @@ function renderSkillItem(skill) {
                 </div>
             </div>
             ${subtasksContainerHtml}
-            <div id="tips-${skill.id}" class="tips-container hidden mt-2 p-2 bg-blue-50 border-l-4 border-blue-300 rounded">
-                <div class="text-sm text-blue-800">Tip suggestions will appear here.</div>
-            </div>
         </div>
     `;
 }
