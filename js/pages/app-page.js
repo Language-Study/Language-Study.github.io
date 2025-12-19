@@ -1087,22 +1087,7 @@ if (googleSignInToggleBtn) {
     }
 }
 
-// Manual walkthrough start from Settings
-const startTutorialBtn = document.getElementById('startTutorialBtn');
-if (startTutorialBtn) {
-    startTutorialBtn.addEventListener('click', () => {
-        if (typeof startWalkthrough === 'function') {
-            // Close settings before showing the overlay so it doesn't overlap
-            if (typeof closeModal === 'function') {
-                closeModal('settingsModal');
-            }
-            startWalkthrough();
-            if (typeof markWalkthroughSeen === 'function') {
-                markWalkthroughSeen();
-            }
-        }
-    });
-}
+// (Walkthrough start removed)
 
 // Language selection
 const languageSelect = document.getElementById('languageSelect');
