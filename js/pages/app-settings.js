@@ -10,6 +10,7 @@ const openSettingsHandler = () => {
     // Gate auth-related options based on user's login providers
     updateAuthOptionVisibility();
     updateMentorCodeToggle();
+    updateMentorQuickReviewUI();
     // Close mobile menu if open
     if (mobileNavDropdown && mobileMenuBtn) {
         mobileNavDropdown.classList.remove('active');
@@ -134,6 +135,17 @@ mentorToggle?.addEventListener('change', async (e) => {
     }
     await setMentorCodeEnabled(e.target.checked);
     await showMentorCode();
+});
+
+// Mentor quick review toggle
+const mentorQuickReviewToggle = document.getElementById('toggleMentorQuickReview');
+mentorQuickReviewToggle?.addEventListener('change', async (e) => {
+    await setMentorQuickReviewEnabled(e.target.checked);
+    if (e.target.checked) {
+        showToast('✓ Mentors can now use Quick Review');
+    } else {
+        showToast('✓ Mentors cannot use Quick Review');
+    }
 });
 
 // Regenerate mentor code with confirmation

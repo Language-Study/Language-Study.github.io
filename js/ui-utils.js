@@ -412,6 +412,47 @@ async function setMentorCodeEnabled(val) {
 }
 
 /**
+ * Get mentor quick review enabled setting
+ * @async
+ * @returns {Promise<boolean>}
+ */
+async function getMentorQuickReviewEnabled() {
+    if (!currentUser) return false;
+
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (doc.exists && typeof doc.data().mentorQuickReviewEnabled === 'boolean') {
+            return doc.data().mentorQuickReviewEnabled;
+        }
+    } catch (e) {
+        console.error('Error fetching mentor quick review setting:', e);
+    }
+
+    return false;
+}
+
+/**
+ * Set mentor quick review enabled setting
+ * @async
+ * @param {boolean} val - Enable or disable
+ * @returns {Promise<void>}
+ */
+async function setMentorQuickReviewEnabled(val) {
+    if (!currentUser) return;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
+            { mentorQuickReviewEnabled: val },
+            { merge: true }
+        );
+        console.log('Mentor quick review enabled status updated to:', val);
+    } catch (e) {
+        console.error('Error setting mentor quick review:', e);
+        throw e;
+    }
+}
+
+/**
  * Get or create mentor code
  * @async
  * @param {boolean} forceRegenerate - Force create new code
@@ -478,8 +519,41 @@ async function showMentorCode(forceRegenerate = false) {
         }
         if (regenBtn) regenBtn.classList.remove('hidden');
         if (infoDiv) infoDiv.classList.remove('hidden');
+
+        // Update mentor quick review section visibility
+        updateMentorQuickReviewUI();
     } catch (e) {
         showToast('Error generating mentor code: ' + e.message);
+    }
+}
+
+/**
+ * Update mentor quick review UI section
+ * Shows the section only when mentor code is enabled
+ * @async
+ * @returns {Promise<void>}
+ */
+async function updateMentorQuickReviewUI() {
+    const mentorCodeEnabled = await getMentorCodeEnabled();
+    const quickReviewSection = document.getElementById('mentorQuickReviewSection');
+    const quickReviewToggle = document.getElementById('toggleMentorQuickReview');
+
+    if (!quickReviewSection) return;
+
+    if (mentorCodeEnabled) {
+        quickReviewSection.classList.remove('hidden');
+
+        // Update the toggle to reflect current setting
+        if (quickReviewToggle) {
+            const quickReviewEnabled = await getMentorQuickReviewEnabled();
+            quickReviewToggle.checked = quickReviewEnabled;
+        }
+    } else {
+        quickReviewSection.classList.add('hidden');
+        // Reset the toggle when mentor code is disabled
+        if (quickReviewToggle) {
+            quickReviewToggle.checked = false;
+        }
     }
 }
 

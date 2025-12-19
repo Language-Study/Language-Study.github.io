@@ -120,7 +120,8 @@ function disableEditingUI() {
         '#portfolioTitle',
         '#portfolioLink',
         '#toggleLanguageSection',
-        '#openPrintPdfModalBtn'
+        '#openPrintPdfModalBtn',
+        '#startReviewBtn'
     ];
 
     editingElements.forEach(selector => {
@@ -154,6 +155,39 @@ function disableEditingUI() {
         el.style.display = '';
         el.disabled = false;
     });
+
+    // Check if mentor has enabled quick review
+    handleMentorQuickReviewAccess();
+}
+
+/**
+ * Handle quick review access for mentor view
+ * Shows button only if mentor has enabled it
+ * @async
+ * @returns {Promise<void>}
+ */
+async function handleMentorQuickReviewAccess() {
+    if (!window.isMentorView) return;
+
+    try {
+        const mentorQuickReviewEnabled = await getMentorQuickReviewEnabled();
+        const startReviewBtn = document.getElementById('startReviewBtn');
+
+        if (startReviewBtn) {
+            if (mentorQuickReviewEnabled) {
+                // Show button for mentor
+                startReviewBtn.style.display = '';
+            } else {
+                // Keep button hidden (already hidden by disableEditingUI)
+                startReviewBtn.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error handling mentor quick review access:', error);
+        // Keep button hidden if there's an error
+        const startReviewBtn = document.getElementById('startReviewBtn');
+        if (startReviewBtn) startReviewBtn.style.display = 'none';
+    }
 }
 
 /**
