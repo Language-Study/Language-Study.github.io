@@ -1038,6 +1038,30 @@ if (changeEmailBtn) {
     });
 }
 
+// Reset password
+const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+if (resetPasswordBtn) {
+    resetPasswordBtn.addEventListener('click', async () => {
+        const email = document.getElementById('resetEmailInput').value.trim();
+        const resetPasswordMsg = document.getElementById('resetPasswordMsg');
+
+        if (!email) {
+            resetPasswordMsg.textContent = 'Please enter your email address.';
+            resetPasswordMsg.className = 'text-sm mt-2 text-red-600';
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(email);
+            resetPasswordMsg.textContent = 'Password reset email sent. Please check your inbox.';
+            resetPasswordMsg.className = 'text-sm mt-2 text-blue-600';
+        } catch (error) {
+            resetPasswordMsg.textContent = 'Error: ' + error.message;
+            resetPasswordMsg.className = 'text-sm mt-2 text-red-600';
+        }
+    });
+}
+
 // Google Sign-In linking
 const googleSignInToggleBtn = document.getElementById('googleSignInToggleBtn');
 if (googleSignInToggleBtn) {

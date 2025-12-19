@@ -83,12 +83,15 @@ class TabController {
      * @private
      */
     initializeListeners() {
-        // Tab button click handlers
+        // Tab button click handlers - only for main navigation tabs
         document.addEventListener('click', (e) => {
             const tabButton = e.target.closest('[data-tab-target]');
             if (tabButton) {
                 const tabId = tabButton.getAttribute('data-tab-target').replace('#', '');
-                this.activateTab(tabId);
+                // Only handle main navigation tabs (vocabulary, skills, portfolio)
+                if (this.tabs.includes(tabId)) {
+                    this.activateTab(tabId);
+                }
             }
         });
 
