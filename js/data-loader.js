@@ -109,7 +109,7 @@ async function loadUserData() {
             );
         }
 
-        // (Walkthrough prompt removed)
+
 
         // Mark cache as valid
         dataCache.isCached = true;

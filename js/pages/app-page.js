@@ -1087,7 +1087,7 @@ if (googleSignInToggleBtn) {
     }
 }
 
-// (Walkthrough start removed)
+
 
 // Language selection
 const languageSelect = document.getElementById('languageSelect');

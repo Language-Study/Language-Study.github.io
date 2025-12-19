@@ -518,8 +518,6 @@ a.text-blue-600:hover {
     background-color: var(--color-bg-secondary);
 }
 
-/* (Walkthrough styles removed) */
-
 @keyframes slideIn {
     from {
         opacity: 0;
