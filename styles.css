@@ -1268,3 +1268,52 @@ a:visited {
         font-weight: 500;
     }
 }
+
+/* Mobile: Flashcard Modal */
+@media (max-width: 768px) {
+    #flashcardModal {
+        padding: 0;
+    }
+
+    .flashcard-container {
+        min-height: 200px;
+    }
+
+    .flashcard-inner {
+        height: 200px;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+        padding: 1rem;
+    }
+
+    .flashcard-front .text-gray-800,
+    .flashcard-back .text-indigo-600 {
+        line-height: 1.2;
+        word-wrap: break-word;
+    }
+
+    /* Hide keyboard hints on mobile */
+    #keyboardHints {
+        display: none !important;
+    }
+
+    /* Show mobile flip button only on small screens */
+    #flashcardFlip {
+        display: block;
+    }
+}
+
+/* Show keyboard hints on desktop */
+@media (min-width: 769px) {
+    #keyboardHints {
+        display: inline-flex !important;
+    }
+
+    @media (min-width: 769px) {
+        #flashcardFlip {
+            display: none;
+        }
+    }
+}

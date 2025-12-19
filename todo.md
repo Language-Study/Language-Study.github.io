@@ -1,0 +1,4 @@
+- make quick review modal mobile friendly
+    - change or remove the navigation hints at the bottom for mobile
+- add (no translation) if a translation isn't inputted
+- give a good mix of not started and in progress, but toss in a few mastered from time to time.

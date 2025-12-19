@@ -23,6 +23,7 @@ const startReviewBtn = document.getElementById('startReviewBtn');
 const closeFlashcardBtn = document.getElementById('closeFlashcardBtn');
 const flashcardPrev = document.getElementById('flashcardPrev');
 const flashcardNext = document.getElementById('flashcardNext');
+const flashcardFlip = document.getElementById('flashcardFlip');
 const flashcardNotStarted = document.getElementById('flashcardNotStarted');
 const flashcardInProgress = document.getElementById('flashcardInProgress');
 const flashcardMastered = document.getElementById('flashcardMastered');
@@ -89,6 +90,9 @@ flashcard?.addEventListener('keydown', (e) => {
         flipCard();
     }
 });
+
+// Mobile flip button
+flashcardFlip?.addEventListener('click', flipCard);
 
 function flipCard() {
     isFlashcardFlipped = !isFlashcardFlipped;
