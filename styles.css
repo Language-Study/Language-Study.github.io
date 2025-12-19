@@ -520,19 +520,21 @@ a.text-blue-600:hover {
 
 /* ===== WALKTHROUGH ===== */
 #tourOverlay {
-    z-index: 50;
+    z-index: 100;
 }
 
 #tourCard {
-    z-index: 70;
+    z-index: 110;
     max-width: 420px;
 }
 
 .tour-highlight {
     position: relative;
-    z-index: 60 !important;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.45), 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 105 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6), 0 10px 25px rgba(0, 0, 0, 0.3) !important;
     border-radius: 0.5rem;
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 2px;
 }
 
 @keyframes slideIn {

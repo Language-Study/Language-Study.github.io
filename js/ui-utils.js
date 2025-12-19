@@ -627,8 +627,8 @@ function renderWalkthroughStep(stepIndex = 0) {
     overlay.classList.remove('hidden');
 
     const step = walkthroughSteps[stepIndex];
-    if (step.tab && typeof activateTab === 'function') {
-        activateTab(step.tab);
+    if (step.tab && window.tabController) {
+        window.tabController.activateTab(step.tab);
     }
 
     // Delay to allow layout changes when switching tabs
