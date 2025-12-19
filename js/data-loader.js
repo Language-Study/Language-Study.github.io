@@ -246,39 +246,3 @@ async function batchUpdateItems(updates) {
         throw error;
     }
 }
-
-/**
- * Export user data as JSON
- * @returns {Object}
- */
-function exportUserDataAsJSON() {
-    return {
-        exportDate: new Date().toISOString(),
-        vocabulary: vocabularyList,
-        skills: skills,
-        categories: categories,
-        portfolio: portfolioEntries,
-        badges: earnedBadges
-    };
-}
-
-/**
- * Download user data as JSON file
- * @returns {void}
- */
-function downloadUserDataAsJSON() {
-    const data = exportUserDataAsJSON();
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = `language-study-backup-${Date.now()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    showToast('Data downloaded successfully!');
-}
