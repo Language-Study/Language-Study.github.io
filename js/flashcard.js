@@ -234,16 +234,25 @@ async function renderFlashcard() {
 
     const translationText = currentItem.translation || '';
     const cleanedText = translationText.replace(/https?:\/\/\S+/gi, '').trim();
-    flashcardTranslation.textContent = cleanedText || '(no translation)';
 
     const ytEmbed = getYouTubeEmbedUrl(translationText);
-    const hasVideo = Boolean(ytEmbed);
+    const scEmbed = await getSoundCloudEmbedUrl(translationText);
+    const hasMedia = Boolean(ytEmbed) || Boolean(scEmbed);
+
+    // Show cleaned text if available, otherwise show nothing if there's media, otherwise "(no translation)"
+    if (cleanedText) {
+        flashcardTranslation.textContent = cleanedText;
+    } else if (hasMedia) {
+        flashcardTranslation.textContent = '';
+    } else {
+        flashcardTranslation.textContent = '(no translation)';
+    }
 
     if (flashcardVideoWrap) {
-        flashcardVideoWrap.classList.toggle('hidden', !hasVideo);
+        flashcardVideoWrap.classList.toggle('hidden', !ytEmbed);
     }
     if (flashcardVideo) {
-        flashcardVideo.src = hasVideo ? ytEmbed : '';
+        flashcardVideo.src = ytEmbed || '';
     }
 
     // Reset audio while resolving shortened SoundCloud links asynchronously
@@ -255,14 +264,12 @@ async function renderFlashcard() {
     }
 
     if (flashcardMedia) {
-        flashcardMedia.classList.toggle('hidden', !hasVideo);
+        flashcardMedia.classList.toggle('hidden', !hasMedia);
     }
 
-    const scEmbed = await getSoundCloudEmbedUrl(translationText);
     if (renderToken !== flashcardRenderToken) return;
 
     const hasAudio = Boolean(scEmbed);
-    const hasMedia = hasVideo || hasAudio;
 
     if (flashcardAudioWrap) {
         flashcardAudioWrap.classList.toggle('hidden', !hasAudio);
