@@ -1,3 +1,28 @@
+/* Avatar styles */
+.avatar-option,
+#userAvatar,
+#userAvatarMobile {
+    border-radius: 9999px;
+    object-fit: cover;
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-border-light);
+    transition: border-color 0.2s;
+}
+
+.avatar-option:focus {
+    outline: var(--focus-ring);
+    border-color: var(--color-primary);
+}
+
+.avatar-option.border-blue-400 {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 2px #60a5fa33;
+}
+
+.avatar-option {
+    cursor: pointer;
+}
+
 /* ===== DESIGN SYSTEM TOKENS ===== */
 :root {
     /* Light mode colors */
