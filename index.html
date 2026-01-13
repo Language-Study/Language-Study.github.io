@@ -1,3 +1,23 @@
+<script>
+    // Mobile hamburger menu open/close logic
+    document.addEventListener('DOMContentLoaded', function () {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileNavDropdown = document.getElementById('mobileNavDropdown');
+        const menuIcon = mobileMenuBtn?.querySelector('.menu-icon');
+        const closeIcon = mobileMenuBtn?.querySelector('.close-icon');
+        if (mobileMenuBtn && mobileNavDropdown) {
+            mobileMenuBtn.addEventListener('click', function () {
+                const isOpen = mobileNavDropdown.classList.toggle('active');
+                mobileNavDropdown.style.display = isOpen ? 'block' : '';
+                mobileMenuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (menuIcon && closeIcon) {
+                    menuIcon.classList.toggle('hidden', isOpen);
+                    closeIcon.classList.toggle('hidden', !isOpen);
+                }
+            });
+        }
+    });
+</script>
 <!DOCTYPE html>
 <html lang="en">
 
