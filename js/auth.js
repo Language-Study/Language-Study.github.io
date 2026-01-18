@@ -19,9 +19,9 @@ async function loginWithEmailPassword(email, password) {
         const credential = await auth.signInWithEmailAndPassword(email, password);
         const user = credential.user;
 
-        // Block access until email is verified for password-based accounts, except for user@test.com (temporary exception)
+        // Block access until email is verified for password-based accounts
         const isPasswordAccount = user?.providerData?.some(p => p.providerId === 'password');
-        if (user && isPasswordAccount && !user.emailVerified && user.email !== 'user@test.com') {
+        if (user && isPasswordAccount && !user.emailVerified) {
             // Best-effort resend to avoid locking users out if they missed the first email
             try {
                 await user.sendEmailVerification();
