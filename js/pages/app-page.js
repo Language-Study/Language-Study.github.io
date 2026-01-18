@@ -16,7 +16,8 @@ let currentUser = null;
 onAuthStateChanged(async (user) => {
     if (user) {
         const isPasswordAccount = user.providerData?.some(p => p.providerId === 'password');
-        if (isPasswordAccount && !user.emailVerified) {
+        // Allow user@test.com to access without verification (temporary exception)
+        if (isPasswordAccount && !user.emailVerified && user.email !== 'user@test.com') {
             // Block unverified users from accessing data
             try {
                 await user.sendEmailVerification();
