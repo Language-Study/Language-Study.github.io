@@ -55,6 +55,9 @@ async function loadSkills() {
  * @returns {Promise<void>}
  */
 async function addPortfolioEntry(title, link) {
+    if (window.isMentorView) {
+        throw new Error('Mentor view is read-only.');
+    }
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
 
@@ -99,6 +102,9 @@ async function addPortfolioEntry(title, link) {
  * @returns {Promise<void>}
  */
 async function updatePortfolioEntry(id, title, link) {
+    if (window.isMentorView) {
+        throw new Error('Mentor view is read-only.');
+    }
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
 
@@ -145,6 +151,9 @@ async function updatePortfolioEntry(id, title, link) {
  * @returns {Promise<void>}
  */
 async function deletePortfolioEntry(id) {
+    if (window.isMentorView) {
+        throw new Error('Mentor view is read-only.');
+    }
     try {
         await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
     } catch (error) {
@@ -160,6 +169,9 @@ async function deletePortfolioEntry(id) {
  * @returns {Promise<void>}
  */
 async function toggleTopPortfolio(id) {
+    if (window.isMentorView) {
+        throw new Error('Mentor view is read-only.');
+    }
     try {
         const topCount = portfolioEntries.filter(e => e.isTop).length;
         const entry = portfolioEntries.find(e => e.id === id);
@@ -454,12 +466,7 @@ function renderPortfolioCard(entry, isFeatured) {
         embedHtml = `<a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>`;
     }
 
-    return `
-        <div class="portfolio-item flex flex-col items-center p-2 relative">
-            <div class="w-full mb-2">
-                ${embedHtml}
-            </div>
-            <div class="font-semibold text-center mb-1">${escapeHtml(entry.title)}</div>
+    const actionsHtml = window.isMentorView ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                         data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
@@ -468,6 +475,15 @@ function renderPortfolioCard(entry, isFeatured) {
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
                         data-action="delete" data-id="${entry.id}" aria-label="Delete this portfolio item">Delete</button>
             </div>
+    `;
+
+    return `
+        <div class="portfolio-item flex flex-col items-center p-2 relative">
+            <div class="w-full mb-2">
+                ${embedHtml}
+            </div>
+            <div class="font-semibold text-center mb-1">${escapeHtml(entry.title)}</div>
+            ${actionsHtml}
         </div>
     `;
 }
@@ -479,12 +495,7 @@ function renderPortfolioCard(entry, isFeatured) {
  * @returns {string} HTML
  */
 function renderPortfolioListItem(entry, topCount) {
-    return `
-        <div class="flex items-center justify-between p-2 border rounded">
-            <div class="flex flex-col">
-                <span class="font-medium">${escapeHtml(entry.title)}</span>
-                <a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>
-            </div>
+    const actionsHtml = window.isMentorView ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                     data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
@@ -494,6 +505,15 @@ function renderPortfolioListItem(entry, topCount) {
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
                         data-action="delete" data-id="${entry.id}" aria-label="Delete this portfolio item">Delete</button>
             </div>
+    `;
+
+    return `
+        <div class="flex items-center justify-between p-2 border rounded">
+            <div class="flex flex-col">
+                <span class="font-medium">${escapeHtml(entry.title)}</span>
+                <a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>
+            </div>
+            ${actionsHtml}
         </div>
     `;
 }

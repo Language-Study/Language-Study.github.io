@@ -105,6 +105,7 @@ function disableEditingUI() {
     // Hide editing buttons and forms
     const editingElements = [
         '.delete-button',
+        '.edit-button',
         '.status-button',
         '.feature-button',
         '#addVocabBtn',

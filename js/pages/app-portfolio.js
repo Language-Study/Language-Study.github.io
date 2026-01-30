@@ -8,6 +8,10 @@ const portfolioList = document.getElementById('portfolioList');
 if (portfolioForm) {
     portfolioForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (window.isMentorView) {
+            showToast('Mentor view is read-only.');
+            return;
+        }
         try {
             await addPortfolioEntry(portfolioTitle.value, portfolioLink.value);
             portfolioTitle.value = '';
@@ -26,6 +30,10 @@ if (portfolioForm) {
         container.addEventListener('click', async (e) => {
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
+            if (window.isMentorView) {
+                showToast('Mentor view is read-only.');
+                return;
+            }
 
             const id = btn.getAttribute('data-id');
             const action = btn.getAttribute('data-action');
