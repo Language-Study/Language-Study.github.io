@@ -463,7 +463,7 @@ function renderPortfolioCard(entry, isFeatured) {
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                         data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
-                <button class="feature-button px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300" 
+                <button class="feature-button feature-button-active px-2 py-1 text-xs rounded" 
                         data-action="toggleTop" data-id="${entry.id}" aria-label="Unfeature this portfolio item">Unfeature</button>
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
                         data-action="delete" data-id="${entry.id}" aria-label="Delete this portfolio item">Delete</button>
