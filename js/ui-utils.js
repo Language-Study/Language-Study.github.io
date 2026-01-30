@@ -1,11 +1,3 @@
-// Avatar fallback logic for navigation (in case app-settings.js loads after UI)
-window.updateAvatarUI = function (avatarFile) {
-    const avatarUrl = `icons/avatars/${avatarFile}`;
-    const navAvatar = document.getElementById('userAvatar');
-    const navAvatarMobile = document.getElementById('userAvatarMobile');
-    if (navAvatar) navAvatar.src = avatarUrl;
-    if (navAvatarMobile) navAvatarMobile.src = avatarUrl;
-};
 /**
  * UI Utilities Module
  * Handles toast notifications, settings management, mentor codes, and common UI operations
