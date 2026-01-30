@@ -377,3 +377,88 @@ skillsList?.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// ===== DRAG AND DROP FOR SKILLS ORDERING =====
+let draggedElement = null;
+let draggedOverElement = null;
+
+skillsList?.addEventListener('dragstart', (e) => {
+    const skillItem = e.target.closest('.skill-item');
+    if (skillItem && !window.isMentorView) {
+        draggedElement = skillItem;
+        skillItem.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', skillItem.innerHTML);
+    }
+});
+
+skillsList?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    const skillItem = e.target.closest('.skill-item');
+    if (skillItem && skillItem !== draggedElement && !window.isMentorView) {
+        draggedOverElement = skillItem;
+        skillItem.classList.add('drag-over');
+    }
+});
+
+skillsList?.addEventListener('dragleave', (e) => {
+    const skillItem = e.target.closest('.skill-item');
+    if (skillItem) {
+        skillItem.classList.remove('drag-over');
+    }
+});
+
+skillsList?.addEventListener('drop', async (e) => {
+    e.preventDefault();
+
+    if (draggedElement && draggedOverElement && draggedElement !== draggedOverElement && !window.isMentorView) {
+        try {
+            // Reorder the skills array
+            const allSkillItems = Array.from(skillsList.querySelectorAll('.skill-item'));
+            const draggedIndex = allSkillItems.indexOf(draggedElement);
+            const targetIndex = allSkillItems.indexOf(draggedOverElement);
+
+            // Swap the elements in DOM
+            if (draggedIndex < targetIndex) {
+                draggedOverElement.parentNode.insertBefore(draggedElement, draggedOverElement.nextSibling);
+            } else {
+                draggedOverElement.parentNode.insertBefore(draggedElement, draggedOverElement);
+            }
+
+            // Get new order of skill IDs
+            const newOrder = Array.from(skillsList.querySelectorAll('.skill-item')).map(item => item.dataset.id);
+
+            // Update in Firestore
+            await updateSkillOrder(newOrder);
+
+            // Update the in-memory skills array to match new order
+            const newSkillsOrder = newOrder.map(id => skills.find(s => s.id === id)).filter(Boolean);
+            skills.splice(0, skills.length, ...newSkillsOrder);
+            if (dataCache?.isCached) {
+                dataCache.skills = [...skills];
+            }
+
+            showToast('✓ Skills reordered!');
+        } catch (error) {
+            showToast('Error: ' + error.message);
+            // Refresh to restore original order on error
+            renderSkillsWithCurrentFilter();
+        }
+    }
+
+    // Clean up
+    draggedElement?.classList.remove('dragging');
+    draggedOverElement?.classList.remove('drag-over');
+    draggedElement = null;
+    draggedOverElement = null;
+});
+
+skillsList?.addEventListener('dragend', (e) => {
+    draggedElement?.classList.remove('dragging');
+    draggedOverElement?.classList.remove('drag-over');
+    draggedElement = null;
+    draggedOverElement = null;
+});
+

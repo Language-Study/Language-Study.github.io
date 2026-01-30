@@ -36,6 +36,12 @@ async function loadSkills() {
             id: doc.id,
             ...doc.data()
         }));
+        // Sort by priority if available, otherwise maintain order
+        skills.sort((a, b) => {
+            const priorityA = a.priority !== undefined ? a.priority : Infinity;
+            const priorityB = b.priority !== undefined ? b.priority : Infinity;
+            return priorityA - priorityB;
+        });
     } catch (error) {
         console.error('Error loading skills:', error);
     }
@@ -553,14 +559,20 @@ function renderSkillItem(skill) {
     `;
 
     return `
-        <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}">
+        <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}" draggable="${!window.isMentorView}" role="listitem">
             <div class="skill-header flex items-center justify-between" data-skill-id="${skill.id}">
                 <div class="flex items-center flex-1 gap-2">
-                    ${!window.isMentorView ? `<button class="expand-button p-1 rounded hover:bg-gray-100" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks">
+                    ${!window.isMentorView ? `<button class="drag-handle p-1 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing flex-shrink-0" aria-label="Drag to reorder" title="Drag to reorder skills by priority" style="pointer-events: all;">
+                        <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/>
+                            <circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                        </svg>
+                    </button>` : `<div style="width: 24px;"></div>`}
+                    <button class="expand-button p-1 rounded hover:bg-gray-100 flex-shrink-0" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks" ${window.isMentorView ? 'disabled style="opacity: 0.5; cursor: default;"' : ''}>
                         <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                    </button>` : `<div style="width: 24px;"></div>`}
+                    </button>
                     <div class="font-medium flex-1">${escapeHtml(skill.name)}</div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -716,5 +728,31 @@ async function resolveSoundCloudPortfolioLink(rawUrl) {
         return rawUrl;
     } catch (e) {
         return rawUrl;
+    }
+}
+
+/**
+ * Update skill order after drag and drop
+ * @async
+ * @param {Array<string>} skillIds - Array of skill IDs in new order
+ * @returns {Promise<void>}
+ */
+async function updateSkillOrder(skillIds) {
+    if (!currentUser) throw new Error('User not authenticated');
+
+    try {
+        const batch = db.batch();
+        const skillsRef = db.collection('users').doc(currentUser.uid).collection('skills');
+
+        skillIds.forEach((skillId, index) => {
+            batch.update(skillsRef.doc(skillId), {
+                priority: index
+            });
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error updating skill order:', error);
+        throw error;
     }
 }

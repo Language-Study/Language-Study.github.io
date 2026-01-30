@@ -457,6 +457,33 @@ kbd {
     border-color: var(--color-border-light);
 }
 
+/* ===== DRAG AND DROP STYLES ===== */
+.skill-item[draggable="true"] {
+    cursor: move;
+}
+
+.skill-item.dragging {
+    opacity: 0.5;
+    background-color: var(--color-bg-tertiary);
+    border: 2px dashed var(--color-primary);
+}
+
+.skill-item.drag-over {
+    background-color: var(--color-primary);
+    background-opacity: 0.1;
+    border: 2px solid var(--color-primary);
+    box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.drag-handle {
+    cursor: grab;
+    user-select: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
 /* ===== FORM ELEMENTS ===== */
 select {
     padding: 0.5rem;
