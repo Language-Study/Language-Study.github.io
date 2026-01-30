@@ -455,7 +455,7 @@ function renderPortfolioCard(entry, isFeatured) {
     }
 
     return `
-        <div class="flex flex-col items-center bg-gray-50 rounded p-2 border relative">
+        <div class="portfolio-item flex flex-col items-center p-2 relative">
             <div class="w-full mb-2">
                 ${embedHtml}
             </div>
