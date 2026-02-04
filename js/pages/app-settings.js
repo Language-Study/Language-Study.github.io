@@ -1,5 +1,51 @@
 // ===== SETTINGS & MENTOR =====
 
+// Settings Modal Tab Controller
+class SettingsTabController {
+    constructor() {
+        this.currentTab = 'display';
+        this.initializeListeners();
+    }
+
+    activateTab(tabName) {
+        this.currentTab = tabName;
+
+        // Update button states
+        const tabButtons = document.querySelectorAll('[data-settings-tab]');
+        tabButtons.forEach(btn => {
+            const btnTabName = btn.getAttribute('data-settings-tab');
+            if (btnTabName === tabName) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Update content visibility
+        const tabContents = document.querySelectorAll('[data-settings-tab-content]');
+        tabContents.forEach(content => {
+            if (content.id === tabName + 'Tab') {
+                content.classList.remove('hidden');
+            } else {
+                content.classList.add('hidden');
+            }
+        });
+    }
+
+    initializeListeners() {
+        document.addEventListener('click', (e) => {
+            const tabButton = e.target.closest('[data-settings-tab]');
+            if (tabButton) {
+                const tabName = tabButton.getAttribute('data-settings-tab');
+                this.activateTab(tabName);
+            }
+        });
+    }
+}
+
+// Initialize settings tab controller
+const settingsTabController = new SettingsTabController();
+
 // Mobile menu elements for closing when opening settings
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileNavDropdown = document.getElementById('mobileNavDropdown');
@@ -7,6 +53,8 @@ const mobileNavDropdown = document.getElementById('mobileNavDropdown');
 // Settings modal (both desktop and mobile)
 const openSettingsHandler = () => {
     openModal('settingsModal');
+    // Activate the default tab
+    settingsTabController.activateTab('display');
     // Gate auth-related options based on user's login providers
     updateAuthOptionVisibility();
     updateMentorCodeToggle();
