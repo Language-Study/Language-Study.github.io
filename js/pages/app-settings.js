@@ -59,6 +59,8 @@ const openSettingsHandler = () => {
     updateAuthOptionVisibility();
     updateMentorCodeToggle();
     updateMentorQuickReviewUI();
+    // Load current homepage setting
+    loadHomepageTabSetting();
     // Close mobile menu if open
     if (mobileNavDropdown && mobileMenuBtn) {
         mobileNavDropdown.classList.remove('active');
@@ -329,4 +331,74 @@ onAuthStateChanged?.(async (user) => {
     } catch (error) {
         console.error('Error restoring language:', error);
     }
+});
+/**
+ * Save the selected homepage tab preference to Firestore
+ * @async
+ * @param {string} tabName - The tab name (vocabulary, skills, or portfolio)
+ * @returns {Promise<void>}
+ */
+async function setHomepageTab(tabName) {
+    if (!currentUser) return;
+
+    const validTabs = ['vocabulary', 'skills', 'portfolio'];
+    if (!validTabs.includes(tabName)) {
+        console.warn(`Invalid homepage tab: ${tabName}`);
+        return;
+    }
+
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
+            { homepageTab: tabName },
+            { merge: true }
+        );
+    } catch (error) {
+        console.error('Error saving homepage tab preference:', error);
+        showToast('Error saving preference. Please try again.');
+    }
+}
+
+/**
+ * Get the saved homepage tab preference from Firestore
+ * @async
+ * @returns {Promise<string>} The saved homepage tab (defaults to 'vocabulary')
+ */
+async function getHomepageTab() {
+    if (!currentUser) return 'vocabulary';
+
+    try {
+        const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
+        if (settingsDoc.exists && settingsDoc.data().homepageTab) {
+            return settingsDoc.data().homepageTab;
+        }
+    } catch (error) {
+        console.error('Error loading homepage tab preference:', error);
+    }
+
+    return 'vocabulary'; // Default to vocabulary
+}
+
+/**
+ * Load and display the current homepage tab setting in the settings modal
+ * @async
+ * @returns {Promise<void>}
+ */
+async function loadHomepageTabSetting() {
+    const homepageSelect = document.getElementById('homepageTabSelect');
+    if (!homepageSelect) return;
+
+    try {
+        const currentTab = await getHomepageTab();
+        homepageSelect.value = currentTab;
+    } catch (error) {
+        console.error('Error loading homepage setting:', error);
+    }
+}
+
+// Homepage tab selection change handler
+const homepageTabSelect = document.getElementById('homepageTabSelect');
+homepageTabSelect?.addEventListener('change', async (e) => {
+    const selectedTab = e.target.value;
+    await setHomepageTab(selectedTab);
+    showToast(`✓ Homepage set to ${selectedTab.charAt(0).toUpperCase() + selectedTab.slice(1)}`);
 });
