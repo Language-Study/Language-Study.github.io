@@ -118,29 +118,7 @@ class TabController {
             return;
         }
 
-        // Otherwise, use the saved homepage preference if available
-        this.activateTabFromPreference();
-    }
-
-    /**
-     * Activate tab from saved user preference (async)
-     * Falls back to 'vocabulary' if preference not found
-     */
-    async activateTabFromPreference() {
-        try {
-            // Check if the getHomepageTab function exists (from app-settings.js)
-            if (typeof getHomepageTab === 'function') {
-                const homepageTab = await getHomepageTab();
-                if (this.tabs.includes(homepageTab)) {
-                    this.activateTab(homepageTab);
-                    return;
-                }
-            }
-        } catch (error) {
-            console.warn('Could not load homepage preference:', error);
-        }
-
-        // Fallback to default tab
+        // On normal page loads, default to vocabulary.
         this.activateTab('vocabulary');
     }
 

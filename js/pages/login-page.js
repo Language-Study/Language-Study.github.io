@@ -41,6 +41,32 @@ if (params.get('verify') === 'required' && errorMessage) {
     errorMessage.classList.remove('hidden');
 }
 
+/**
+ * Resolve preferred landing tab and build post-login URL.
+ * This is intentionally used only after an explicit login action.
+ */
+async function getPostLoginRedirectUrl() {
+    const user = loginAuth.currentUser;
+    if (!user) return 'index.html?tab=vocabulary';
+
+    try {
+        const settingsDoc = await loginDb
+            .collection('users')
+            .doc(user.uid)
+            .collection('metadata')
+            .doc('settings')
+            .get();
+
+        const homepageTab = settingsDoc.exists ? settingsDoc.data()?.homepageTab : null;
+        const validTabs = ['vocabulary', 'skills', 'portfolio'];
+        const tab = validTabs.includes(homepageTab) ? homepageTab : 'vocabulary';
+        return `index.html?tab=${tab}`;
+    } catch (error) {
+        console.warn('Could not load homepage preference during login redirect:', error);
+        return 'index.html?tab=vocabulary';
+    }
+}
+
 // Email/Password Login
 document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('email').value;
@@ -48,7 +74,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 
     try {
         await loginWithEmailPassword(email, password);
-        window.location.href = 'index.html';
+        window.location.href = await getPostLoginRedirectUrl();
     } catch (error) {
         errorMessage.textContent = error.message;
         errorMessage.classList.remove('hidden');
@@ -146,7 +172,7 @@ if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
         try {
             await loginWithGoogle();
-            window.location.href = 'index.html';
+            window.location.href = await getPostLoginRedirectUrl();
         } catch (error) {
             errorMessage.textContent = error.message;
             errorMessage.classList.remove('hidden');
@@ -154,7 +180,7 @@ if (googleLoginBtn) {
     });
 }
 
-// Auto-redirect if already logged in
+// Keep verification guard, but do not auto-redirect on page load.
 onAuthStateChanged(async (user) => {
     if (!user) return;
 
@@ -172,6 +198,4 @@ onAuthStateChanged(async (user) => {
         }
         return;
     }
-
-    window.location.href = 'index.html';
 });

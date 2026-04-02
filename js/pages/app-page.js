@@ -67,9 +67,9 @@ onAuthStateChanged(async (user) => {
             renderASLClubAchievements();
         }
 
-        // Activate tab from URL parameter or saved preference AFTER all data is loaded and rendered
+        // Activate tab from URL parameter (or default behavior) AFTER all data is loaded and rendered
         if (window.tabController) {
-            await window.tabController.activateTabFromPreference();
+            window.tabController.initializeFromURL();
         }
     } else {
         window.location.href = 'login.html';
