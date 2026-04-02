@@ -9,8 +9,8 @@
  */
 function isPublicPortfolioViewEarly() {
     const params = new URLSearchParams(window.location.search);
-    const portfolioUserId = params.get('portfolio');
-    return !!portfolioUserId;
+    const portfolioCode = params.get('portfolio');
+    return !!portfolioCode;
 }
 
 /**
@@ -20,11 +20,22 @@ function isPublicPortfolioViewEarly() {
  */
 async function tryPublicPortfolioView() {
     const params = new URLSearchParams(window.location.search);
-    const portfolioUserId = params.get('portfolio');
+    const portfolioCode = params.get('portfolio');
 
-    if (!portfolioUserId) return;
+    if (!portfolioCode) return;
 
     try {
+        // Look up the portfolio code to get the user ID
+        const codeDoc = await db.collection('portfolioCodes').doc(portfolioCode.toUpperCase()).get();
+        
+        if (!codeDoc.exists) {
+            alert('Invalid portfolio link.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        const portfolioUserId = codeDoc.data().uid;
+
         // Check if this user has portfolio sharing enabled
         const shareDoc = await db.collection('users').doc(portfolioUserId).collection('settings').doc('portfolioShare').get();
 
@@ -209,15 +220,65 @@ function addPublicPortfolioFooter() {
 
 /**
  * Generate shareable portfolio link for current user
- * @returns {string}
+ * @async
+ * @returns {Promise<string>}
  */
-function generatePortfolioShareLink() {
+async function generatePortfolioShareLink() {
     if (!currentUser) {
         throw new Error('User must be logged in to generate share link');
     }
 
+    // Get or create portfolio share code
+    const shareData = await getPortfolioShareData();
+    let code = shareData?.code;
+
+    if (!code) {
+        // Generate new code if doesn't exist
+        code = await createPortfolioShareCode();
+    }
+
     const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?portfolio=${currentUser.uid}`;
+    return `${baseUrl}?portfolio=${code}`;
+}
+
+/**
+ * Create a new portfolio share code
+ * @async
+ * @returns {Promise<string>}
+ */
+async function createPortfolioShareCode() {
+    if (!currentUser) {
+        throw new Error('User must be logged in');
+    }
+
+    let code;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    // Try to generate a unique code
+    while (attempts < maxAttempts) {
+        code = generatePortfolioShareCode();
+        const existingCode = await db.collection('portfolioCodes').doc(code).get();
+
+        if (!existingCode.exists) {
+            // Code is unique, create it
+            await db.collection('portfolioCodes').doc(code).set({
+                uid: currentUser.uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Store code in user's settings
+            await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
+                code: code
+            }, { merge: true });
+
+            return code;
+        }
+
+        attempts++;
+    }
+
+    throw new Error('Failed to generate unique portfolio code');
 }
 
 /**
@@ -231,8 +292,17 @@ async function enablePortfolioSharing() {
     }
 
     try {
+        // Get or create code
+        let shareData = await getPortfolioShareData();
+        let code = shareData?.code;
+
+        if (!code) {
+            code = await createPortfolioShareCode();
+        }
+
         await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
             enabled: true,
+            code: code,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastAccessed: null
         }, { merge: true });

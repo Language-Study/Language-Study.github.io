@@ -83,7 +83,7 @@ async function loadShareModalState() {
 
         if (isEnabled) {
             showShareContent();
-            const shareLink = generatePortfolioShareLink();
+            const shareLink = await generatePortfolioShareLink();
             displayShareLink(shareLink);
             generateQRCode(shareLink);
         } else {
@@ -107,7 +107,7 @@ async function handleShareToggle(event) {
         if (isEnabled) {
             await enablePortfolioSharing();
             showShareContent();
-            const shareLink = generatePortfolioShareLink();
+            const shareLink = await generatePortfolioShareLink();
             displayShareLink(shareLink);
             generateQRCode(shareLink);
         } else {

@@ -55,3 +55,8 @@ function generateMentorCode() {
     }
     return code;
 }
+
+// Utility: Generate a random portfolio share code (same format as mentor code)
+function generatePortfolioShareCode() {
+    return generateMentorCode(); // Reuse same format
+}
