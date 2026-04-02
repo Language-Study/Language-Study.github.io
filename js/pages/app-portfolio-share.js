@@ -245,6 +245,9 @@ async function copyShareLinkToClipboard() {
  * @returns {void}
  */
 function addShareButtonToSettings() {
+    // Don't add to settings in public portfolio view (settings modal doesn't exist)
+    if (window.isPublicPortfolioView) return;
+    
     // Find the settings modal content
     const settingsContent = document.querySelector('#settingsModal .settings-modal-content');
     if (!settingsContent) return;
@@ -299,6 +302,9 @@ function closeSettingsModal() {
 
 // Initialize portfolio share modal when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Skip initialization in public portfolio view
+    if (window.isPublicPortfolioView) return;
+    
     initPortfolioShareModal();
     addShareButtonToSettings();
 });

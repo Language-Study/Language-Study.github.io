@@ -12,15 +12,37 @@ let currentUser = null;
     }
 })();
 
-// Detect public portfolio view early
+// Detect public portfolio view early and load it (bypassing auth)
 (async function detectPublicPortfolioViewEarly() {
     if (isPublicPortfolioViewEarly()) {
         window.isPublicPortfolioView = true;
+        
+        // Wait for Firebase to be ready (config.js defines db)
+        const maxWait = 50; // 5 seconds max
+        let attempts = 0;
+        while (typeof db === 'undefined' && attempts < maxWait) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (typeof db === 'undefined') {
+            console.error('Firebase not loaded in time');
+            alert('Error loading portfolio. Please refresh the page.');
+            return;
+        }
+        
+        // Load public portfolio immediately, bypassing auth
+        await tryPublicPortfolioView();
     }
 })();
 
 // Watch auth state
 onAuthStateChanged(async (user) => {
+    // Skip normal auth flow if in public portfolio view
+    if (window.isPublicPortfolioView) {
+        return; // Public view already loaded
+    }
+
     if (user) {
         const isPasswordAccount = user.providerData?.some(p => p.providerId === 'password');
         if (isPasswordAccount && !user.emailVerified) {
@@ -61,12 +83,6 @@ onAuthStateChanged(async (user) => {
 
         // Load data after auth state confirmed
         await loadUserData();
-
-        // Check for public portfolio view BEFORE regular flow
-        if (window.isPublicPortfolioView) {
-            await tryPublicPortfolioView();
-            return; // Stop further execution for public view
-        }
 
         // Ensure settings reflect current link status
         const btn = document.getElementById('googleSignInToggleBtn');
