@@ -12,6 +12,13 @@ let currentUser = null;
     }
 })();
 
+// Detect public portfolio view early
+(async function detectPublicPortfolioViewEarly() {
+    if (isPublicPortfolioViewEarly()) {
+        window.isPublicPortfolioView = true;
+    }
+})();
+
 // Watch auth state
 onAuthStateChanged(async (user) => {
     if (user) {
@@ -54,6 +61,12 @@ onAuthStateChanged(async (user) => {
 
         // Load data after auth state confirmed
         await loadUserData();
+
+        // Check for public portfolio view BEFORE regular flow
+        if (window.isPublicPortfolioView) {
+            await tryPublicPortfolioView();
+            return; // Stop further execution for public view
+        }
 
         // Ensure settings reflect current link status
         const btn = document.getElementById('googleSignInToggleBtn');

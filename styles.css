@@ -1464,3 +1464,73 @@ a:visited {
 #flashcardMastered.active-status-button span {
     color: white !important;
 }
+
+/* ===== PORTFOLIO SHARE MODAL STYLES ===== */
+#portfolioShareModal .bg-white {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+}
+
+#portfolioShareModal input[readonly] {
+    cursor: text;
+    user-select: all;
+}
+
+#portfolioShareModal #qrCodeContainer {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#portfolioShareModal #qrCodeContainer canvas,
+#portfolioShareModal #qrCodeContainer img {
+    max-width: 100%;
+    height: auto;
+}
+
+#copyFeedback {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== PUBLIC PORTFOLIO VIEW STYLES ===== */
+#publicPortfolioFooter {
+    background-color: var(--color-bg-secondary);
+    border-top-color: var(--color-border);
+}
+
+#publicPortfolioFooter a {
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+#publicPortfolioFooter a:hover {
+    text-decoration: underline;
+}
+
+/* Adjust portfolio grid for public view (cleaner display) */
+body.public-portfolio-view #portfolioTop3,
+body.public-portfolio-view #portfolioList {
+    margin-top: 1rem;
+}
+
+body.public-portfolio-view .portfolio-item {
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+body.public-portfolio-view .portfolio-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
