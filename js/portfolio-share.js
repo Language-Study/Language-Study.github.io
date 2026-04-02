@@ -104,6 +104,7 @@ function disableEditingForPublicPortfolio() {
         '#logoutBtnMobile',
         '#mobileMenuBtn',
         '#searchInput',
+        '#openPortfolioShareBtn',  // Hide share button in public view
         '.tab-button:not([data-tab-target="#portfolio"])', // Hide all tabs except portfolio
         '#vocabulary',
         '#skills',
@@ -172,9 +173,11 @@ function addPublicPortfolioHeader() {
     // Add "View on Language Study" button
     const ctaButton = document.createElement('a');
     ctaButton.href = 'index.html';
-    ctaButton.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm';
+    ctaButton.className = 'px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors';
     ctaButton.textContent = 'Create Your Portfolio';
     ctaButton.setAttribute('aria-label', 'Sign up for Language Study');
+    ctaButton.style.color = 'white'; // Ensure text is white
+    ctaButton.style.textDecoration = 'none'; // Remove link underline
 
     const navContainer = nav.querySelector('.max-w-4xl > div');
     if (navContainer) {
