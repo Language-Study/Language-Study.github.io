@@ -31,8 +31,24 @@ const { auth, db } = initializeFirebase();
 const PROGRESS_STATUS = {
     NOT_STARTED: 'not_started',
     IN_PROGRESS: 'in_progress',
-    MASTERED: 'mastered',
+    PROFICIENT: 'proficient',
 };
+
+const LEGACY_PROGRESS_STATUS = {
+    MASTERED: 'mastered'
+};
+
+function normalizeProgressStatus(status) {
+    if (status === LEGACY_PROGRESS_STATUS.MASTERED) {
+        return PROGRESS_STATUS.PROFICIENT;
+    }
+
+    if (Object.values(PROGRESS_STATUS).includes(status)) {
+        return status;
+    }
+
+    return PROGRESS_STATUS.NOT_STARTED;
+}
 
 // Status Icons HTML
 const statusIcons = {
@@ -42,9 +58,11 @@ const statusIcons = {
     [PROGRESS_STATUS.IN_PROGRESS]: `<svg class="w-5 h-5 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 6v6l4 4" stroke-width="2"/>
         </svg>`,
 
-    [PROGRESS_STATUS.MASTERED]: `<svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
+    [PROGRESS_STATUS.PROFICIENT]: `<svg class="w-5 h-5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke-width="2"/>
         </svg>`
 };
+
+statusIcons[LEGACY_PROGRESS_STATUS.MASTERED] = statusIcons[PROGRESS_STATUS.PROFICIENT];
 
 // Utility: Generate a random 5-character alphanumeric mentor code
 function generateMentorCode() {

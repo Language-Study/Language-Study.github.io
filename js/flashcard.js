@@ -19,7 +19,7 @@ const flashcardAudioWrap = document.getElementById('flashcardAudioWrap');
 const flashcardAudio = document.getElementById('flashcardAudio');
 const flashcardCounter = document.getElementById('flashcardCounter');
 const flashcardProgress = document.getElementById('flashcardProgress');
-const masteredBadge = document.getElementById('masteredBadge');
+const proficientBadge = document.getElementById('masteredBadge');
 const startReviewBtn = document.getElementById('startReviewBtn');
 const closeFlashcardBtn = document.getElementById('closeFlashcardBtn');
 const flashcardPrev = document.getElementById('flashcardPrev');
@@ -27,7 +27,7 @@ const flashcardNext = document.getElementById('flashcardNext');
 const flashcardFlip = document.getElementById('flashcardFlip');
 const flashcardNotStarted = document.getElementById('flashcardNotStarted');
 const flashcardInProgress = document.getElementById('flashcardInProgress');
-const flashcardMastered = document.getElementById('flashcardMastered');
+const flashcardProficient = document.getElementById('flashcardProficient');
 const FLASHCARD_TARGET_COUNT = 10;
 
 // Start review session
@@ -130,14 +130,14 @@ flashcardInProgress?.addEventListener('click', () => {
     updateFlashcardStatus(PROGRESS_STATUS.IN_PROGRESS);
     highlightButton(flashcardInProgress);
 });
-flashcardMastered?.addEventListener('click', () => {
-    updateFlashcardStatus(PROGRESS_STATUS.MASTERED);
-    highlightButton(flashcardMastered);
+flashcardProficient?.addEventListener('click', () => {
+    updateFlashcardStatus(PROGRESS_STATUS.PROFICIENT);
+    highlightButton(flashcardProficient);
 });
 
 function highlightButton(button) {
     // Remove highlight from all buttons
-    [flashcardNotStarted, flashcardInProgress, flashcardMastered].forEach(btn => {
+    [flashcardNotStarted, flashcardInProgress, flashcardProficient].forEach(btn => {
         btn?.classList.remove('active-status-button');
     });
     // Add highlight to clicked button
@@ -165,8 +165,8 @@ async function updateFlashcardStatus(newStatus) {
             }
         }
 
-        // If mastered, remove from review list
-        if (newStatus === PROGRESS_STATUS.MASTERED) {
+        // If proficient, remove from review list
+        if (newStatus === PROGRESS_STATUS.PROFICIENT) {
             flashcardReviewList.splice(currentFlashcardIndex, 1);
 
             if (flashcardReviewList.length === 0) {
@@ -223,7 +223,7 @@ function buildDueFirstReviewList(items, targetCount) {
     const remaining = items.filter(item => !selectedIds.has(item.id));
     const notStarted = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.NOT_STARTED));
     const inProgress = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.IN_PROGRESS));
-    const mastered = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.MASTERED));
+    const proficient = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.PROFICIENT));
 
     const slotsLeft = targetCount - selected.length;
     const targetNotStarted = Math.ceil(slotsLeft * 0.5);
@@ -239,7 +239,7 @@ function buildDueFirstReviewList(items, targetCount) {
 
     pick(notStarted, targetNotStarted);
     pick(inProgress, targetInProgress);
-    pick(mastered, targetCount - selected.length);
+    pick(proficient, targetCount - selected.length);
 
     if (selected.length < targetCount) {
         const fallback = shuffleArray(items.filter(item => !selectedIds.has(item.id)));
@@ -258,20 +258,20 @@ async function renderFlashcard() {
     flashcardWord.textContent = currentItem.word;
 
     // Highlight the button that matches this item's current status
-    [flashcardNotStarted, flashcardInProgress, flashcardMastered].forEach(btn => {
+    [flashcardNotStarted, flashcardInProgress, flashcardProficient].forEach(btn => {
         btn?.classList.remove('active-status-button');
     });
     if (currentItem.status === PROGRESS_STATUS.NOT_STARTED) {
         flashcardNotStarted?.classList.add('active-status-button');
     } else if (currentItem.status === PROGRESS_STATUS.IN_PROGRESS) {
         flashcardInProgress?.classList.add('active-status-button');
-    } else if (currentItem.status === PROGRESS_STATUS.MASTERED) {
-        flashcardMastered?.classList.add('active-status-button');
+    } else if (currentItem.status === PROGRESS_STATUS.PROFICIENT) {
+        flashcardProficient?.classList.add('active-status-button');
     }
 
-    // Show mastered badge if item is already mastered
-    if (masteredBadge) {
-        masteredBadge.classList.toggle('hidden', currentItem.status !== PROGRESS_STATUS.MASTERED);
+    // Show proficient badge if item is already proficient
+    if (proficientBadge) {
+        proficientBadge.classList.toggle('hidden', currentItem.status !== PROGRESS_STATUS.PROFICIENT);
     }
 
     const translationText = currentItem.translation || '';
@@ -334,12 +334,14 @@ async function renderFlashcard() {
     // Highlight current status
     flashcardNotStarted.classList.remove('ring-2', 'ring-gray-400');
     flashcardInProgress.classList.remove('ring-2', 'ring-yellow-500');
-    flashcardMastered.classList.remove('ring-2', 'ring-green-500');
+    flashcardProficient.classList.remove('ring-2', 'ring-green-500');
 
     if (currentItem.status === PROGRESS_STATUS.NOT_STARTED) {
         flashcardNotStarted.classList.add('ring-2', 'ring-gray-400');
     } else if (currentItem.status === PROGRESS_STATUS.IN_PROGRESS) {
         flashcardInProgress.classList.add('ring-2', 'ring-yellow-500');
+    } else if (currentItem.status === PROGRESS_STATUS.PROFICIENT) {
+        flashcardProficient.classList.add('ring-2', 'ring-green-500');
     }
 }
 
@@ -455,7 +457,7 @@ document.addEventListener('keydown', (e) => {
             break;
         case '3':
             e.preventDefault();
-            flashcardMastered.click();
+            flashcardProficient.click();
             break;
     }
 });

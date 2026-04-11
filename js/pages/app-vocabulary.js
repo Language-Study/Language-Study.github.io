@@ -140,7 +140,7 @@ vocabularyListEl?.addEventListener('click', async (e) => {
         try {
             const item = vocabularyList.find(v => v.id === itemId);
             if (!item) return;
-            const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
+            const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.PROFICIENT];
             const currentIndex = statusOrder.indexOf(item.status);
             const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 

@@ -180,7 +180,7 @@ skillsList?.addEventListener('click', async (e) => {
 
                 const skill = skills.find(s => s.id === skillId);
                 const subtask = (skill.subtasks || []).find(st => st.id === subtaskId);
-                const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
+                const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.PROFICIENT];
                 const currentIndex = statusOrder.indexOf(subtask.status);
                 const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
@@ -307,7 +307,7 @@ skillsList?.addEventListener('click', async (e) => {
             });
 
             const skill = skills.find(s => s.id === itemId);
-            const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
+            const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.PROFICIENT];
             const currentIndex = statusOrder.indexOf(skill.status);
             const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 

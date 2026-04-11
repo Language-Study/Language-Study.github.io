@@ -1451,17 +1451,17 @@ a:visited {
     color: white !important;
 }
 
-#flashcardMastered.active-status-button {
+#flashcardProficient.active-status-button {
     background-color: #059669 !important;
     color: white !important;
 }
 
-#flashcardMastered.active-status-button svg {
+#flashcardProficient.active-status-button svg {
     stroke: white !important;
     color: white !important;
 }
 
-#flashcardMastered.active-status-button span {
+#flashcardProficient.active-status-button span {
     color: white !important;
 }
 

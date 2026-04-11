@@ -26,32 +26,32 @@ const BADGES = [
         check: () => vocabularyList.length >= 50
     },
     {
-        id: 'first_mastered',
+        id: 'first_proficient',
         name: 'First Word Proficient',
         description: 'Become proficient in your first vocabulary word.',
         icon: '⭐',
-        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 1
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.PROFICIENT).length >= 1
     },
     {
-        id: 'five_mastered',
+        id: 'five_proficient',
         name: '5 Words Proficient',
         description: 'Become proficient in 5 vocabulary words.',
         icon: '🎯',
-        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 5
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.PROFICIENT).length >= 5
     },
     {
-        id: 'ten_mastered',
+        id: 'ten_proficient',
         name: '10 Words Proficient',
         description: 'Become proficient in 10 vocabulary words.',
         icon: '🏆',
-        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 10
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.PROFICIENT).length >= 10
     },
     {
-        id: 'fifty_mastered',
+        id: 'fifty_proficient',
         name: '50 Words Proficient',
         description: 'Become proficient in 50 vocabulary words.',
         icon: '🥇',
-        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 50
+        check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.PROFICIENT).length >= 50
     },
     {
         id: 'first_skill',
@@ -75,25 +75,25 @@ const BADGES = [
         check: () => skills.length >= 10
     },
     {
-        id: 'first_mastered_skill',
+        id: 'first_proficient_skill',
         name: 'First Skill Proficient',
         description: 'Become proficient in your first skill.',
         icon: '⭐',
-        check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 1
+        check: () => skills.filter(s => s.status === PROGRESS_STATUS.PROFICIENT).length >= 1
     },
     {
-        id: 'five_mastered_skills',
+        id: 'five_proficient_skills',
         name: '5 Skills Proficient',
         description: 'Become proficient in 5 skills.',
         icon: '🏅',
-        check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 5
+        check: () => skills.filter(s => s.status === PROGRESS_STATUS.PROFICIENT).length >= 5
     },
     {
-        id: 'ten_mastered_skills',
+        id: 'ten_proficient_skills',
         name: '10 Skills Proficient',
         description: 'Become proficient in 10 skills.',
         icon: '🏆',
-        check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 10
+        check: () => skills.filter(s => s.status === PROGRESS_STATUS.PROFICIENT).length >= 10
     },
     {
         id: 'all_categories',
@@ -121,7 +121,23 @@ const BADGES = [
     }
 ];
 
+const LEGACY_BADGE_ID_MAP = {
+    first_mastered: 'first_proficient',
+    five_mastered: 'five_proficient',
+    ten_mastered: 'ten_proficient',
+    fifty_mastered: 'fifty_proficient',
+    first_mastered_skill: 'first_proficient_skill',
+    five_mastered_skills: 'five_proficient_skills',
+    ten_mastered_skills: 'ten_proficient_skills'
+};
+
 let earnedBadges = [];
+
+function normalizeBadgeIds(ids) {
+    if (!Array.isArray(ids)) return [];
+
+    return ids.map(id => LEGACY_BADGE_ID_MAP[id] || id);
+}
 
 /**
  * Groups badges by type (e.g., "Words Added", "Words Proficient", "Skills Added", etc.)
@@ -133,13 +149,13 @@ function groupBadgesByType() {
     BADGES.forEach(badge => {
         let type = 'Other';
 
-        if (badge.id.includes('_word') && !badge.id.includes('_mastered')) {
+        if (badge.id.includes('_word') && !badge.id.includes('_proficient')) {
             type = 'Words Added';
-        } else if (badge.id.includes('_mastered') && !badge.id.includes('_skill')) {
+        } else if (badge.id.includes('_proficient') && !badge.id.includes('_skill')) {
             type = 'Words Proficient';
-        } else if (badge.id.includes('_skill') && !badge.id.includes('_mastered')) {
+        } else if (badge.id.includes('_skill') && !badge.id.includes('_proficient')) {
             type = 'Skills Added';
-        } else if (badge.id.includes('_mastered_skill')) {
+        } else if (badge.id.includes('_proficient_skill')) {
             type = 'Skills Proficient';
         } else if (badge.id.includes('_portfolio')) {
             type = 'Portfolio';
@@ -170,7 +186,7 @@ async function renderBadges() {
     try {
         const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
         if (doc.exists && Array.isArray(doc.data().earnedBadges)) {
-            previouslyEarned = doc.data().earnedBadges;
+            previouslyEarned = normalizeBadgeIds(doc.data().earnedBadges);
         }
     } catch (e) {
         console.error('Error fetching earned badges:', e);

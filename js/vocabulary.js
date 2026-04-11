@@ -18,7 +18,8 @@ async function loadVocabulary() {
         const snapshot = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
         vocabularyList = snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            status: normalizeProgressStatus(doc.data().status)
         }));
     } catch (error) {
         console.error('Error loading vocabulary:', error);
@@ -130,15 +131,16 @@ async function deleteVocabularyItem(itemId) {
  * Update vocabulary item status
  * @async
  * @param {string} itemId - Document ID of vocabulary item
- * @param {string} newStatus - New status (NOT_STARTED, IN_PROGRESS, MASTERED)
+ * @param {string} newStatus - New status (NOT_STARTED, IN_PROGRESS, PROFICIENT)
  * @returns {Promise<void>}
  */
 async function updateVocabularyStatus(itemId, newStatus) {
     try {
+        const normalizedStatus = normalizeProgressStatus(newStatus);
         const currentItem = vocabularyList.find(item => item.id === itemId) || null;
-        const scheduleUpdate = computeSrsScheduleUpdate(currentItem, newStatus);
+        const scheduleUpdate = computeSrsScheduleUpdate(currentItem, normalizedStatus);
         const payload = {
-            status: newStatus,
+            status: normalizedStatus,
             ...scheduleUpdate.firestore
         };
 
@@ -146,7 +148,7 @@ async function updateVocabularyStatus(itemId, newStatus) {
 
         if (currentItem) {
             Object.assign(currentItem, {
-                status: newStatus,
+                status: normalizedStatus,
                 ...scheduleUpdate.local
             });
             return currentItem;
@@ -154,7 +156,7 @@ async function updateVocabularyStatus(itemId, newStatus) {
 
         return {
             id: itemId,
-            status: newStatus,
+            status: normalizedStatus,
             ...scheduleUpdate.local
         };
     } catch (error) {
@@ -365,7 +367,7 @@ function renderVocabItem(item) {
                 ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit vocabulary item" title="Edit">
                     Edit
                 </button>`}
-                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)" aria-label="Status: ${item.status === PROGRESS_STATUS.MASTERED ? 'Proficient' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle status" title="Click to change status">
+                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)" aria-label="Status: ${item.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle status" title="Click to change status">
                     ${statusIcons[item.status]}
                 </button>`}
                 ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete vocabulary item" title="Delete">
@@ -433,11 +435,11 @@ function filterVocabulary(query) {
  */
 function getVocabularyStats() {
     const total = vocabularyList.length;
-    const mastered = vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length;
+    const proficient = vocabularyList.filter(w => w.status === PROGRESS_STATUS.PROFICIENT).length;
     const inProgress = vocabularyList.filter(w => w.status === PROGRESS_STATUS.IN_PROGRESS).length;
-    const notStarted = total - mastered - inProgress;
+    const notStarted = total - proficient - inProgress;
 
-    return { total, mastered, inProgress, notStarted };
+    return { total, proficient, inProgress, notStarted };
 }
 
 /**
@@ -519,7 +521,7 @@ function computeSrsScheduleUpdate(item, newStatus) {
     const qualityByStatus = {
         [PROGRESS_STATUS.NOT_STARTED]: 1,
         [PROGRESS_STATUS.IN_PROGRESS]: 3,
-        [PROGRESS_STATUS.MASTERED]: 5
+        [PROGRESS_STATUS.PROFICIENT]: 5
     };
     const quality = qualityByStatus[newStatus] || 1;
 
@@ -550,7 +552,7 @@ function computeSrsScheduleUpdate(item, newStatus) {
         if (newStatus === PROGRESS_STATUS.IN_PROGRESS) {
             intervalDays = Math.min(intervalDays, 3);
         }
-        if (newStatus === PROGRESS_STATUS.MASTERED) {
+        if (newStatus === PROGRESS_STATUS.PROFICIENT) {
             intervalDays = Math.max(intervalDays, 3);
         }
 

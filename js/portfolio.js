@@ -34,7 +34,14 @@ async function loadSkills() {
         const snapshot = await db.collection('users').doc(currentUser.uid).collection('skills').get();
         skills = snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            status: normalizeProgressStatus(doc.data().status),
+            subtasks: Array.isArray(doc.data().subtasks)
+                ? doc.data().subtasks.map(subtask => ({
+                    ...subtask,
+                    status: normalizeProgressStatus(subtask.status)
+                }))
+                : []
         }));
         // Sort by priority if available, otherwise maintain order
         skills.sort((a, b) => {
@@ -253,8 +260,9 @@ async function deleteSkill(itemId) {
  */
 async function updateSkillStatus(itemId, newStatus) {
     try {
+        const normalizedStatus = normalizeProgressStatus(newStatus);
         await db.collection('users').doc(currentUser.uid).collection('skills').doc(itemId).update({
-            status: newStatus
+            status: normalizedStatus
         });
     } catch (error) {
         console.error('Error updating skill status:', error);
@@ -373,7 +381,7 @@ async function updateSubtaskStatus(skillId, subtaskId, newStatus) {
             throw new Error('Subtask not found.');
         }
 
-        subtask.status = newStatus;
+        subtask.status = normalizeProgressStatus(newStatus);
 
         await db.collection('users').doc(currentUser.uid).collection('skills').doc(skillId).update({
             subtasks: subtasks
@@ -565,7 +573,7 @@ function renderSkillItem(skill) {
                 ${window.isMentorView ? '' : `<button class="subtask-edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit subtask" title="Edit">
                         Edit
                     </button>`}
-                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${subtask.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : subtask.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${subtask.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : subtask.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
                     title="Status (view only)">${statusIcons[subtask.status]}</span>`
             : `<button class="subtask-status-button p-1 rounded-full hover:bg-gray-100 transition-transform" aria-label="Toggle subtask status" title="Click to change status">
                     ${statusIcons[subtask.status]}
@@ -608,8 +616,8 @@ function renderSkillItem(skill) {
                 </div>
                 <div class="flex items-center gap-2">
                     ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>`}
-                    ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
-                        title="Status (view only)" aria-label="Status: ${skill.status === PROGRESS_STATUS.MASTERED ? 'Proficient' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[skill.status]}</span>`
+                    ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                        title="Status (view only)" aria-label="Status: ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[skill.status]}</span>`
             : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
                             ${statusIcons[skill.status]}
                         </button>`}
@@ -685,11 +693,11 @@ function filterPortfolio(query) {
  */
 function getSkillsStats() {
     const total = skills.length;
-    const mastered = skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length;
+    const proficient = skills.filter(s => s.status === PROGRESS_STATUS.PROFICIENT).length;
     const inProgress = skills.filter(s => s.status === PROGRESS_STATUS.IN_PROGRESS).length;
-    const notStarted = total - mastered - inProgress;
+    const notStarted = total - proficient - inProgress;
 
-    return { total, mastered, inProgress, notStarted };
+    return { total, proficient, inProgress, notStarted };
 }
 
 function getPortfolioStats() {
