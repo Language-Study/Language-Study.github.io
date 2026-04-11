@@ -2,15 +2,25 @@
  * Mentor View Module
  * Handles mentor code validation, mentor view UI, and read-only mode
  */
+const MENTOR_CODE_REGEX = /^[A-Z0-9]{5}$/;
+
+function getRawMentorCodeFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('mentor') || '').trim();
+}
+
+function getMentorCodeFromUrl() {
+    const rawCode = getRawMentorCodeFromUrl().toUpperCase();
+    if (!MENTOR_CODE_REGEX.test(rawCode)) return null;
+    return rawCode;
+}
 
 /**
  * Detect if this is a mentor view based on URL parameters
  * @returns {boolean}
  */
 function isMentorViewEarly() {
-    const params = new URLSearchParams(window.location.search);
-    const mentorCode = params.get('mentor');
-    return !!mentorCode;
+    return Boolean(getRawMentorCodeFromUrl());
 }
 
 /**
@@ -19,14 +29,18 @@ function isMentorViewEarly() {
  * @returns {Promise<void>}
  */
 async function tryMentorView() {
+    const rawMentorCode = getRawMentorCodeFromUrl();
+    const mentorCode = getMentorCodeFromUrl();
     const params = new URLSearchParams(window.location.search);
-    const mentorCode = params.get('mentor');
 
-    if (!mentorCode) return;
+    if (!rawMentorCode) return;
+    if (!mentorCode) {
+        alert('Invalid mentor code.');
+        return;
+    }
 
     try {
-        const code = mentorCode.toUpperCase();
-        const doc = await db.collection('mentorCodes').doc(code).get();
+        const doc = await db.collection('mentorCodes').doc(mentorCode).get();
 
         if (!doc.exists) {
             alert('Invalid mentor code.');
@@ -48,6 +62,7 @@ async function tryMentorView() {
 
         // Disable all editing features
         disableEditingUI();
+        addMentorModeBanner();
         addMentorBackButton();
 
         // Activate tab from URL parameter
@@ -122,7 +137,9 @@ function disableEditingUI() {
         '#portfolioLink',
         '#toggleLanguageSection',
         '#openPrintPdfModalBtn',
-        '#startReviewBtn'
+        '#startReviewBtn',
+        '#openSettingsBtnMobile',
+        '#openPortfolioShareBtn'
     ];
 
     editingElements.forEach(selector => {
@@ -150,6 +167,8 @@ function disableEditingUI() {
     const viewAsMentorBtn = document.querySelector('#mentorViewForm button[type="submit"]');
     if (mentorCodeInput) mentorCodeInput.disabled = true;
     if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
+    const mentorAccessSection = document.getElementById('mentorAccessSection');
+    if (mentorAccessSection) mentorAccessSection.style.display = 'none';
 
     // Show tab buttons and content
     document.querySelectorAll('.tab-button, .tab-content').forEach(el => {
@@ -159,6 +178,23 @@ function disableEditingUI() {
 
     // Check if mentor has enabled quick review
     handleMentorQuickReviewAccess();
+}
+
+function addMentorModeBanner() {
+    if (document.getElementById('mentorModeBanner')) return;
+
+    const appContainer = document.querySelector('.max-w-4xl.mx-auto.p-2.sm\\:p-4');
+    if (!appContainer) return;
+
+    const mentorCode = getMentorCodeFromUrl();
+    const banner = document.createElement('div');
+    banner.id = 'mentorModeBanner';
+    banner.className = 'mb-4 rounded border-l-4 border-yellow-500 bg-yellow-50 px-4 py-3 text-sm text-yellow-900';
+    banner.textContent = mentorCode
+        ? `Mentor View (${mentorCode}): This page is read-only.`
+        : 'Mentor View: This page is read-only.';
+
+    appContainer.prepend(banner);
 }
 
 /**
@@ -235,9 +271,8 @@ function addMentorBackButton() {
  */
 function getMentorViewEmailDisplay() {
     if (window.isMentorView) {
-        const params = new URLSearchParams(window.location.search);
-        const mentorCode = params.get('mentor');
-        return mentorCode ? `Mentor View: <b>(${mentorCode})</b>` : 'Mentor View';
+        const mentorCode = getMentorCodeFromUrl();
+        return mentorCode ? `Mentor View (${mentorCode})` : 'Mentor View';
     }
     return '';
 }
@@ -251,7 +286,7 @@ function updateMentorViewUI() {
 
     if (window.isMentorView) {
         if (userEmail) {
-            userEmail.innerHTML = getMentorViewEmailDisplay();
+            userEmail.textContent = getMentorViewEmailDisplay();
         }
 
         const logoutBtn = document.getElementById('logoutBtn');
@@ -269,7 +304,7 @@ function updateMentorViewUI() {
  * @returns {Promise<boolean>}
  */
 async function validateMentorCode(code) {
-    if (!/^[A-Z0-9]{5}$/.test(code)) {
+    if (!MENTOR_CODE_REGEX.test(code)) {
         throw new Error('Please enter a valid 5-digit code.');
     }
 

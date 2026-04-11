@@ -2,15 +2,25 @@
  * Portfolio Share Module
  * Handles public portfolio sharing with shareable links and QR codes
  */
+const PORTFOLIO_CODE_REGEX = /^[A-Z0-9]{5}$/;
+
+function getRawPortfolioCodeFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('portfolio') || '').trim();
+}
+
+function getPortfolioCodeFromUrl() {
+    const rawCode = getRawPortfolioCodeFromUrl().toUpperCase();
+    if (!PORTFOLIO_CODE_REGEX.test(rawCode)) return null;
+    return rawCode;
+}
 
 /**
  * Detect if this is a public portfolio view based on URL parameters
  * @returns {boolean}
  */
 function isPublicPortfolioViewEarly() {
-    const params = new URLSearchParams(window.location.search);
-    const portfolioCode = params.get('portfolio');
-    return !!portfolioCode;
+    return Boolean(getRawPortfolioCodeFromUrl());
 }
 
 /**
@@ -19,14 +29,19 @@ function isPublicPortfolioViewEarly() {
  * @returns {Promise<void>}
  */
 async function tryPublicPortfolioView() {
-    const params = new URLSearchParams(window.location.search);
-    const portfolioCode = params.get('portfolio');
+    const rawPortfolioCode = getRawPortfolioCodeFromUrl();
+    const portfolioCode = getPortfolioCodeFromUrl();
 
-    if (!portfolioCode) return;
+    if (!rawPortfolioCode) return;
+    if (!portfolioCode) {
+        alert('Invalid portfolio link.');
+        window.location.href = 'index.html';
+        return;
+    }
 
     try {
         // Look up the portfolio code to get the user ID
-        const codeDoc = await db.collection('portfolioCodes').doc(portfolioCode.toUpperCase()).get();
+        const codeDoc = await db.collection('portfolioCodes').doc(portfolioCode).get();
         
         if (!codeDoc.exists) {
             alert('Invalid portfolio link.');
@@ -64,6 +79,7 @@ async function tryPublicPortfolioView() {
         disableEditingForPublicPortfolio();
         showPublicPortfolioUI();
         addPublicPortfolioHeader();
+        addPublicPortfolioBanner();
 
     } catch (error) {
         console.error('Error loading public portfolio:', error);
@@ -116,6 +132,7 @@ function disableEditingForPublicPortfolio() {
         '#mobileMenuBtn',
         '#searchInput',
         '#openPortfolioShareBtn',  // Hide share button in public view
+        '#mentorAccessSection',
         '.tab-button:not([data-tab-target="#portfolio"])', // Hide all tabs except portfolio
         '#vocabulary',
         '#skills',
@@ -140,6 +157,26 @@ function disableEditingForPublicPortfolio() {
         portfolioContent.classList.remove('hidden');
         portfolioContent.style.display = 'block';
     }
+}
+
+function addPublicPortfolioBanner() {
+    if (document.getElementById('publicPortfolioBanner')) return;
+
+    const appContainer = document.querySelector('.max-w-4xl.mx-auto.p-2.sm\\:p-4');
+    if (!appContainer) return;
+
+    const total = Array.isArray(portfolioEntries) ? portfolioEntries.length : 0;
+    const featured = Array.isArray(portfolioEntries) ? portfolioEntries.filter(e => e.isTop).length : 0;
+    const code = getPortfolioCodeFromUrl();
+
+    const banner = document.createElement('div');
+    banner.id = 'publicPortfolioBanner';
+    banner.className = 'mb-4 rounded border-l-4 border-blue-500 bg-blue-50 px-4 py-3 text-sm text-blue-900';
+    banner.textContent = code
+        ? `Viewing public portfolio (${code}) - ${featured} featured item${featured === 1 ? '' : 's'}, ${total} total.`
+        : `Viewing public portfolio - ${featured} featured item${featured === 1 ? '' : 's'}, ${total} total.`;
+
+    appContainer.prepend(banner);
 }
 
 /**

@@ -63,10 +63,11 @@ onAuthStateChanged(async (user) => {
 
         if (window.isMentorView) {
             const params = new URLSearchParams(window.location.search);
-            const mentorCode = params.get('mentor');
+            const mentorCodeRaw = (params.get('mentor') || '').toUpperCase().trim();
+            const mentorCode = /^[A-Z0-9]{5}$/.test(mentorCodeRaw) ? mentorCodeRaw : '';
             const displayText = mentorCode ? `Mentor View: ${mentorCode}` : 'Mentor View';
             if (userEmailEl) {
-                userEmailEl.innerHTML = mentorCode ? `Mentor View: <b>(${mentorCode})</b>` : 'Mentor View';
+                userEmailEl.textContent = mentorCode ? `Mentor View (${mentorCode})` : 'Mentor View';
             }
             if (userEmailMobileEl) {
                 userEmailMobileEl.textContent = displayText;
