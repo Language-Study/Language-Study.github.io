@@ -187,7 +187,7 @@ async function updateFlashcardStatus(newStatus) {
         renderFlashcard();
 
         const statusText = newStatus === PROGRESS_STATUS.NOT_STARTED ? 'Not Started' :
-            newStatus === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Mastered';
+            newStatus === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Proficient';
         showToast(`Marked as ${statusText}`);
     } catch (error) {
         showToast('Error updating status');

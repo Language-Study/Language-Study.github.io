@@ -609,7 +609,7 @@ function renderSkillItem(skill) {
                 <div class="flex items-center gap-2">
                     ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>`}
                     ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.MASTERED ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
-                        title="Status (view only)" aria-label="Status: ${skill.status}">${statusIcons[skill.status]}</span>`
+                        title="Status (view only)" aria-label="Status: ${skill.status === PROGRESS_STATUS.MASTERED ? 'Proficient' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[skill.status]}</span>`
             : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
                             ${statusIcons[skill.status]}
                         </button>`}

@@ -27,29 +27,29 @@ const BADGES = [
     },
     {
         id: 'first_mastered',
-        name: 'First Word Mastered',
-        description: 'Master your first vocabulary word.',
+        name: 'First Word Proficient',
+        description: 'Become proficient in your first vocabulary word.',
         icon: '⭐',
         check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 1
     },
     {
         id: 'five_mastered',
-        name: '5 Words Mastered',
-        description: 'Master 5 vocabulary words.',
+        name: '5 Words Proficient',
+        description: 'Become proficient in 5 vocabulary words.',
         icon: '🎯',
         check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 5
     },
     {
         id: 'ten_mastered',
-        name: '10 Words Mastered',
-        description: 'Master 10 vocabulary words.',
+        name: '10 Words Proficient',
+        description: 'Become proficient in 10 vocabulary words.',
         icon: '🏆',
         check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 10
     },
     {
         id: 'fifty_mastered',
-        name: '50 Words Mastered',
-        description: 'Master 50 vocabulary words.',
+        name: '50 Words Proficient',
+        description: 'Become proficient in 50 vocabulary words.',
         icon: '🥇',
         check: () => vocabularyList.filter(w => w.status === PROGRESS_STATUS.MASTERED).length >= 50
     },
@@ -76,22 +76,22 @@ const BADGES = [
     },
     {
         id: 'first_mastered_skill',
-        name: 'First Skill Mastered',
-        description: 'Master your first skill.',
+        name: 'First Skill Proficient',
+        description: 'Become proficient in your first skill.',
         icon: '⭐',
         check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 1
     },
     {
         id: 'five_mastered_skills',
-        name: '5 Skills Mastered',
-        description: 'Master 5 skills.',
+        name: '5 Skills Proficient',
+        description: 'Become proficient in 5 skills.',
         icon: '🏅',
         check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 5
     },
     {
         id: 'ten_mastered_skills',
-        name: '10 Skills Mastered',
-        description: 'Master 10 skills.',
+        name: '10 Skills Proficient',
+        description: 'Become proficient in 10 skills.',
         icon: '🏆',
         check: () => skills.filter(s => s.status === PROGRESS_STATUS.MASTERED).length >= 10
     },
@@ -124,7 +124,7 @@ const BADGES = [
 let earnedBadges = [];
 
 /**
- * Groups badges by type (e.g., "Words Added", "Words Mastered", "Skills Added", etc.)
+ * Groups badges by type (e.g., "Words Added", "Words Proficient", "Skills Added", etc.)
  * @returns {Object} Object with badge type as key and array of badges as value
  */
 function groupBadgesByType() {
@@ -136,11 +136,11 @@ function groupBadgesByType() {
         if (badge.id.includes('_word') && !badge.id.includes('_mastered')) {
             type = 'Words Added';
         } else if (badge.id.includes('_mastered') && !badge.id.includes('_skill')) {
-            type = 'Words Mastered';
+            type = 'Words Proficient';
         } else if (badge.id.includes('_skill') && !badge.id.includes('_mastered')) {
             type = 'Skills Added';
         } else if (badge.id.includes('_mastered_skill')) {
-            type = 'Skills Mastered';
+            type = 'Skills Proficient';
         } else if (badge.id.includes('_portfolio')) {
             type = 'Portfolio';
         } else if (badge.id === 'all_categories') {
