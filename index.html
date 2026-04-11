@@ -288,6 +288,22 @@
                             Sharing</label>
                     </div>
                     <p class="text-xs text-gray-600 ml-8">Allow anyone with the link to view your portfolio</p>
+                    <div class="mt-4 ml-8 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="portfolioShareExpiryToggle"
+                                class="form-checkbox h-4 w-4 text-blue-600 flex-shrink-0" />
+                            <label for="portfolioShareExpiryToggle" class="text-sm font-medium text-gray-700">Set link expiration</label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label for="portfolioShareExpiryHours" class="text-xs text-gray-600">Expire after</label>
+                            <select id="portfolioShareExpiryHours"
+                                class="p-1.5 border rounded text-xs bg-white text-gray-700">
+                                <option value="24">24 hours</option>
+                                <option value="168">7 days</option>
+                                <option value="720">30 days</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Share Link Section (shown when enabled) -->
@@ -309,7 +325,7 @@
                         </div>
                         <p id="copyFeedback" class="text-xs text-green-600 mt-1 hidden">✓ Link copied to clipboard!</p>
                         <p id="shareExpiryNotice" class="text-xs text-amber-700 mt-2">
-                            This link expires 24 hours after you enable sharing.
+                            This link does not expire unless you turn sharing off.
                         </p>
                     </div>
 
@@ -327,7 +343,7 @@
                 <!-- Disabled Message -->
                 <div id="shareDisabledMessage" class="text-center text-gray-600 py-4 hidden">
                     <p>Enable public sharing above to generate your shareable link and QR code.</p>
-                    <p class="text-xs text-amber-700 mt-2">Public share links expire after 24 hours.</p>
+                    <p class="text-xs text-amber-700 mt-2">By default, links do not expire unless you choose an expiration.</p>
                 </div>
             </div>
         </div>

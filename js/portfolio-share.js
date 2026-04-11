@@ -3,9 +3,43 @@
  * Handles public portfolio sharing with shareable links and QR codes
  */
 const PORTFOLIO_CODE_REGEX = /^[A-Z0-9]{5}$/;
+const DEFAULT_NON_EXPIRING_HOURS = 24 * 365 * 100;
 
-function getShareExpiryTimestamp(hours = 24) {
-    return firebase.firestore.Timestamp.fromDate(new Date(Date.now() + hours * 60 * 60 * 1000));
+function normalizeShareExpiryHours(hours) {
+    const parsed = Number(hours);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return parsed;
+}
+
+function getShareExpiryTimestamp(hours = null) {
+    const normalizedHours = normalizeShareExpiryHours(hours);
+    const effectiveHours = normalizedHours || DEFAULT_NON_EXPIRING_HOURS;
+    return firebase.firestore.Timestamp.fromDate(new Date(Date.now() + effectiveHours * 60 * 60 * 1000));
+}
+
+function getExpiryDateFromValue(expiresAt) {
+    if (!expiresAt) return null;
+    if (typeof expiresAt.toDate === 'function') {
+        const date = expiresAt.toDate();
+        return Number.isNaN(date?.getTime?.()) ? null : date;
+    }
+    if (expiresAt instanceof Date) {
+        return Number.isNaN(expiresAt.getTime()) ? null : expiresAt;
+    }
+    return null;
+}
+
+function isShareDataExpired(shareData) {
+    const expiryDate = getExpiryDateFromValue(shareData?.expiresAt);
+    if (!expiryDate) return false;
+    return expiryDate.getTime() <= Date.now();
+}
+
+async function getPortfolioShareDataRaw() {
+    if (!currentUser) return null;
+
+    const doc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').get();
+    return doc.exists ? doc.data() : null;
 }
 
 function getRawPortfolioCodeFromUrl() {
@@ -54,9 +88,16 @@ async function tryPublicPortfolioView() {
         }
 
         const shareData = codeDoc.data();
-        const isActiveShare = shareData.enabled === true
-            && shareData.expiresAt?.toDate instanceof Function
-            && shareData.expiresAt.toDate().getTime() > Date.now();
+        const isExpired = isShareDataExpired(shareData);
+        const isActiveShare = shareData.enabled === true && !isExpired;
+
+        if (isExpired && shareData.enabled === true) {
+            try {
+                await db.collection('publicShareLinks').doc(portfolioCode).delete();
+            } catch (disableError) {
+                console.warn('Unable to delete expired public share link:', disableError);
+            }
+        }
 
         if (!isActiveShare || typeof shareData.uid !== 'string') {
             alert('This portfolio is not publicly shared or has been disabled.');
@@ -262,13 +303,13 @@ async function generatePortfolioShareLink() {
         throw new Error('User must be logged in to generate share link');
     }
 
-    // Get or create portfolio share code
+    // Get existing portfolio share code only. Link creation should happen
+    // explicitly when sharing is enabled.
     const shareData = await getPortfolioShareData();
     let code = shareData?.code;
 
     if (!code) {
-        // Generate new code if doesn't exist
-        code = await createPortfolioShareCode();
+        throw new Error('No active portfolio share code found');
     }
 
     const baseUrl = window.location.origin + window.location.pathname;
@@ -280,11 +321,12 @@ async function generatePortfolioShareLink() {
  * @async
  * @returns {Promise<string>}
  */
-async function createPortfolioShareCode() {
+async function createPortfolioShareCode(options = {}) {
     if (!currentUser) {
         throw new Error('User must be logged in');
     }
 
+    const expiryHours = normalizeShareExpiryHours(options.expiryHours);
     let code;
     let attempts = 0;
     const maxAttempts = 10;
@@ -293,7 +335,7 @@ async function createPortfolioShareCode() {
     // Some rule sets deny reads of missing docs, so write-first is safer.
     while (attempts < maxAttempts) {
         code = generatePortfolioShareCode();
-        const expiresAt = getShareExpiryTimestamp(24);
+        const expiresAt = getShareExpiryTimestamp(expiryHours);
 
         try {
             // If a generated code already belongs to another user, this set is denied.
@@ -313,6 +355,7 @@ async function createPortfolioShareCode() {
                 enabled: true,
                 shareType: 'full-site-24h',
                 expiresAt: expiresAt,
+                disabledAt: null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
@@ -338,38 +381,80 @@ async function createPortfolioShareCode() {
  * @async
  * @returns {Promise<void>}
  */
-async function enablePortfolioSharing() {
+async function enablePortfolioSharing(options = {}) {
     if (!currentUser) {
         throw new Error('User must be logged in');
     }
 
     try {
+        const expiryHours = normalizeShareExpiryHours(options.expiryHours);
+        const expiresAt = getShareExpiryTimestamp(expiryHours);
+
         // Get or create code
         let shareData = await getPortfolioShareData();
         let code = shareData?.code;
-        const expiresAt = getShareExpiryTimestamp(24);
+        const wasPreviouslyDisabled = shareData?.enabled !== true;
+        const wasExpired = isShareDataExpired(shareData);
+        const shouldCreateNewCode = !code || wasPreviouslyDisabled || wasExpired;
 
-        if (!code) {
-            code = await createPortfolioShareCode();
+        if (shouldCreateNewCode) {
+            if (code) {
+                const shouldDeleteOldCode = wasExpired || wasPreviouslyDisabled;
+                if (shouldDeleteOldCode) {
+                    try {
+                        await db.collection('publicShareLinks').doc(code).delete();
+                    } catch (error) {
+                        const isNotFound = error?.code === 'not-found';
+                        if (!isNotFound) {
+                            console.warn('Unable to delete old portfolio share code:', error);
+                        }
+                    }
+                } else {
+                    try {
+                        await db.collection('publicShareLinks').doc(code).update({
+                            enabled: false,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } catch (error) {
+                        const isNotFound = error?.code === 'not-found';
+                        if (!isNotFound) {
+                            console.warn('Unable to disable old portfolio share code:', error);
+                        }
+                    }
+                }
+            }
+
+            code = await createPortfolioShareCode({ expiryHours });
         } else {
-            await db.collection('publicShareLinks').doc(code).set({
-                uid: currentUser.uid,
-                shareType: 'full-site-24h',
+            try {
+                await db.collection('publicShareLinks').doc(code).set({
+                    uid: currentUser.uid,
+                    shareType: 'full-site-24h',
+                    enabled: true,
+                    expiresAt: expiresAt,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (error) {
+                const isPermissionDenied = error?.code === 'permission-denied'
+                    || String(error?.message || '').toLowerCase().includes('permission');
+                if (!isPermissionDenied) {
+                    throw error;
+                }
+
+                // If this code no longer belongs to the owner, rotate to a fresh code.
+                code = await createPortfolioShareCode({ expiryHours });
+            }
+
+            await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
                 enabled: true,
+                code: code,
+                shareType: 'full-site-24h',
                 expiresAt: expiresAt,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                disabledAt: null
             }, { merge: true });
         }
-
-        await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
-            enabled: true,
-            code: code,
-            shareType: 'full-site-24h',
-            expiresAt: expiresAt,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            disabledAt: null
-        }, { merge: true });
     } catch (error) {
         console.error('Error enabling portfolio sharing:', error);
         throw new Error('Failed to enable portfolio sharing');
@@ -381,22 +466,43 @@ async function enablePortfolioSharing() {
  * @async
  * @returns {Promise<void>}
  */
-async function disablePortfolioSharing() {
+async function disablePortfolioSharing(options = {}) {
     if (!currentUser) {
         throw new Error('User must be logged in');
     }
 
     try {
-        const shareData = await getPortfolioShareData();
+        const shareData = options.shareData || await getPortfolioShareDataRaw();
+        const shouldDeleteCode = options.deleteCode === true;
+
         if (shareData?.code) {
-            await db.collection('publicShareLinks').doc(shareData.code).set({
-                enabled: false,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            if (shouldDeleteCode) {
+                try {
+                    await db.collection('publicShareLinks').doc(shareData.code).delete();
+                } catch (error) {
+                    const isNotFound = error?.code === 'not-found';
+                    if (!isNotFound) {
+                        console.warn('Unable to delete portfolio share code during disable:', error);
+                    }
+                }
+            } else {
+                try {
+                    await db.collection('publicShareLinks').doc(shareData.code).update({
+                        enabled: false,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    const isNotFound = error?.code === 'not-found';
+                    if (!isNotFound) {
+                        console.warn('Unable to disable portfolio share code:', error);
+                    }
+                }
+            }
         }
 
         await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
             enabled: false,
+            code: shouldDeleteCode ? null : (shareData?.code || null),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             disabledAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -415,8 +521,8 @@ async function isPortfolioSharingEnabled() {
     if (!currentUser) return false;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').get();
-        return doc.exists && doc.data().enabled === true;
+        const shareData = await getPortfolioShareData();
+        return shareData?.enabled === true;
     } catch (error) {
         console.error('Error checking portfolio sharing status:', error);
         return false;
@@ -432,8 +538,22 @@ async function getPortfolioShareData() {
     if (!currentUser) return null;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').get();
-        return doc.exists ? doc.data() : null;
+        let shareData = await getPortfolioShareDataRaw();
+        if (!shareData) return null;
+
+        if (shareData.enabled === true && isShareDataExpired(shareData)) {
+            await disablePortfolioSharing({
+                shareData,
+                deleteCode: true
+            });
+            shareData = {
+                ...shareData,
+                enabled: false,
+                code: null
+            };
+        }
+
+        return shareData;
     } catch (error) {
         console.error('Error getting portfolio share data:', error);
         return null;

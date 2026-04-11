@@ -4,6 +4,8 @@
  */
 
 let qrCodeInstance = null;
+const NON_EXPIRING_THRESHOLD_MS = 50 * 365 * 24 * 60 * 60 * 1000;
+const SHARE_EXPIRY_OPTIONS_HOURS = [24, 168, 720];
 
 /**
  * Initialize portfolio share modal and event listeners
@@ -14,6 +16,8 @@ function initPortfolioShareModal() {
     const closeBtn = document.getElementById('closePortfolioShareBtn');
     const modal = document.getElementById('portfolioShareModal');
     const toggle = document.getElementById('portfolioShareToggle');
+    const expiryToggle = document.getElementById('portfolioShareExpiryToggle');
+    const expiryHours = document.getElementById('portfolioShareExpiryHours');
     const copyBtn = document.getElementById('copyShareLinkBtn');
 
     if (openBtn) {
@@ -34,6 +38,14 @@ function initPortfolioShareModal() {
 
     if (toggle) {
         toggle.addEventListener('change', handleShareToggle);
+    }
+
+    if (expiryToggle) {
+        expiryToggle.addEventListener('change', handleExpiryOptionChange);
+    }
+
+    if (expiryHours) {
+        expiryHours.addEventListener('change', handleExpiryOptionChange);
     }
 
     if (copyBtn) {
@@ -74,23 +86,39 @@ function closePortfolioShareModal() {
  */
 async function loadShareModalState() {
     try {
-        const shareData = await getPortfolioShareData();
-        const isEnabled = await isPortfolioSharingEnabled();
+        let shareData = await getPortfolioShareData();
+        let isEnabled = shareData?.enabled === true;
         const toggle = document.getElementById('portfolioShareToggle');
+
+        // Repair invalid states so opening the modal never auto-creates a link.
+        if (isEnabled && !shareData?.code) {
+            await disablePortfolioSharing({ shareData, deleteCode: true });
+            shareData = await getPortfolioShareData();
+            isEnabled = false;
+        }
 
         if (toggle) {
             toggle.checked = isEnabled;
         }
 
+        syncExpiryControlsWithShareData(shareData, isEnabled);
         updateShareExpiryNotice(shareData, isEnabled);
 
         if (isEnabled) {
             showShareContent();
-            const shareLink = await generatePortfolioShareLink();
-            displayShareLink(shareLink);
-            generateQRCode(shareLink);
+            if (shareData?.code) {
+                const shareLink = await generatePortfolioShareLink();
+                displayShareLink(shareLink);
+                generateQRCode(shareLink);
+            } else {
+                hideShareContent();
+                resetShareLinkDisplay();
+                clearQRCode();
+            }
         } else {
             hideShareContent();
+            resetShareLinkDisplay();
+            clearQRCode();
         }
     } catch (error) {
         console.error('Error loading share modal state:', error);
@@ -105,10 +133,11 @@ async function loadShareModalState() {
  */
 async function handleShareToggle(event) {
     const isEnabled = event.target.checked;
+    const selectedExpiryHours = getSelectedShareExpiryHours();
 
     try {
         if (isEnabled) {
-            await enablePortfolioSharing();
+            await enablePortfolioSharing({ expiryHours: selectedExpiryHours });
             const shareData = await getPortfolioShareData();
             updateShareExpiryNotice(shareData, true);
             showShareContent();
@@ -117,8 +146,10 @@ async function handleShareToggle(event) {
             generateQRCode(shareLink);
         } else {
             await disablePortfolioSharing();
-            updateShareExpiryNotice(null, false);
+            const shareData = await getPortfolioShareData();
+            updateShareExpiryNotice(shareData, false);
             hideShareContent();
+            resetShareLinkDisplay();
             clearQRCode();
         }
     } catch (error) {
@@ -165,6 +196,105 @@ function displayShareLink(link) {
     }
 }
 
+function resetShareLinkDisplay() {
+    const input = document.getElementById('shareableLinkInput');
+    if (input) {
+        input.value = '';
+    }
+}
+
+function getSelectedShareExpiryHours() {
+    const expiryToggle = document.getElementById('portfolioShareExpiryToggle');
+    const expiryHours = document.getElementById('portfolioShareExpiryHours');
+
+    if (!expiryToggle || !expiryToggle.checked) {
+        return null;
+    }
+
+    const selected = Number(expiryHours?.value);
+    if (!Number.isFinite(selected) || selected <= 0) {
+        return 24;
+    }
+
+    return selected;
+}
+
+function syncExpiryControlsWithShareData(shareData, isEnabled) {
+    const expiryToggle = document.getElementById('portfolioShareExpiryToggle');
+    const expiryHours = document.getElementById('portfolioShareExpiryHours');
+    if (!expiryToggle || !expiryHours) return;
+
+    if (!isEnabled) {
+        expiryToggle.checked = false;
+        expiryHours.disabled = true;
+        expiryHours.value = '24';
+        return;
+    }
+
+    const selectedHours = inferShareExpiryHoursFromData(shareData);
+    const hasExpiry = Number.isFinite(selectedHours) && selectedHours > 0;
+
+    expiryToggle.checked = hasExpiry;
+    expiryHours.disabled = !hasExpiry;
+
+    if (hasExpiry) {
+        const selectedValue = String(selectedHours);
+        const supportsValue = Array.from(expiryHours.options).some(option => option.value === selectedValue);
+        expiryHours.value = supportsValue ? selectedValue : '24';
+    } else {
+        expiryHours.value = '24';
+    }
+}
+
+function inferShareExpiryHoursFromData(shareData) {
+    let expiryDate = null;
+    if (typeof shareData?.expiresAt?.toDate === 'function') {
+        expiryDate = shareData.expiresAt.toDate();
+    } else if (shareData?.expiresAt instanceof Date) {
+        expiryDate = shareData.expiresAt;
+    }
+
+    if (!expiryDate || Number.isNaN(expiryDate.getTime())) {
+        return null;
+    }
+
+    const remainingMs = expiryDate.getTime() - Date.now();
+    if (remainingMs > NON_EXPIRING_THRESHOLD_MS) {
+        return null;
+    }
+
+    const remainingHours = Math.max(1, Math.round(remainingMs / (60 * 60 * 1000)));
+    return SHARE_EXPIRY_OPTIONS_HOURS.reduce((closest, option) => {
+        return Math.abs(option - remainingHours) < Math.abs(closest - remainingHours) ? option : closest;
+    }, SHARE_EXPIRY_OPTIONS_HOURS[0]);
+}
+
+async function handleExpiryOptionChange() {
+    const shareToggle = document.getElementById('portfolioShareToggle');
+    const expiryToggle = document.getElementById('portfolioShareExpiryToggle');
+    const expiryHours = document.getElementById('portfolioShareExpiryHours');
+
+    if (expiryHours && expiryToggle) {
+        expiryHours.disabled = !expiryToggle.checked;
+    }
+
+    if (!shareToggle || !shareToggle.checked) {
+        const shareData = await getPortfolioShareData();
+        updateShareExpiryNotice(shareData, false);
+        return;
+    }
+
+    const selectedExpiryHours = getSelectedShareExpiryHours();
+    try {
+        await enablePortfolioSharing({ expiryHours: selectedExpiryHours });
+        const shareData = await getPortfolioShareData();
+        updateShareExpiryNotice(shareData, true);
+    } catch (error) {
+        console.error('Error updating share expiration settings:', error);
+        alert('Failed to update expiration settings. Please try again.');
+    }
+}
+
 function formatShareExpiryDate(expiresAt) {
     if (!expiresAt) return null;
 
@@ -178,6 +308,10 @@ function formatShareExpiryDate(expiresAt) {
     }
 
     if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    if ((date.getTime() - Date.now()) > NON_EXPIRING_THRESHOLD_MS) {
         return null;
     }
 
@@ -195,17 +329,17 @@ function updateShareExpiryNotice(shareData, isEnabled) {
     if (!notice) return;
 
     if (!isEnabled) {
-        notice.textContent = 'This link expires 24 hours after you enable sharing.';
+        notice.textContent = 'Public sharing is off. Links work only while sharing is enabled.';
         return;
     }
 
     const formattedExpiry = formatShareExpiryDate(shareData?.expiresAt);
     if (formattedExpiry) {
-        notice.textContent = `This link expires on ${formattedExpiry}.`;
+        notice.textContent = `This link expires on ${formattedExpiry}. Sharing will turn off automatically at that time.`;
         return;
     }
 
-    notice.textContent = 'This link expires 24 hours after you enable sharing.';
+    notice.textContent = 'This link does not expire unless you turn sharing off.';
 }
 
 /**
@@ -321,9 +455,9 @@ function addShareButtonToSettings() {
     `;
 
     // Insert before the delete account section
-    const deleteAccountSection = settingsContent.querySelector('.mt-6.pt-6.border-t');
-    if (deleteAccountSection) {
-        settingsContent.insertBefore(shareSection, deleteAccountSection);
+    const deleteAccountSection = settingsContent.querySelector('#accountTab .mt-6.pt-6.border-t');
+    if (deleteAccountSection && deleteAccountSection.parentNode) {
+        deleteAccountSection.parentNode.insertBefore(shareSection, deleteAccountSection);
     } else {
         settingsContent.appendChild(shareSection);
     }
