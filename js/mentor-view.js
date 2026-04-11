@@ -3,6 +3,36 @@
  * Handles mentor code validation, mentor view UI, and read-only mode
  */
 const MENTOR_CODE_REGEX = /^[A-Z0-9]{5}$/;
+const MENTOR_VIEW_ACCESS_LEVELS = {
+    VIEW: 'view',
+    STATUS: 'status',
+    FULL: 'full'
+};
+
+function normalizeMentorAccessLevel(level) {
+    if (level === MENTOR_VIEW_ACCESS_LEVELS.STATUS || level === MENTOR_VIEW_ACCESS_LEVELS.FULL) {
+        return level;
+    }
+    return MENTOR_VIEW_ACCESS_LEVELS.VIEW;
+}
+
+function getCurrentMentorAccessLevel() {
+    return normalizeMentorAccessLevel(window.mentorAccessLevelForView);
+}
+
+function canMentorEditStatus() {
+    if (!window.isMentorView) return false;
+    const level = getCurrentMentorAccessLevel();
+    return level === MENTOR_VIEW_ACCESS_LEVELS.STATUS || level === MENTOR_VIEW_ACCESS_LEVELS.FULL;
+}
+
+function canMentorEditAll() {
+    return window.isMentorView && getCurrentMentorAccessLevel() === MENTOR_VIEW_ACCESS_LEVELS.FULL;
+}
+
+window.getCurrentMentorAccessLevel = getCurrentMentorAccessLevel;
+window.canMentorEditStatus = canMentorEditStatus;
+window.canMentorEditAll = canMentorEditAll;
 
 function getRawMentorCodeFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -56,6 +86,7 @@ async function tryMentorView() {
 
         window.isMentorView = true;
         window.mentorUid = doc.data().uid;
+        window.mentorAccessLevelForView = await loadMentorAccessLevelForOwner(window.mentorUid);
 
         // Load data for mentor UID instead of current user
         await loadUserDataForMentor(window.mentorUid);
@@ -117,58 +148,74 @@ async function loadUserDataForMentor(uid) {
  * @returns {void}
  */
 function disableEditingUI() {
-    // Hide editing buttons and forms
-    const editingElements = [
-        '.delete-button',
-        '.edit-button',
-        '.status-button',
-        '.feature-button',
-        '#addVocabBtn',
-        '#addSkillBtn',
-        '#addCategoryBtn',
-        '#deleteCategoryBtn',
-        '#portfolioForm',
+    const canStatusEdit = canMentorEditStatus();
+    const canFullEdit = canMentorEditAll();
+
+    const alwaysHidden = [
         '#openSettingsBtn',
-        '#deleteAccountBtn',
-        '#newCategoryInput',
-        '#vocabularyInput',
-        '#skillsInput',
-        '#portfolioTitle',
-        '#portfolioLink',
-        '#toggleLanguageSection',
-        '#openPrintPdfModalBtn',
-        '#startReviewBtn',
         '#openSettingsBtnMobile',
-        '#openPortfolioShareBtn'
+        '#openPortfolioShareBtn',
+        '#deleteAccountBtn',
+        '#mentorAccessSection'
     ];
 
-    editingElements.forEach(selector => {
+    alwaysHidden.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
-            if (el) {
-                if (el.tagName === 'FORM' || el.tagName === 'BUTTON') {
-                    el.style.display = 'none';
-                } else {
-                    el.disabled = true;
-                }
-            }
+            el.style.display = 'none';
         });
     });
+
+    if (!canFullEdit) {
+        const fullEditOnly = [
+            '.delete-button',
+            '.edit-button',
+            '.feature-button',
+            '.privacy-button',
+            '.subtask-edit-button',
+            '.subtask-delete-button',
+            '.subtask-add-button',
+            '.drag-handle',
+            '#addVocabBtn',
+            '#addSkillBtn',
+            '#addCategoryBtn',
+            '#deleteCategoryBtn',
+            '#portfolioForm',
+            '#newCategoryInput',
+            '#vocabularyInput',
+            '#translationInput',
+            '#skillsInput',
+            '#portfolioTitle',
+            '#portfolioLink',
+            '#toggleLanguageSection',
+            '#openPrintPdfModalBtn'
+        ];
+
+        fullEditOnly.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+                    el.disabled = true;
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    if (!canStatusEdit) {
+        document.querySelectorAll('.status-button, .subtask-status-button').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
 
     // Hide settings modal if open
     const modal = document.getElementById('settingsModal');
     if (modal) modal.classList.add('hidden');
-
-    // Disable translation input for mentor mode
-    const translationInput = document.getElementById('translationInput');
-    if (translationInput) translationInput.disabled = true;
 
     // Disable mentor code input and button
     const mentorCodeInput = document.getElementById('mentorCodeInput');
     const viewAsMentorBtn = document.querySelector('#mentorViewForm button[type="submit"]');
     if (mentorCodeInput) mentorCodeInput.disabled = true;
     if (viewAsMentorBtn) viewAsMentorBtn.disabled = true;
-    const mentorAccessSection = document.getElementById('mentorAccessSection');
-    if (mentorAccessSection) mentorAccessSection.style.display = 'none';
 
     // Show tab buttons and content
     document.querySelectorAll('.tab-button, .tab-content').forEach(el => {
@@ -176,8 +223,28 @@ function disableEditingUI() {
         el.disabled = false;
     });
 
-    // Check if mentor has enabled quick review
-    handleMentorQuickReviewAccess();
+    // Access-level specific actions
+    handleMentorAccessActions();
+}
+
+async function loadMentorAccessLevelForOwner(ownerUid) {
+    try {
+        const settingsDoc = await db.collection('users').doc(ownerUid).collection('metadata').doc('settings').get();
+        if (!settingsDoc.exists) return MENTOR_VIEW_ACCESS_LEVELS.VIEW;
+
+        const data = settingsDoc.data() || {};
+        if (typeof data.mentorAccessLevel === 'string') {
+            return normalizeMentorAccessLevel(data.mentorAccessLevel);
+        }
+
+        if (data.mentorQuickReviewEnabled === true) {
+            return MENTOR_VIEW_ACCESS_LEVELS.STATUS;
+        }
+    } catch (error) {
+        console.error('Error loading mentor access level:', error);
+    }
+
+    return MENTOR_VIEW_ACCESS_LEVELS.VIEW;
 }
 
 function addMentorModeBanner() {
@@ -190,38 +257,40 @@ function addMentorModeBanner() {
     const banner = document.createElement('div');
     banner.id = 'mentorModeBanner';
     banner.className = 'mb-4 rounded border-l-4 border-yellow-500 bg-yellow-50 px-4 py-3 text-sm text-yellow-900';
+    const accessLevel = getCurrentMentorAccessLevel();
+    const accessLabel = accessLevel === MENTOR_VIEW_ACCESS_LEVELS.FULL
+        ? 'Edit All'
+        : accessLevel === MENTOR_VIEW_ACCESS_LEVELS.STATUS
+            ? 'Status Updates Only'
+            : 'Read Only';
     banner.textContent = mentorCode
-        ? `Mentor View (${mentorCode}): This page is read-only.`
-        : 'Mentor View: This page is read-only.';
+        ? `Mentor View (${mentorCode}): ${accessLabel}`
+        : `Mentor View: ${accessLabel}`;
 
     appContainer.prepend(banner);
 }
 
 /**
- * Handle quick review access for mentor view
- * Shows button only if mentor has enabled it
+ * Handle access-specific actions for mentor view
  * @async
  * @returns {Promise<void>}
  */
-async function handleMentorQuickReviewAccess() {
+async function handleMentorAccessActions() {
     if (!window.isMentorView) return;
 
     try {
-        const mentorQuickReviewEnabled = await getMentorQuickReviewEnabled();
+        const mentorCanUseQuickReview = canMentorEditStatus();
         const startReviewBtn = document.getElementById('startReviewBtn');
 
         if (startReviewBtn) {
-            if (mentorQuickReviewEnabled) {
-                // Show button for mentor
+            if (mentorCanUseQuickReview) {
                 startReviewBtn.style.display = '';
             } else {
-                // Keep button hidden (already hidden by disableEditingUI)
                 startReviewBtn.style.display = 'none';
             }
         }
     } catch (error) {
-        console.error('Error handling mentor quick review access:', error);
-        // Keep button hidden if there's an error
+        console.error('Error handling mentor access actions:', error);
         const startReviewBtn = document.getElementById('startReviewBtn');
         if (startReviewBtn) startReviewBtn.style.display = 'none';
     }

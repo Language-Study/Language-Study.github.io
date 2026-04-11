@@ -8,6 +8,30 @@ let categories = [];
 const SRS_DEFAULT_EASE_FACTOR = 2.5;
 const SRS_MIN_EASE_FACTOR = 1.3;
 
+function mentorCanEditVocabularyStatus() {
+    return window.isMentorView === true
+        && typeof window.canMentorEditStatus === 'function'
+        && window.canMentorEditStatus() === true;
+}
+
+function mentorCanEditVocabularyAll() {
+    return window.isMentorView === true
+        && typeof window.canMentorEditAll === 'function'
+        && window.canMentorEditAll() === true;
+}
+
+function assertMentorCanEditAll() {
+    if (window.isMentorView && !mentorCanEditVocabularyAll()) {
+        throw new Error('Mentor access does not allow full edits.');
+    }
+}
+
+function assertMentorCanEditStatus() {
+    if (window.isMentorView && !mentorCanEditVocabularyStatus()) {
+        throw new Error('Mentor access does not allow status updates.');
+    }
+}
+
 /**
  * Load user vocabulary from Firestore
  * @async
@@ -76,6 +100,7 @@ async function saveCategories() {
  * @returns {Promise<void>}
  */
 async function addVocabularyWords(wordsText, translation, category) {
+    assertMentorCanEditAll();
     const words = wordsText.trim().split('\n').filter(word => word.trim());
 
     if (words.length === 0) {
@@ -119,6 +144,7 @@ async function addVocabularyWords(wordsText, translation, category) {
  * @returns {Promise<void>}
  */
 async function deleteVocabularyItem(itemId) {
+    assertMentorCanEditAll();
     try {
         await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(itemId).delete();
     } catch (error) {
@@ -135,6 +161,7 @@ async function deleteVocabularyItem(itemId) {
  * @returns {Promise<void>}
  */
 async function updateVocabularyStatus(itemId, newStatus) {
+    assertMentorCanEditStatus();
     try {
         const normalizedStatus = normalizeProgressStatus(newStatus);
         const currentItem = vocabularyList.find(item => item.id === itemId) || null;
@@ -173,6 +200,7 @@ async function updateVocabularyStatus(itemId, newStatus) {
  * @returns {Promise<void>}
  */
 async function updateVocabularyItem(itemId, updates) {
+    assertMentorCanEditAll();
     const payload = {};
 
     if (updates.word !== undefined) {
@@ -209,6 +237,7 @@ async function updateVocabularyItem(itemId, updates) {
  * @returns {Promise<void>}
  */
 async function deleteCategory(categoryToDelete) {
+    assertMentorCanEditAll();
     const protectedCategories = ['General'];
 
     if (protectedCategories.includes(categoryToDelete)) {
@@ -243,6 +272,7 @@ async function deleteCategory(categoryToDelete) {
  * @returns {Promise<void>}
  */
 async function addCategory(newCategoryName) {
+    assertMentorCanEditAll();
     const trimmed = newCategoryName.trim();
 
     if (!trimmed) {
@@ -356,6 +386,9 @@ function renderVocabItem(item) {
         }
     }
 
+    const canStatusEdit = !window.isMentorView || mentorCanEditVocabularyStatus();
+    const canFullEdit = !window.isMentorView || mentorCanEditVocabularyAll();
+
     return `
         <div class="vocab-item flex items-center gap-3 p-2 border rounded mb-2" data-id="${item.id}">
             <div class="flex-1">
@@ -364,17 +397,17 @@ function renderVocabItem(item) {
                 ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
             </div>
             <div class="flex items-center gap-2">
-                ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit vocabulary item" title="Edit">
+                ${canFullEdit ? `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit vocabulary item" title="Edit">
                     Edit
-                </button>`}
-                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)" aria-label="Status: ${item.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[item.status]}</span>` : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle status" title="Click to change status">
+                </button>` : ''}
+                ${canStatusEdit ? `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle status" title="Click to change status">
                     ${statusIcons[item.status]}
-                </button>`}
-                ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete vocabulary item" title="Delete">
+                </button>` : `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${item.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" title="Status (view only)" aria-label="Status: ${item.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : item.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[item.status]}</span>`}
+                ${canFullEdit ? `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete vocabulary item" title="Delete">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
-                </button>`}
+                </button>` : ''}
             </div>
         </div>
     `;

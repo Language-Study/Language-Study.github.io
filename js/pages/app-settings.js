@@ -1,4 +1,4 @@
-// ===== SETTINGS & MENTOR =====
+﻿// ===== SETTINGS & MENTOR =====
 
 // Settings Modal Tab Controller
 class SettingsTabController {
@@ -58,7 +58,7 @@ const openSettingsHandler = () => {
     // Gate auth-related options based on user's login providers
     updateAuthOptionVisibility();
     updateMentorCodeToggle();
-    updateMentorQuickReviewUI();
+    updateMentorAccessLevelUI();
     // Load current homepage setting
     loadHomepageTabSetting();
     // Close mobile menu if open
@@ -197,15 +197,32 @@ mentorToggle?.addEventListener('change', async (e) => {
     await showMentorCode();
 });
 
-// Mentor quick review toggle
-const mentorQuickReviewToggle = document.getElementById('toggleMentorQuickReview');
-mentorQuickReviewToggle?.addEventListener('change', async (e) => {
-    await setMentorQuickReviewEnabled(e.target.checked);
-    if (e.target.checked) {
-        showToast('✓ Mentors can now use Quick Review');
-    } else {
-        showToast('✓ Mentors cannot use Quick Review');
+// Mentor access level selector
+const mentorAccessLevelSelect = document.getElementById('mentorAccessLevelSelect');
+mentorAccessLevelSelect?.addEventListener('change', async (e) => {
+    const selectedLevel = e.target.value;
+
+    if (selectedLevel === 'full') {
+        const confirmed = confirm('Allow Edit All? Mentors will be able to add, edit, and delete your learning data.');
+        if (!confirmed) {
+            const current = await getMentorAccessLevel();
+            e.target.value = current;
+            return;
+        }
     }
+
+    if (selectedLevel === 'status') {
+        const confirmed = confirm('Allow Status Updates Only? Mentors will be able to change progress statuses but not edit content.');
+        if (!confirmed) {
+            const current = await getMentorAccessLevel();
+            e.target.value = current;
+            return;
+        }
+    }
+
+    await setMentorAccessLevel(selectedLevel);
+    await updateMentorAccessLevelUI();
+    showToast('✓ Mentor access level updated');
 });
 
 // Regenerate mentor code with confirmation
@@ -216,7 +233,7 @@ regenBtn?.addEventListener('click', async (e) => {
         return;
     }
     await showMentorCode(true);
-    showToast('✓ Code regenerated!');
+    showToast('âœ“ Code regenerated!');
 });
 
 // Delete account
@@ -282,11 +299,11 @@ googleSignInToggleBtn?.addEventListener('click', async () => {
         if (isGoogleLinked()) {
             await unlinkGoogleSignIn();
             googleSignInToggleBtn.textContent = 'Link Google Account';
-            showToast('✓ Google Account unlinked');
+            showToast('âœ“ Google Account unlinked');
         } else {
             await linkGoogleSignIn();
             googleSignInToggleBtn.textContent = 'Unlink Google Account';
-            showToast('✓ Google Account linked');
+            showToast('âœ“ Google Account linked');
         }
     } catch (error) {
         showToast('Error: ' + error.message);
@@ -434,5 +451,5 @@ const homepageTabSelect = document.getElementById('homepageTabSelect');
 homepageTabSelect?.addEventListener('change', async (e) => {
     const selectedTab = e.target.value;
     await setHomepageTab(selectedTab);
-    showToast(`✓ Homepage set to ${selectedTab.charAt(0).toUpperCase() + selectedTab.slice(1)}`);
+    showToast(`âœ“ Homepage set to ${selectedTab.charAt(0).toUpperCase() + selectedTab.slice(1)}`);
 });

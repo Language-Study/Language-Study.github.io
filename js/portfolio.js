@@ -6,6 +6,30 @@
 let portfolioEntries = [];
 let skills = [];
 
+function mentorCanEditAllContent() {
+    return window.isMentorView === true
+        && typeof window.canMentorEditAll === 'function'
+        && window.canMentorEditAll() === true;
+}
+
+function mentorCanEditStatusOnly() {
+    return window.isMentorView === true
+        && typeof window.canMentorEditStatus === 'function'
+        && window.canMentorEditStatus() === true;
+}
+
+function assertMentorCanEditAllContent() {
+    if (window.isMentorView && !mentorCanEditAllContent()) {
+        throw new Error('Mentor access does not allow full edits.');
+    }
+}
+
+function assertMentorCanEditStatus() {
+    if (window.isMentorView && !mentorCanEditStatusOnly()) {
+        throw new Error('Mentor access does not allow status updates.');
+    }
+}
+
 /**
  * Load portfolio entries from Firestore
  * @async
@@ -62,9 +86,7 @@ async function loadSkills() {
  * @returns {Promise<void>}
  */
 async function addPortfolioEntry(title, link) {
-    if (window.isMentorView) {
-        throw new Error('Mentor view is read-only.');
-    }
+    assertMentorCanEditAllContent();
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
 
@@ -110,9 +132,7 @@ async function addPortfolioEntry(title, link) {
  * @returns {Promise<void>}
  */
 async function updatePortfolioEntry(id, title, link) {
-    if (window.isMentorView) {
-        throw new Error('Mentor view is read-only.');
-    }
+    assertMentorCanEditAllContent();
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
 
@@ -159,9 +179,7 @@ async function updatePortfolioEntry(id, title, link) {
  * @returns {Promise<void>}
  */
 async function deletePortfolioEntry(id) {
-    if (window.isMentorView) {
-        throw new Error('Mentor view is read-only.');
-    }
+    assertMentorCanEditAllContent();
     try {
         await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).delete();
     } catch (error) {
@@ -177,9 +195,7 @@ async function deletePortfolioEntry(id) {
  * @returns {Promise<void>}
  */
 async function toggleTopPortfolio(id) {
-    if (window.isMentorView) {
-        throw new Error('Mentor view is read-only.');
-    }
+    assertMentorCanEditAllContent();
     try {
         const topCount = portfolioEntries.filter(e => e.isTop).length;
         const entry = portfolioEntries.find(e => e.id === id);
@@ -208,9 +224,7 @@ async function toggleTopPortfolio(id) {
  * @returns {Promise<void>}
  */
 async function togglePortfolioPrivacy(id) {
-    if (window.isMentorView) {
-        throw new Error('Mentor view is read-only.');
-    }
+    assertMentorCanEditAllContent();
 
     const entry = portfolioEntries.find(e => e.id === id);
     if (!entry) {
@@ -237,6 +251,7 @@ async function togglePortfolioPrivacy(id) {
  * @returns {Promise<void>}
  */
 async function addSkills(skillsText) {
+    assertMentorCanEditAllContent();
     const skillsToAdd = skillsText.trim().split('\n').filter(skill => skill.trim());
 
     if (skillsToAdd.length === 0) {
@@ -273,6 +288,7 @@ async function addSkills(skillsText) {
  * @returns {Promise<void>}
  */
 async function deleteSkill(itemId) {
+    assertMentorCanEditAllContent();
     try {
         await db.collection('users').doc(currentUser.uid).collection('skills').doc(itemId).delete();
     } catch (error) {
@@ -289,6 +305,7 @@ async function deleteSkill(itemId) {
  * @returns {Promise<void>}
  */
 async function updateSkillStatus(itemId, newStatus) {
+    assertMentorCanEditStatus();
     try {
         const normalizedStatus = normalizeProgressStatus(newStatus);
         await db.collection('users').doc(currentUser.uid).collection('skills').doc(itemId).update({
@@ -308,6 +325,7 @@ async function updateSkillStatus(itemId, newStatus) {
  * @returns {Promise<void>}
  */
 async function updateSkillName(itemId, newName) {
+    assertMentorCanEditAllContent();
     const trimmed = newName.trim();
     if (!trimmed) {
         throw new Error('Skill name cannot be empty.');
@@ -331,6 +349,7 @@ async function updateSkillName(itemId, newName) {
  * @returns {Promise<void>}
  */
 async function addSubtask(skillId, subtaskText) {
+    assertMentorCanEditAllContent();
     const trimmedText = subtaskText.trim();
     if (!trimmedText) {
         throw new Error('Please enter a subtask.');
@@ -371,6 +390,7 @@ async function addSubtask(skillId, subtaskText) {
  * @returns {Promise<void>}
  */
 async function deleteSubtask(skillId, subtaskId) {
+    assertMentorCanEditAllContent();
     try {
         const skill = skills.find(s => s.id === skillId);
         if (!skill) {
@@ -399,6 +419,7 @@ async function deleteSubtask(skillId, subtaskId) {
  * @returns {Promise<void>}
  */
 async function updateSubtaskStatus(skillId, subtaskId, newStatus) {
+    assertMentorCanEditStatus();
     try {
         const skill = skills.find(s => s.id === skillId);
         if (!skill) {
@@ -433,6 +454,7 @@ async function updateSubtaskStatus(skillId, subtaskId, newStatus) {
  * @returns {Promise<void>}
  */
 async function updateSubtaskText(skillId, subtaskId, newText) {
+    assertMentorCanEditAllContent();
     const trimmed = newText.trim();
     if (!trimmed) {
         throw new Error('Subtask cannot be empty.');
@@ -519,7 +541,8 @@ function renderPortfolioCard(entry, isFeatured) {
         ? '<span class="inline-block text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 px-2 py-1 rounded">Private</span>'
         : '';
 
-    const actionsHtml = (window.isMentorView || window.isPublicPortfolioView) ? '' : `
+    const canFullEdit = !window.isMentorView || mentorCanEditAllContent();
+    const actionsHtml = (!canFullEdit || window.isPublicPortfolioView) ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                         data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
@@ -568,7 +591,8 @@ function renderPortfolioListItem(entry, topCount) {
         ? '<span class="inline-block text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 px-2 py-0.5 rounded w-fit mt-1">Private</span>'
         : '';
 
-    const actionsHtml = (window.isMentorView || window.isPublicPortfolioView) ? '' : `
+    const canFullEdit = !window.isMentorView || mentorCanEditAllContent();
+    const actionsHtml = (!canFullEdit || window.isPublicPortfolioView) ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                     data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
@@ -622,6 +646,8 @@ function renderSkillItem(skill) {
     const hasSubtasks = subtasks.length > 0;
     const expandButtonId = `expand-${skill.id}`;
     const subtasksContainerId = `subtasks-${skill.id}`;
+    const canStatusEdit = !window.isMentorView || mentorCanEditStatusOnly();
+    const canFullEdit = !window.isMentorView || mentorCanEditAllContent();
 
     const subtasksHtml = hasSubtasks ? subtasks.map(subtask => `
         <div class="subtask-item flex items-center justify-between p-2 ml-4 bg-gray-50 border-l-2 border-blue-300 rounded mb-2 mt-2" data-subtask-id="${subtask.id}">
@@ -629,19 +655,18 @@ function renderSkillItem(skill) {
                 <div class="text-sm text-gray-700">${escapeHtml(subtask.text)}</div>
             </div>
             <div class="flex items-center gap-2 ml-2">
-                ${window.isMentorView ? '' : `<button class="subtask-edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit subtask" title="Edit">
+                ${canFullEdit ? `<button class="subtask-edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit subtask" title="Edit">
                         Edit
-                    </button>`}
-                ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${subtask.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : subtask.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
-                    title="Status (view only)">${statusIcons[subtask.status]}</span>`
-            : `<button class="subtask-status-button p-1 rounded-full hover:bg-gray-100 transition-transform" aria-label="Toggle subtask status" title="Click to change status">
+                    </button>` : ''}
+                ${canStatusEdit ? `<button class="subtask-status-button p-1 rounded-full hover:bg-gray-100 transition-transform" aria-label="Toggle subtask status" title="Click to change status">
                     ${statusIcons[subtask.status]}
-                </button>`}
-                ${window.isMentorView ? '' : `<button class="subtask-delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete subtask" title="Delete">
+                </button>` : `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${subtask.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : subtask.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                    title="Status (view only)">${statusIcons[subtask.status]}</span>`}
+                ${canFullEdit ? `<button class="subtask-delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete subtask" title="Delete">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
-                </button>`}
+                </button>` : ''}
             </div>
         </div>
     `).join('') : '';
@@ -649,24 +674,24 @@ function renderSkillItem(skill) {
     const subtasksContainerHtml = `
         <div id="${subtasksContainerId}" class="subtasks-container hidden mt-2">
             ${subtasksHtml}
-            ${window.isMentorView ? '' : `<div class="mt-2 ml-4">
+            ${canFullEdit ? `<div class="mt-2 ml-4">
                 <input type="text" class="subtask-input w-full p-2 border rounded text-sm" placeholder="Add a subtask (improvement goal)..." data-skill-id="${skill.id}" />
                 <button class="subtask-add-button mt-1 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600" data-skill-id="${skill.id}">Add Subtask</button>
-            </div>`}
+            </div>` : ''}
         </div>
     `;
 
     return `
-        <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}" draggable="${!window.isMentorView}" role="listitem">
+        <div class="skill-item flex flex-col p-2 border rounded mb-2" data-id="${skill.id}" draggable="${canFullEdit}" role="listitem">
             <div class="skill-header flex items-center justify-between" data-skill-id="${skill.id}">
                 <div class="flex items-center flex-1 gap-2">
-                    ${!window.isMentorView ? `<button class="drag-handle p-1 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing flex-shrink-0" aria-label="Drag to reorder" title="Drag to reorder skills by priority" style="pointer-events: all;">
+                    ${canFullEdit ? `<button class="drag-handle p-1 rounded hover:bg-gray-100 cursor-grab active:cursor-grabbing flex-shrink-0" aria-label="Drag to reorder" title="Drag to reorder skills by priority" style="pointer-events: all;">
                         <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/>
                             <circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
                         </svg>
                     </button>` : `<div style="width: 24px;"></div>`}
-                    <button class="expand-button p-1 rounded hover:bg-gray-100 flex-shrink-0" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks" ${window.isMentorView ? 'disabled style="opacity: 0.5; cursor: default;"' : ''}>
+                    <button class="expand-button p-1 rounded hover:bg-gray-100 flex-shrink-0" id="${expandButtonId}" data-skill-id="${skill.id}" aria-label="Toggle subtasks" title="Toggle subtasks">
                         <svg class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
@@ -674,17 +699,16 @@ function renderSkillItem(skill) {
                     <div class="font-medium flex-1">${escapeHtml(skill.name)}</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    ${window.isMentorView ? '' : `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>`}
-                    ${window.isMentorView ? `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
-                        title="Status (view only)" aria-label="Status: ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[skill.status]}</span>`
-            : `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
+                    ${canFullEdit ? `<button class="edit-button p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-all" aria-label="Edit skill" title="Edit">Edit</button>` : ''}
+                    ${canStatusEdit ? `<button class="status-button p-1 rounded-full hover:bg-gray-100 transition-transform progress-button" aria-label="Toggle skill status" title="Click to change status">
                             ${statusIcons[skill.status]}
-                        </button>`}
-                    ${window.isMentorView ? '' : `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill" title="Delete">
+                        </button>` : `<span class="inline-block px-2 py-1 rounded text-xs font-semibold ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'bg-green-200 text-green-800' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'} cursor-not-allowed opacity-70" 
+                        title="Status (view only)" aria-label="Status: ${skill.status === PROGRESS_STATUS.PROFICIENT ? 'Proficient' : skill.status === PROGRESS_STATUS.IN_PROGRESS ? 'In Progress' : 'Not Started'}">${statusIcons[skill.status]}</span>`}
+                    ${canFullEdit ? `<button class="delete-button p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-full transition-all" aria-label="Delete skill" title="Delete">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
-                    </button>`}
+                    </button>` : ''}
                 </div>
             </div>
             ${subtasksContainerHtml}
@@ -859,6 +883,7 @@ async function resolveSoundCloudPortfolioLink(rawUrl) {
  * @returns {Promise<void>}
  */
 async function updateSkillOrder(skillIds) {
+    assertMentorCanEditAllContent();
     if (!currentUser) throw new Error('User not authenticated');
 
     try {

@@ -8,8 +8,9 @@ const portfolioList = document.getElementById('portfolioList');
 if (portfolioForm) {
     portfolioForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (window.isMentorView) {
-            showToast('Mentor view is read-only.');
+        const mentorCanEditAll = typeof window.canMentorEditAll === 'function' && window.canMentorEditAll();
+        if (window.isMentorView && !mentorCanEditAll) {
+            showToast('Mentor access does not allow full edits.');
             return;
         }
         try {
@@ -30,8 +31,9 @@ if (portfolioForm) {
         container.addEventListener('click', async (e) => {
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
-            if (window.isMentorView) {
-                showToast('Mentor view is read-only.');
+            const mentorCanEditAll = typeof window.canMentorEditAll === 'function' && window.canMentorEditAll();
+            if (window.isMentorView && !mentorCanEditAll) {
+                showToast('Mentor access does not allow full edits.');
                 return;
             }
 

@@ -382,9 +382,14 @@ skillsList?.addEventListener('keydown', (e) => {
 let draggedElement = null;
 let draggedOverElement = null;
 
+function canMentorReorderSkills() {
+    return !window.isMentorView
+        || (typeof window.canMentorEditAll === 'function' && window.canMentorEditAll());
+}
+
 skillsList?.addEventListener('dragstart', (e) => {
     const skillItem = e.target.closest('.skill-item');
-    if (skillItem && !window.isMentorView) {
+    if (skillItem && canMentorReorderSkills()) {
         draggedElement = skillItem;
         skillItem.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -397,7 +402,7 @@ skillsList?.addEventListener('dragover', (e) => {
     e.dataTransfer.dropEffect = 'move';
 
     const skillItem = e.target.closest('.skill-item');
-    if (skillItem && skillItem !== draggedElement && !window.isMentorView) {
+    if (skillItem && skillItem !== draggedElement && canMentorReorderSkills()) {
         draggedOverElement = skillItem;
         skillItem.classList.add('drag-over');
     }
@@ -413,7 +418,7 @@ skillsList?.addEventListener('dragleave', (e) => {
 skillsList?.addEventListener('drop', async (e) => {
     e.preventDefault();
 
-    if (draggedElement && draggedOverElement && draggedElement !== draggedOverElement && !window.isMentorView) {
+    if (draggedElement && draggedOverElement && draggedElement !== draggedOverElement && canMentorReorderSkills()) {
         try {
             // Reorder the skills array
             const allSkillItems = Array.from(skillsList.querySelectorAll('.skill-item'));

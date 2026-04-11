@@ -356,6 +356,19 @@ function renderProgressMetrics() {
     `;
 }
 
+const MENTOR_ACCESS_LEVELS = {
+    VIEW: 'view',
+    STATUS: 'status',
+    FULL: 'full'
+};
+
+function normalizeMentorAccessLevel(level) {
+    if (level === MENTOR_ACCESS_LEVELS.STATUS || level === MENTOR_ACCESS_LEVELS.FULL) {
+        return level;
+    }
+    return MENTOR_ACCESS_LEVELS.VIEW;
+}
+
 /**
  * Get mentor code enabled setting
  * @async
@@ -412,42 +425,54 @@ async function setMentorCodeEnabled(val) {
 }
 
 /**
- * Get mentor quick review enabled setting
+ * Get mentor access level setting
  * @async
- * @returns {Promise<boolean>}
+ * @returns {Promise<'view'|'status'|'full'>}
  */
-async function getMentorQuickReviewEnabled() {
-    if (!currentUser) return false;
+async function getMentorAccessLevel() {
+    if (!currentUser) return MENTOR_ACCESS_LEVELS.VIEW;
 
     try {
         const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists && typeof doc.data().mentorQuickReviewEnabled === 'boolean') {
-            return doc.data().mentorQuickReviewEnabled;
+        if (doc.exists) {
+            const data = doc.data() || {};
+            if (typeof data.mentorAccessLevel === 'string') {
+                return normalizeMentorAccessLevel(data.mentorAccessLevel);
+            }
+
+            // Backward compatibility: quick-review previously implied status-edit access.
+            if (data.mentorQuickReviewEnabled === true) {
+                return MENTOR_ACCESS_LEVELS.STATUS;
+            }
         }
     } catch (e) {
-        console.error('Error fetching mentor quick review setting:', e);
+        console.error('Error fetching mentor access level setting:', e);
     }
 
-    return false;
+    return MENTOR_ACCESS_LEVELS.VIEW;
 }
 
 /**
- * Set mentor quick review enabled setting
+ * Set mentor access level setting
  * @async
- * @param {boolean} val - Enable or disable
+ * @param {'view'|'status'|'full'} level - Access level
  * @returns {Promise<void>}
  */
-async function setMentorQuickReviewEnabled(val) {
+async function setMentorAccessLevel(level) {
     if (!currentUser) return;
 
+    const normalized = normalizeMentorAccessLevel(level);
     try {
         await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { mentorQuickReviewEnabled: val },
+            {
+                mentorAccessLevel: normalized,
+                mentorQuickReviewEnabled: normalized !== MENTOR_ACCESS_LEVELS.VIEW
+            },
             { merge: true }
         );
-        console.log('Mentor quick review enabled status updated to:', val);
+        console.log('Mentor access level updated to:', normalized);
     } catch (e) {
-        console.error('Error setting mentor quick review:', e);
+        console.error('Error setting mentor access level:', e);
         throw e;
     }
 }
@@ -509,6 +534,7 @@ async function showMentorCode(forceRegenerate = false) {
         if (codeDiv) codeDiv.innerHTML = '';
         if (regenBtn) regenBtn.classList.add('hidden');
         if (infoDiv) infoDiv.classList.add('hidden');
+        updateMentorAccessLevelUI();
         return;
     }
 
@@ -520,39 +546,51 @@ async function showMentorCode(forceRegenerate = false) {
         if (regenBtn) regenBtn.classList.remove('hidden');
         if (infoDiv) infoDiv.classList.remove('hidden');
 
-        // Update mentor quick review section visibility
-        updateMentorQuickReviewUI();
+        // Update mentor access level section visibility
+        updateMentorAccessLevelUI();
     } catch (e) {
         showToast('Error generating mentor code: ' + e.message);
     }
 }
 
 /**
- * Update mentor quick review UI section
+ * Update mentor access level UI section
  * Shows the section only when mentor code is enabled
  * @async
  * @returns {Promise<void>}
  */
-async function updateMentorQuickReviewUI() {
+async function updateMentorAccessLevelUI() {
     const mentorCodeEnabled = await getMentorCodeEnabled();
-    const quickReviewSection = document.getElementById('mentorQuickReviewSection');
-    const quickReviewToggle = document.getElementById('toggleMentorQuickReview');
+    const accessSection = document.getElementById('mentorAccessLevelSection');
+    const accessSelect = document.getElementById('mentorAccessLevelSelect');
+    const accessDescription = document.getElementById('mentorAccessLevelDescription');
 
-    if (!quickReviewSection) return;
+    if (!accessSection) return;
 
     if (mentorCodeEnabled) {
-        quickReviewSection.classList.remove('hidden');
+        accessSection.classList.remove('hidden');
 
-        // Update the toggle to reflect current setting
-        if (quickReviewToggle) {
-            const quickReviewEnabled = await getMentorQuickReviewEnabled();
-            quickReviewToggle.checked = quickReviewEnabled;
+        if (accessSelect) {
+            const level = await getMentorAccessLevel();
+            accessSelect.value = level;
+        }
+
+        if (accessDescription && accessSelect) {
+            if (accessSelect.value === MENTOR_ACCESS_LEVELS.FULL) {
+                accessDescription.textContent = 'Edit All: mentors can add, edit, and delete your vocabulary, skills, and portfolio.';
+            } else if (accessSelect.value === MENTOR_ACCESS_LEVELS.STATUS) {
+                accessDescription.textContent = 'Status Updates Only: mentors can change learning progress statuses (no content edits).';
+            } else {
+                accessDescription.textContent = 'Read Only: mentors can view your data but cannot make any changes.';
+            }
         }
     } else {
-        quickReviewSection.classList.add('hidden');
-        // Reset the toggle when mentor code is disabled
-        if (quickReviewToggle) {
-            quickReviewToggle.checked = false;
+        accessSection.classList.add('hidden');
+        if (accessSelect) {
+            accessSelect.value = MENTOR_ACCESS_LEVELS.VIEW;
+        }
+        if (accessDescription) {
+            accessDescription.textContent = '';
         }
     }
 }
@@ -564,24 +602,12 @@ async function updateMentorQuickReviewUI() {
  */
 async function updateMentorCodeToggle() {
     const toggle = document.getElementById('toggleMentorCode');
-    const regenBtn = document.getElementById('regenerateMentorCodeBtn');
 
     if (!toggle) return;
 
     const enabled = await getMentorCodeEnabled();
     toggle.checked = enabled;
     await showMentorCode();
-
-    toggle.onchange = async (e) => {
-        await setMentorCodeEnabled(e.target.checked);
-        await showMentorCode();
-    };
-
-    if (regenBtn) {
-        regenBtn.onclick = async () => {
-            await showMentorCode(true);
-        };
-    }
 }
 
 /**
