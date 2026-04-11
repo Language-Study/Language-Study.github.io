@@ -262,18 +262,20 @@ function renderVocabularyList() {
             if (items.length === 0 && category !== 'General') return '';
 
             const isExpanded = expandedCategories.has(category);
+            const safeCategory = escapeHtml(category);
+            const safeCategoryAttr = escapeHtmlAttr(category);
             return `
                 <div class="mb-4 category-container">
                     <div class="flex items-center justify-between p-2 bg-gray-100 rounded cursor-pointer category-header hover:bg-gray-200 transition-colors" 
-                         data-category-name="${category}" role="button" tabindex="0" aria-expanded="${isExpanded}">
-                        <h3 class="font-bold">${category} (${items.length})</h3>
+                         data-category-name="${safeCategoryAttr}" role="button" tabindex="0" aria-expanded="${isExpanded}">
+                        <h3 class="font-bold">${safeCategory} (${items.length})</h3>
                         <svg class="w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </div>
                     <div class="category-content space-y-2 mt-2 ml-2 ${isExpanded ? 'expanded' : ''}" 
-                         style="${isExpanded ? '' : 'display: none;'}" role="region" aria-label="${category} vocabulary">
+                         style="${isExpanded ? '' : 'display: none;'}" role="region" aria-label="${safeCategoryAttr} vocabulary">
                         ${items.map(item => renderVocabItem(item)).join('')}
                         ${items.length === 0 ? '<p class="text-xs text-gray-500 pl-2">No items in this category yet.</p>' : ''}
                     </div>
@@ -310,16 +312,19 @@ function renderVocabularyList() {
  */
 function renderVocabItem(item) {
     let translationHtml = '';
-    if (item.translation) {
+    const rawTranslation = typeof item.translation === 'string' ? item.translation : '';
+
+    if (rawTranslation) {
         const ytRegex = /(?:youtube(?:-nocookie)?\.com\/(?:.*[?&]v=|(?:v|embed|shorts)\/)|youtu\.be\/)([\w-]{11})/;
         const scRegex = /^https?:\/\/(soundcloud\.com|snd\.sc|on\.soundcloud\.com)\//;
+        const safeLink = sanitizeHttpUrl(rawTranslation);
 
-        if (ytRegex.test(item.translation)) {
-            translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline" aria-label="YouTube link">YouTube Link</a>`;
-        } else if (scRegex.test(item.translation)) {
-            translationHtml = `<a href="${item.translation}" target="_blank" class="text-blue-600 hover:underline" aria-label="SoundCloud link">SoundCloud Link</a>`;
+        if (ytRegex.test(rawTranslation) && safeLink) {
+            translationHtml = `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline" aria-label="YouTube link">YouTube Link</a>`;
+        } else if (scRegex.test(rawTranslation) && safeLink) {
+            translationHtml = `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline" aria-label="SoundCloud link">SoundCloud Link</a>`;
         } else {
-            translationHtml = `<span class="text-gray-700 translation-text" role="note">${item.translation}</span>`;
+            translationHtml = `<span class="text-gray-700 translation-text" role="note">${escapeHtml(rawTranslation)}</span>`;
         }
     }
 
@@ -381,10 +386,11 @@ function filterVocabulary(query) {
         .map(category => {
             const items = grouped[category] || [];
             if (items.length === 0) return '';
+            const safeCategory = escapeHtml(category);
             return `
                 <div class="mb-4 category-container">
                     <div class="flex items-center justify-between p-2 bg-gray-100 rounded category-header">
-                        <h3 class="font-bold">${category} (${items.length})</h3>
+                        <h3 class="font-bold">${safeCategory} (${items.length})</h3>
                     </div>
                     <div class="category-content space-y-2 mt-2 ml-2 expanded" style="display: block;">
                         ${items.map(item => renderVocabItem(item)).join('')}
@@ -421,6 +427,20 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function escapeHtmlAttr(text) {
+    return escapeHtml(String(text ?? ''));
+}
+
+function sanitizeHttpUrl(url) {
+    if (typeof url !== 'string') return null;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 async function normalizeTranslationLink(translation) {

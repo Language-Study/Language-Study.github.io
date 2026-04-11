@@ -112,6 +112,16 @@ function updateAuthOptionVisibility() {
     }
 }
 
+function sanitizeExternalResourceUrl(url) {
+    if (typeof url !== 'string') return null;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 // Progress metrics toggle
 const toggleProgress = document.getElementById('toggleProgress');
 toggleProgress?.addEventListener('change', async (e) => {
@@ -303,10 +313,34 @@ languageSelect?.addEventListener('change', async (e) => {
         const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
 
         if (linksSnapshot.exists) {
-            const links = linksSnapshot.data().links;
-            languageLinksContainer.innerHTML = links.map(link => `
-                <a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a>
-            `).join('<br>');
+            const links = Array.isArray(linksSnapshot.data().links) ? linksSnapshot.data().links : [];
+            languageLinksContainer.textContent = '';
+
+            const validLinks = links
+                .map(link => ({
+                    name: typeof link?.name === 'string' ? link.name : '',
+                    url: sanitizeExternalResourceUrl(link?.url)
+                }))
+                .filter(link => link.url);
+
+            if (validLinks.length === 0) {
+                languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
+                return;
+            }
+
+            validLinks.forEach((link, index) => {
+                const anchor = document.createElement('a');
+                anchor.href = link.url;
+                anchor.target = '_blank';
+                anchor.rel = 'noopener noreferrer';
+                anchor.className = 'text-blue-600 hover:underline';
+                anchor.textContent = link.name || link.url;
+                languageLinksContainer.appendChild(anchor);
+
+                if (index < validLinks.length - 1) {
+                    languageLinksContainer.appendChild(document.createElement('br'));
+                }
+            });
         } else {
             languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
         }

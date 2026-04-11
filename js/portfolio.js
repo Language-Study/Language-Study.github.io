@@ -452,18 +452,23 @@ function renderPortfolio() {
  */
 function renderPortfolioCard(entry, isFeatured) {
     let embedHtml = '';
+    const safeLink = sanitizeHttpUrl(entry.link);
+    const safeLinkText = escapeHtml(entry.link || '');
+    const safeLinkHtml = safeLink
+        ? `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-xs hover:underline">${safeLinkText}</a>`
+        : `<span class="text-gray-500 text-xs">Invalid link</span>`;
 
     if (entry.type === 'youtube' || (!entry.type && getYouTubeId(entry.link))) {
         let videoId = getYouTubeId(entry.link) || entry.videoId;
         if (videoId) {
             embedHtml = `<iframe class="w-full h-48 rounded" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen title="${escapeHtml(entry.title)}"></iframe>`;
         } else {
-            embedHtml = `<a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>`;
+            embedHtml = safeLinkHtml;
         }
     } else if (entry.type === 'soundcloud') {
         embedHtml = `<iframe class="w-full h-48 rounded" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=${encodeURIComponent(entry.link)}&color=%230066cc&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true" title="${escapeHtml(entry.title)}"></iframe>`;
     } else {
-        embedHtml = `<a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>`;
+        embedHtml = safeLinkHtml;
     }
 
     const actionsHtml = window.isMentorView ? '' : `
@@ -495,6 +500,12 @@ function renderPortfolioCard(entry, isFeatured) {
  * @returns {string} HTML
  */
 function renderPortfolioListItem(entry, topCount) {
+    const safeLink = sanitizeHttpUrl(entry.link);
+    const safeLinkText = escapeHtml(entry.link || '');
+    const linkHtml = safeLink
+        ? `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-xs hover:underline">${safeLinkText}</a>`
+        : `<span class="text-gray-500 text-xs">Invalid link</span>`;
+
     const actionsHtml = window.isMentorView ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
@@ -511,7 +522,7 @@ function renderPortfolioListItem(entry, topCount) {
         <div class="flex items-center justify-between p-2 border rounded">
             <div class="flex flex-col">
                 <span class="font-medium">${escapeHtml(entry.title)}</span>
-                <a href="${entry.link}" target="_blank" class="text-blue-600 text-xs hover:underline">${entry.link}</a>
+                ${linkHtml}
             </div>
             ${actionsHtml}
         </div>
@@ -715,6 +726,16 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function sanitizeHttpUrl(url) {
+    if (typeof url !== 'string') return null;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 async function resolveSoundCloudPortfolioLink(rawUrl) {
