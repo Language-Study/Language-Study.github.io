@@ -41,6 +41,8 @@ if (portfolioForm) {
             try {
                 if (action === 'toggleTop') {
                     await toggleTopPortfolio(id);
+                } else if (action === 'togglePrivacy') {
+                    await togglePortfolioPrivacy(id);
                 } else if (action === 'edit') {
                     const entry = portfolioEntries.find(e => e.id === id);
                     if (!entry) return;

@@ -203,8 +203,11 @@ function addPublicPortfolioBanner() {
     const appContainer = document.querySelector('.max-w-4xl.mx-auto.p-2.sm\\:p-4');
     if (!appContainer) return;
 
-    const total = Array.isArray(portfolioEntries) ? portfolioEntries.length : 0;
-    const featured = Array.isArray(portfolioEntries) ? portfolioEntries.filter(e => e.isTop).length : 0;
+    const publicEntries = Array.isArray(portfolioEntries)
+        ? portfolioEntries.filter(entry => entry?.isPrivate !== true)
+        : [];
+    const total = publicEntries.length;
+    const featured = publicEntries.filter(e => e.isTop).length;
     const code = getPortfolioCodeFromUrl();
 
     const banner = document.createElement('div');

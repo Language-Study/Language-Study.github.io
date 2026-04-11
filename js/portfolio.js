@@ -92,6 +92,7 @@ async function addPortfolioEntry(title, link) {
             type,
             videoId,
             isTop: false,
+            isPrivate: false,
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
         });
     } catch (error) {
@@ -198,6 +199,35 @@ async function toggleTopPortfolio(id) {
         console.error('Error toggling top portfolio:', error);
         throw error;
     }
+}
+
+/**
+ * Toggle portfolio entry privacy for public sharing
+ * @async
+ * @param {string} id - Portfolio entry ID
+ * @returns {Promise<void>}
+ */
+async function togglePortfolioPrivacy(id) {
+    if (window.isMentorView) {
+        throw new Error('Mentor view is read-only.');
+    }
+
+    const entry = portfolioEntries.find(e => e.id === id);
+    if (!entry) {
+        throw new Error('Portfolio entry not found.');
+    }
+
+    const nextPrivate = !isPortfolioEntryPrivate(entry);
+    const updates = {
+        isPrivate: nextPrivate
+    };
+
+    // Private items should not remain featured in public contexts.
+    if (nextPrivate && entry.isTop === true) {
+        updates.isTop = false;
+    }
+
+    await db.collection('users').doc(currentUser.uid).collection('portfolio').doc(id).update(updates);
 }
 
 /**
@@ -441,15 +471,16 @@ function renderPortfolio() {
 
     if (!portfolioTop3 || !portfolioList) return;
 
-    const top3 = portfolioEntries.filter(e => e.isTop).slice(0, 3);
-    const rest = portfolioEntries.filter(e => !e.isTop);
+    const visibleEntries = getVisiblePortfolioEntries();
+    const top3 = visibleEntries.filter(e => e.isTop).slice(0, 3);
+    const rest = visibleEntries.filter(e => !e.isTop);
     const topCount = top3.length;
 
     portfolioTop3.innerHTML = top3.length > 0 ? top3.map(e => renderPortfolioCard(e, true)).join('')
-        : '<div class="text-gray-400 col-span-3">No top portfolio entries selected.</div>';
+        : `<div class="text-gray-400 col-span-3">${window.isPublicPortfolioView ? 'No public featured portfolio entries.' : 'No top portfolio entries selected.'}</div>`;
 
     portfolioList.innerHTML = rest.length > 0 ? rest.map(e => renderPortfolioListItem(e, topCount)).join('')
-        : (portfolioEntries.length === 0 ? '<div class="text-gray-400">No portfolio entries yet.</div>' : '');
+        : (visibleEntries.length === 0 ? `<div class="text-gray-400">${window.isPublicPortfolioView ? 'No public portfolio entries available.' : 'No portfolio entries yet.'}</div>` : '');
 }
 
 /**
@@ -479,12 +510,25 @@ function renderPortfolioCard(entry, isFeatured) {
         embedHtml = safeLinkHtml;
     }
 
-    const actionsHtml = window.isMentorView ? '' : `
+    const isPrivate = isPortfolioEntryPrivate(entry);
+    const privateToggleTitle = isPrivate ? 'Make Public' : 'Keep Private';
+    const privateToggleIcon = isPrivate
+        ? '<i class="fa-solid fa-lock text-sm" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-globe text-sm" aria-hidden="true"></i>';
+    const privateBadgeHtml = isPortfolioEntryPrivate(entry) && !window.isPublicPortfolioView
+        ? '<span class="inline-block text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 px-2 py-1 rounded">Private</span>'
+        : '';
+
+    const actionsHtml = (window.isMentorView || window.isPublicPortfolioView) ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                         data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
                 <button class="feature-button feature-button-active px-2 py-1 text-xs rounded" 
                         data-action="toggleTop" data-id="${entry.id}" aria-label="Unfeature this portfolio item">Unfeature</button>
+                <button class="privacy-button px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded hover:bg-amber-200 flex items-center justify-center"
+                        data-action="togglePrivacy" data-id="${entry.id}" aria-label="${privateToggleTitle}" title="${privateToggleTitle}">
+                    ${privateToggleIcon}
+                </button>
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
                         data-action="delete" data-id="${entry.id}" aria-label="Delete this portfolio item">Delete</button>
             </div>
@@ -495,6 +539,7 @@ function renderPortfolioCard(entry, isFeatured) {
             <div class="w-full mb-2">
                 ${embedHtml}
             </div>
+            ${privateBadgeHtml}
             <div class="font-semibold text-center mb-1">${escapeHtml(entry.title)}</div>
             ${actionsHtml}
         </div>
@@ -514,13 +559,26 @@ function renderPortfolioListItem(entry, topCount) {
         ? `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-xs hover:underline">${safeLinkText}</a>`
         : `<span class="text-gray-500 text-xs">Invalid link</span>`;
 
-    const actionsHtml = window.isMentorView ? '' : `
+    const isPrivate = isPortfolioEntryPrivate(entry);
+    const privateToggleTitle = isPrivate ? 'Make Public' : 'Keep Private';
+    const privateToggleIcon = isPrivate
+        ? '<i class="fa-solid fa-lock text-sm" aria-hidden="true"></i>'
+        : '<i class="fa-solid fa-globe text-sm" aria-hidden="true"></i>';
+    const privateBadgeHtml = isPortfolioEntryPrivate(entry) && !window.isPublicPortfolioView
+        ? '<span class="inline-block text-[10px] font-semibold uppercase tracking-wide text-amber-700 bg-amber-100 px-2 py-0.5 rounded w-fit mt-1">Private</span>'
+        : '';
+
+    const actionsHtml = (window.isMentorView || window.isPublicPortfolioView) ? '' : `
             <div class="flex gap-2">
                 <button class="edit-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
                     data-action="edit" data-id="${entry.id}" aria-label="Edit this portfolio item">Edit</button>
                 <button class="feature-button px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 ${topCount >= 3 ? 'opacity-50 cursor-not-allowed' : ''}" 
                         data-action="toggleTop" data-id="${entry.id}" 
                         ${topCount >= 3 ? 'disabled title="You can only feature 3 items"' : ''} aria-label="Feature this portfolio item">Feature</button>
+                <button class="privacy-button px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded hover:bg-amber-200 flex items-center justify-center"
+                        data-action="togglePrivacy" data-id="${entry.id}" aria-label="${privateToggleTitle}" title="${privateToggleTitle}">
+                    ${privateToggleIcon}
+                </button>
                 <button class="delete-button px-2 py-1 text-xs text-red-600 bg-gray-100 rounded hover:bg-red-100" 
                         data-action="delete" data-id="${entry.id}" aria-label="Delete this portfolio item">Delete</button>
             </div>
@@ -531,6 +589,7 @@ function renderPortfolioListItem(entry, topCount) {
             <div class="flex flex-col">
                 <span class="font-medium">${escapeHtml(entry.title)}</span>
                 ${linkHtml}
+                ${privateBadgeHtml}
             </div>
             ${actionsHtml}
         </div>
@@ -665,7 +724,8 @@ function filterPortfolio(query) {
     }
 
     const lowerQuery = query.toLowerCase();
-    const filtered = portfolioEntries.filter(item =>
+    const visibleEntries = getVisiblePortfolioEntries();
+    const filtered = visibleEntries.filter(item =>
         item.title && item.title.toLowerCase().includes(lowerQuery)
     );
 
@@ -705,6 +765,18 @@ function getPortfolioStats() {
     const featured = portfolioEntries.filter(e => e.isTop).length;
 
     return { total, featured };
+}
+
+function isPortfolioEntryPrivate(entry) {
+    return entry?.isPrivate === true;
+}
+
+function getVisiblePortfolioEntries() {
+    if (!window.isPublicPortfolioView) {
+        return portfolioEntries;
+    }
+
+    return portfolioEntries.filter(entry => !isPortfolioEntryPrivate(entry));
 }
 
 // Helper functions
