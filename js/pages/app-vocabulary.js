@@ -139,12 +139,17 @@ vocabularyListEl?.addEventListener('click', async (e) => {
     } else if (statusButton && itemId) {
         try {
             const item = vocabularyList.find(v => v.id === itemId);
+            if (!item) return;
             const statusOrder = [PROGRESS_STATUS.NOT_STARTED, PROGRESS_STATUS.IN_PROGRESS, PROGRESS_STATUS.MASTERED];
             const currentIndex = statusOrder.indexOf(item.status);
             const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
-            await updateVocabularyStatus(itemId, newStatus);
-            item.status = newStatus;
+            const updated = await updateVocabularyStatus(itemId, newStatus);
+            if (updated) {
+                Object.assign(item, updated);
+            } else {
+                item.status = newStatus;
+            }
             if (dataCache?.isCached) {
                 dataCache.vocabularyList = [...vocabularyList];
             }

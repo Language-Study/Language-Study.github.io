@@ -28,6 +28,7 @@ const flashcardFlip = document.getElementById('flashcardFlip');
 const flashcardNotStarted = document.getElementById('flashcardNotStarted');
 const flashcardInProgress = document.getElementById('flashcardInProgress');
 const flashcardMastered = document.getElementById('flashcardMastered');
+const FLASHCARD_TARGET_COUNT = 10;
 
 // Start review session
 startReviewBtn?.addEventListener('click', () => {
@@ -36,69 +37,15 @@ startReviewBtn?.addEventListener('click', () => {
         return;
     }
 
-    // Separate items by status for SRS approach
-    const notStarted = vocabularyList.filter(item =>
-        item.status === PROGRESS_STATUS.NOT_STARTED
-    );
-
-    const inProgress = vocabularyList.filter(item =>
-        item.status === PROGRESS_STATUS.IN_PROGRESS
-    );
-
-    const mastered = vocabularyList.filter(item =>
-        item.status === PROGRESS_STATUS.MASTERED
-    );
-
-    if (notStarted.length === 0 && inProgress.length === 0) {
-        showToast('No words to review! All words are mastered or add some new ones.');
+    const duePool = vocabularyList.filter(item => isVocabularyItemDue(item));
+    if (duePool.length === 0) {
+        showToast('No words are due right now. Great work!');
         return;
     }
 
-    // SRS Approach: 50% Not Started / 35% In Progress / 15% Mastered from 10 words
-    const targetCount = 10;
-    const targetNotStarted = Math.ceil(targetCount * 0.50); // 5 words
-    const targetInProgress = Math.ceil(targetCount * 0.35); // 4 words
-    const targetMastered = Math.floor(targetCount * 0.15);  // 1-2 words
-
-    flashcardReviewList = [];
-
-    // Add Not Started items (5)
-    const shuffledNotStarted = notStarted.sort(() => Math.random() - 0.5);
-    const notStartedCount = Math.min(shuffledNotStarted.length, targetNotStarted);
-    flashcardReviewList.push(...shuffledNotStarted.slice(0, notStartedCount));
-
-    // Add In Progress items (3-4)
-    const shuffledInProgress = inProgress.sort(() => Math.random() - 0.5);
-    const inProgressCount = Math.min(shuffledInProgress.length, targetInProgress);
-    flashcardReviewList.push(...shuffledInProgress.slice(0, inProgressCount));
-
-    // Fill remaining slots with Mastered items if needed, or more of what we have
-    const currentCount = flashcardReviewList.length;
-    if (currentCount < targetCount) {
-        const remainingSlots = targetCount - currentCount;
-
-        // Try to add mastered items
-        if (mastered.length > 0) {
-            const shuffledMastered = mastered.sort(() => Math.random() - 0.5);
-            const masteredToAdd = Math.min(shuffledMastered.length, remainingSlots);
-            flashcardReviewList.push(...shuffledMastered.slice(0, masteredToAdd));
-        }
-
-        // If still need more, fill with whatever is available
-        if (flashcardReviewList.length < targetCount) {
-            const remaining = targetCount - flashcardReviewList.length;
-            const allItems = [...notStarted, ...inProgress, ...mastered];
-            const available = allItems.filter(item =>
-                !flashcardReviewList.some(selected => selected.id === item.id)
-            );
-            const shuffledAvailable = available.sort(() => Math.random() - 0.5);
-            flashcardReviewList.push(...shuffledAvailable.slice(0, remaining));
-        }
-    }
-
-    // Shuffle the final list for variety
-    flashcardReviewList = flashcardReviewList.sort(() => Math.random() - 0.5);
-    console.log(`SRS Review list: ${notStartedCount} Not Started, ${inProgressCount} In Progress, ${flashcardReviewList.length - notStartedCount - inProgressCount} Mastered`);
+    flashcardReviewList = buildDueFirstReviewList(vocabularyList, FLASHCARD_TARGET_COUNT);
+    const dueCountInSession = flashcardReviewList.filter(item => isVocabularyItemDue(item)).length;
+    showToast(`${dueCountInSession} due card${dueCountInSession === 1 ? '' : 's'} in this session`);
 
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
@@ -202,13 +149,20 @@ async function updateFlashcardStatus(newStatus) {
     if (!currentItem) return;
 
     try {
-        await updateVocabularyStatus(currentItem.id, newStatus);
+        const updated = await updateVocabularyStatus(currentItem.id, newStatus);
         currentItem.status = newStatus;
+        if (updated) {
+            Object.assign(currentItem, updated);
+        }
 
         // Update in main vocabulary list
         const mainItem = vocabularyList.find(v => v.id === currentItem.id);
         if (mainItem) {
-            mainItem.status = newStatus;
+            if (updated) {
+                Object.assign(mainItem, updated);
+            } else {
+                mainItem.status = newStatus;
+            }
         }
 
         // If mastered, remove from review list
@@ -238,6 +192,61 @@ async function updateFlashcardStatus(newStatus) {
     } catch (error) {
         showToast('Error updating status');
     }
+}
+
+function shuffleArray(items) {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
+
+function buildDueFirstReviewList(items, targetCount) {
+    const selected = [];
+    const selectedIds = new Set();
+
+    const dueItems = [...items]
+        .filter(item => isVocabularyItemDue(item))
+        .sort((a, b) => getVocabularyDueTimestamp(a) - getVocabularyDueTimestamp(b));
+
+    dueItems.slice(0, targetCount).forEach(item => {
+        selected.push(item);
+        selectedIds.add(item.id);
+    });
+
+    if (selected.length >= targetCount) {
+        return shuffleArray(selected);
+    }
+
+    const remaining = items.filter(item => !selectedIds.has(item.id));
+    const notStarted = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.NOT_STARTED));
+    const inProgress = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.IN_PROGRESS));
+    const mastered = shuffleArray(remaining.filter(item => item.status === PROGRESS_STATUS.MASTERED));
+
+    const slotsLeft = targetCount - selected.length;
+    const targetNotStarted = Math.ceil(slotsLeft * 0.5);
+    const targetInProgress = Math.ceil(slotsLeft * 0.35);
+
+    const pick = (source, count) => {
+        source.slice(0, count).forEach(item => {
+            if (selectedIds.has(item.id)) return;
+            selected.push(item);
+            selectedIds.add(item.id);
+        });
+    };
+
+    pick(notStarted, targetNotStarted);
+    pick(inProgress, targetInProgress);
+    pick(mastered, targetCount - selected.length);
+
+    if (selected.length < targetCount) {
+        const fallback = shuffleArray(items.filter(item => !selectedIds.has(item.id)));
+        pick(fallback, targetCount - selected.length);
+    }
+
+    return shuffleArray(selected);
 }
 
 async function renderFlashcard() {

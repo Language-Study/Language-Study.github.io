@@ -5,6 +5,8 @@
 
 let vocabularyList = [];
 let categories = [];
+const SRS_DEFAULT_EASE_FACTOR = 2.5;
+const SRS_MIN_EASE_FACTOR = 1.3;
 
 /**
  * Load user vocabulary from Firestore
@@ -89,6 +91,11 @@ async function addVocabularyWords(wordsText, translation, category) {
             translation: normalizedTranslation,
             category: category === 'new' ? 'General' : category,
             status: PROGRESS_STATUS.NOT_STARTED,
+            reviewCount: 0,
+            easeFactor: SRS_DEFAULT_EASE_FACTOR,
+            intervalDays: 0,
+            lastReviewedAt: null,
+            nextReviewAt: firebase.firestore.FieldValue.serverTimestamp(),
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
         }));
 
@@ -128,9 +135,28 @@ async function deleteVocabularyItem(itemId) {
  */
 async function updateVocabularyStatus(itemId, newStatus) {
     try {
-        await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(itemId).update({
-            status: newStatus
-        });
+        const currentItem = vocabularyList.find(item => item.id === itemId) || null;
+        const scheduleUpdate = computeSrsScheduleUpdate(currentItem, newStatus);
+        const payload = {
+            status: newStatus,
+            ...scheduleUpdate.firestore
+        };
+
+        await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(itemId).update(payload);
+
+        if (currentItem) {
+            Object.assign(currentItem, {
+                status: newStatus,
+                ...scheduleUpdate.local
+            });
+            return currentItem;
+        }
+
+        return {
+            id: itemId,
+            status: newStatus,
+            ...scheduleUpdate.local
+        };
     } catch (error) {
         console.error('Error updating vocabulary status:', error);
         throw error;
@@ -332,6 +358,7 @@ function renderVocabItem(item) {
         <div class="vocab-item flex items-center gap-3 p-2 border rounded mb-2" data-id="${item.id}">
             <div class="flex-1">
                 <div class="font-medium">${escapeHtml(item.word)}</div>
+                ${isVocabularyItemDue(item) ? '<div class="text-xs text-indigo-600 font-semibold mt-1">Due for review</div>' : ''}
                 ${translationHtml ? `<div class="text-sm mt-1">${translationHtml}</div>` : ''}
             </div>
             <div class="flex items-center gap-2">
@@ -441,6 +468,113 @@ function sanitizeHttpUrl(url) {
     } catch (e) {
         return null;
     }
+}
+
+function toTimestampMillis(value) {
+    if (!value) return null;
+    if (value instanceof Date) return value.getTime();
+    if (typeof value.toDate === 'function') return value.toDate().getTime();
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    if (typeof value === 'string') {
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? null : parsed;
+    }
+    return null;
+}
+
+function getVocabularyDueTimestamp(item) {
+    const dueMs = toTimestampMillis(item?.nextReviewAt);
+    if (dueMs !== null) return dueMs;
+    const addedMs = toTimestampMillis(item?.dateAdded);
+    if (addedMs !== null) return addedMs;
+    return 0;
+}
+
+function isVocabularyItemDue(item, nowMs = Date.now()) {
+    if (!item) return false;
+    if (item.status === PROGRESS_STATUS.NOT_STARTED) return true;
+    const dueMs = getVocabularyDueTimestamp(item);
+    return dueMs <= nowMs;
+}
+
+function roundToTwo(value) {
+    return Math.round(value * 100) / 100;
+}
+
+function computeSrsScheduleUpdate(item, newStatus) {
+    const now = new Date();
+    const previousEase = Math.max(
+        SRS_MIN_EASE_FACTOR,
+        Number.isFinite(Number(item?.easeFactor)) ? Number(item.easeFactor) : SRS_DEFAULT_EASE_FACTOR
+    );
+    const previousInterval = Math.max(
+        0,
+        Number.isFinite(Number(item?.intervalDays)) ? Number(item.intervalDays) : 0
+    );
+    const previousReviewCount = Math.max(
+        0,
+        Number.isFinite(Number(item?.reviewCount)) ? Number(item.reviewCount) : 0
+    );
+
+    const qualityByStatus = {
+        [PROGRESS_STATUS.NOT_STARTED]: 1,
+        [PROGRESS_STATUS.IN_PROGRESS]: 3,
+        [PROGRESS_STATUS.MASTERED]: 5
+    };
+    const quality = qualityByStatus[newStatus] || 1;
+
+    let easeFactor = previousEase;
+    let reviewCount = previousReviewCount;
+    let intervalDays = previousInterval;
+
+    if (newStatus === PROGRESS_STATUS.NOT_STARTED) {
+        reviewCount = 0;
+        intervalDays = 0;
+        easeFactor = Math.max(SRS_MIN_EASE_FACTOR, previousEase - 0.2);
+    } else if (quality < 3) {
+        reviewCount = 0;
+        intervalDays = 1;
+        easeFactor = Math.max(SRS_MIN_EASE_FACTOR, previousEase - 0.2);
+    } else {
+        const adjustedEase = previousEase + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+        easeFactor = Math.max(SRS_MIN_EASE_FACTOR, Math.min(3.2, adjustedEase));
+
+        if (previousReviewCount <= 0) {
+            intervalDays = 1;
+        } else if (previousReviewCount === 1) {
+            intervalDays = 3;
+        } else {
+            intervalDays = Math.max(1, Math.round(previousInterval * easeFactor));
+        }
+
+        if (newStatus === PROGRESS_STATUS.IN_PROGRESS) {
+            intervalDays = Math.min(intervalDays, 3);
+        }
+        if (newStatus === PROGRESS_STATUS.MASTERED) {
+            intervalDays = Math.max(intervalDays, 3);
+        }
+
+        reviewCount = previousReviewCount + 1;
+    }
+
+    const nextReviewAt = new Date(now.getTime() + (intervalDays * 24 * 60 * 60 * 1000));
+
+    return {
+        firestore: {
+            reviewCount,
+            easeFactor: roundToTwo(easeFactor),
+            intervalDays,
+            lastReviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            nextReviewAt
+        },
+        local: {
+            reviewCount,
+            easeFactor: roundToTwo(easeFactor),
+            intervalDays,
+            lastReviewedAt: now,
+            nextReviewAt
+        }
+    };
 }
 
 async function normalizeTranslationLink(translation) {
