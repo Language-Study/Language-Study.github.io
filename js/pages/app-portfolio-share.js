@@ -74,12 +74,15 @@ function closePortfolioShareModal() {
  */
 async function loadShareModalState() {
     try {
+        const shareData = await getPortfolioShareData();
         const isEnabled = await isPortfolioSharingEnabled();
         const toggle = document.getElementById('portfolioShareToggle');
 
         if (toggle) {
             toggle.checked = isEnabled;
         }
+
+        updateShareExpiryNotice(shareData, isEnabled);
 
         if (isEnabled) {
             showShareContent();
@@ -106,12 +109,15 @@ async function handleShareToggle(event) {
     try {
         if (isEnabled) {
             await enablePortfolioSharing();
+            const shareData = await getPortfolioShareData();
+            updateShareExpiryNotice(shareData, true);
             showShareContent();
             const shareLink = await generatePortfolioShareLink();
             displayShareLink(shareLink);
             generateQRCode(shareLink);
         } else {
             await disablePortfolioSharing();
+            updateShareExpiryNotice(null, false);
             hideShareContent();
             clearQRCode();
         }
@@ -157,6 +163,49 @@ function displayShareLink(link) {
     if (input) {
         input.value = link;
     }
+}
+
+function formatShareExpiryDate(expiresAt) {
+    if (!expiresAt) return null;
+
+    let date;
+    if (typeof expiresAt.toDate === 'function') {
+        date = expiresAt.toDate();
+    } else if (expiresAt instanceof Date) {
+        date = expiresAt;
+    } else {
+        return null;
+    }
+
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
+
+function updateShareExpiryNotice(shareData, isEnabled) {
+    const notice = document.getElementById('shareExpiryNotice');
+    if (!notice) return;
+
+    if (!isEnabled) {
+        notice.textContent = 'This link expires 24 hours after you enable sharing.';
+        return;
+    }
+
+    const formattedExpiry = formatShareExpiryDate(shareData?.expiresAt);
+    if (formattedExpiry) {
+        notice.textContent = `This link expires on ${formattedExpiry}.`;
+        return;
+    }
+
+    notice.textContent = 'This link expires 24 hours after you enable sharing.';
 }
 
 /**
@@ -247,7 +296,7 @@ async function copyShareLinkToClipboard() {
 function addShareButtonToSettings() {
     // Don't add to settings in public portfolio view (settings modal doesn't exist)
     if (window.isPublicPortfolioView) return;
-    
+
     // Find the settings modal content
     const settingsContent = document.querySelector('#settingsModal .settings-modal-content');
     if (!settingsContent) return;
@@ -304,7 +353,7 @@ function closeSettingsModal() {
 document.addEventListener('DOMContentLoaded', () => {
     // Skip initialization in public portfolio view
     if (window.isPublicPortfolioView) return;
-    
+
     initPortfolioShareModal();
     addShareButtonToSettings();
 });
