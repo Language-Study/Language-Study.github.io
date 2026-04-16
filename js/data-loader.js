@@ -100,13 +100,10 @@ async function loadUserData() {
         renderProgressMetrics();
 
         // Show welcome modal if first login
-        const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (!settingsDoc.exists || settingsDoc.data().firstLogin !== false) {
+        const settings = await getUserSettingsData();
+        if (!settings || settings.firstLogin !== false) {
             showWelcomeModal();
-            await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-                { firstLogin: false },
-                { merge: true }
-            );
+            await writeUserSettingsPatch({ firstLogin: false });
         }
 
 

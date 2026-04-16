@@ -184,9 +184,9 @@ async function renderBadges() {
     // Fetch previously earned badges from Firestore
     let previouslyEarned = [];
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists && Array.isArray(doc.data().earnedBadges)) {
-            previouslyEarned = normalizeBadgeIds(doc.data().earnedBadges);
+        const settings = await getUserSettingsData();
+        if (settings && Array.isArray(settings.earnedBadges)) {
+            previouslyEarned = normalizeBadgeIds(settings.earnedBadges);
         }
     } catch (e) {
         console.error('Error fetching earned badges:', e);
@@ -203,10 +203,7 @@ async function renderBadges() {
 
     // Update Firestore with the latest earned badges
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { earnedBadges: currentlyEarned },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ earnedBadges: currentlyEarned });
         earnedBadges = currentlyEarned;
     } catch (e) {
         console.error('Error saving earned badges:', e);

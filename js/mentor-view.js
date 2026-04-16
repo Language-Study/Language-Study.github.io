@@ -229,10 +229,9 @@ function disableEditingUI() {
 
 async function loadMentorAccessLevelForOwner(ownerUid) {
     try {
-        const settingsDoc = await db.collection('users').doc(ownerUid).collection('metadata').doc('settings').get();
-        if (!settingsDoc.exists) return MENTOR_VIEW_ACCESS_LEVELS.VIEW;
+        const data = await getUserSettingsData(false, ownerUid);
+        if (!data) return MENTOR_VIEW_ACCESS_LEVELS.VIEW;
 
-        const data = settingsDoc.data() || {};
         if (typeof data.mentorAccessLevel === 'string') {
             return normalizeMentorAccessLevel(data.mentorAccessLevel);
         }

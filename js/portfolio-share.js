@@ -4,6 +4,25 @@
  */
 const PORTFOLIO_CODE_REGEX = /^[A-Z0-9]{5}$/;
 const DEFAULT_NON_EXPIRING_HOURS = 24 * 365 * 100;
+const PORTFOLIO_SHARE_CACHE_TTL_MS = 60 * 1000;
+
+const portfolioShareCache = {
+    uid: null,
+    data: null,
+    fetchedAt: 0
+};
+
+function setPortfolioShareCache(uid, data) {
+    portfolioShareCache.uid = uid || null;
+    portfolioShareCache.data = data ? { ...data } : null;
+    portfolioShareCache.fetchedAt = Date.now();
+}
+
+function invalidatePortfolioShareCache() {
+    portfolioShareCache.uid = null;
+    portfolioShareCache.data = null;
+    portfolioShareCache.fetchedAt = 0;
+}
 
 function normalizeShareExpiryHours(hours) {
     const parsed = Number(hours);
@@ -54,11 +73,23 @@ function notifyPortfolioShareUser(message, duration = 4200) {
     }
 }
 
-async function getPortfolioShareDataRaw() {
+async function getPortfolioShareDataRaw(forceRefresh = false) {
     if (!currentUser) return null;
 
-    const doc = await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').get();
-    return doc.exists ? doc.data() : null;
+    const uid = currentUser.uid;
+    const now = Date.now();
+    const isFresh = !forceRefresh
+        && portfolioShareCache.uid === uid
+        && (now - portfolioShareCache.fetchedAt) < PORTFOLIO_SHARE_CACHE_TTL_MS;
+
+    if (isFresh) {
+        return portfolioShareCache.data ? { ...portfolioShareCache.data } : null;
+    }
+
+    const doc = await db.collection('users').doc(uid).collection('settings').doc('portfolioShare').get();
+    const data = doc.exists ? (doc.data() || {}) : null;
+    setPortfolioShareCache(uid, data);
+    return data ? { ...data } : null;
 }
 
 function getRawPortfolioCodeFromUrl() {
@@ -390,6 +421,14 @@ async function createPortfolioShareCode(options = {}) {
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
+            setPortfolioShareCache(currentUser.uid, {
+                code,
+                enabled: true,
+                shareType: 'full-site-24h',
+                expiresAt,
+                disabledAt: null
+            });
+
             return code;
         } catch (error) {
             const isPermissionDenied = error?.code === 'permission-denied'
@@ -486,6 +525,15 @@ async function enablePortfolioSharing(options = {}) {
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 disabledAt: null
             }, { merge: true });
+
+            setPortfolioShareCache(currentUser.uid, {
+                ...(shareData || {}),
+                enabled: true,
+                code,
+                shareType: 'full-site-24h',
+                expiresAt,
+                disabledAt: null
+            });
         }
     } catch (error) {
         console.error('Error enabling portfolio sharing:', error);
@@ -547,6 +595,12 @@ async function disablePortfolioSharing(options = {}) {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             disabledAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+
+        setPortfolioShareCache(currentUser.uid, {
+            ...(shareData || {}),
+            enabled: false,
+            code: shouldDeleteCode ? null : (shareData?.code || null)
+        });
     } catch (error) {
         console.error('Error disabling portfolio sharing:', error);
         throw new Error('Failed to disable portfolio sharing');
@@ -592,6 +646,7 @@ async function getPortfolioShareData() {
                 enabled: false,
                 code: null
             };
+            setPortfolioShareCache(currentUser.uid, shareData);
         }
 
         return shareData;
