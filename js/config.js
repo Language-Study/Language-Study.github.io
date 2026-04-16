@@ -78,3 +78,95 @@ function generateMentorCode() {
 function generatePortfolioShareCode() {
     return generateMentorCode(); // Reuse same format
 }
+
+function getRateLimitIdentity(uidOverride = null) {
+    if (typeof uidOverride === 'string' && uidOverride.trim()) {
+        return uidOverride.trim();
+    }
+
+    if (typeof currentUser !== 'undefined' && currentUser?.uid) {
+        return currentUser.uid;
+    }
+
+    return 'anonymous';
+}
+
+function getRateLimitStorageKey(bucket, uidOverride = null) {
+    return `ls_rate_limit:${getRateLimitIdentity(uidOverride)}:${bucket}`;
+}
+
+function readRateLimitTimestamps(storageKey) {
+    try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed.filter((value) => Number.isFinite(value));
+    } catch (error) {
+        console.warn('Unable to read rate limiter state:', error);
+        return [];
+    }
+}
+
+function writeRateLimitTimestamps(storageKey, timestamps) {
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(timestamps));
+    } catch (error) {
+        console.warn('Unable to persist rate limiter state:', error);
+    }
+}
+
+function formatRateLimitWait(ms) {
+    const totalSeconds = Math.max(1, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    if (minutes <= 0) return `${seconds}s`;
+    if (seconds === 0) return `${minutes}m`;
+    return `${minutes}m ${seconds}s`;
+}
+
+function consumeClientRateLimit({ bucket, limit, windowMs, uidOverride = null }) {
+    if (typeof window === 'undefined' || !window.localStorage) {
+        return { allowed: true, remaining: Math.max(0, limit - 1), retryAfterMs: 0 };
+    }
+
+    if (!bucket || !Number.isFinite(limit) || !Number.isFinite(windowMs) || limit <= 0 || windowMs <= 0) {
+        throw new Error('Invalid rate limiter configuration.');
+    }
+
+    const now = Date.now();
+    const threshold = now - windowMs;
+    const storageKey = getRateLimitStorageKey(bucket, uidOverride);
+    const timestamps = readRateLimitTimestamps(storageKey).filter((ts) => ts > threshold);
+
+    if (timestamps.length >= limit) {
+        const oldestAllowedTs = timestamps[0];
+        const retryAfterMs = Math.max(1000, oldestAllowedTs + windowMs - now);
+        return { allowed: false, remaining: 0, retryAfterMs };
+    }
+
+    timestamps.push(now);
+    writeRateLimitTimestamps(storageKey, timestamps);
+    return {
+        allowed: true,
+        remaining: Math.max(0, limit - timestamps.length),
+        retryAfterMs: 0
+    };
+}
+
+function enforceClientRateLimit({ bucket, limit, windowMs, message, uidOverride = null }) {
+    const result = consumeClientRateLimit({ bucket, limit, windowMs, uidOverride });
+
+    if (!result.allowed) {
+        const waitTime = formatRateLimitWait(result.retryAfterMs);
+        if (message) {
+            throw new Error(`${message} Try again in ${waitTime}.`);
+        }
+        throw new Error(`Rate limit reached. Try again in ${waitTime}.`);
+    }
+
+    return result;
+}

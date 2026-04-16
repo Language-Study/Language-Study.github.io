@@ -154,10 +154,33 @@ async function handleShareToggle(event) {
         }
     } catch (error) {
         console.error('Error toggling portfolio sharing:', error);
-        alert('Failed to update sharing settings. Please try again.');
+        const message = getPortfolioShareUiErrorMessage(error, 'Failed to update sharing settings.');
+        if (typeof showToast === 'function') {
+            showToast(`Error: ${message}`, 4200);
+        } else {
+            alert(message);
+        }
         // Revert toggle state
         event.target.checked = !isEnabled;
     }
+}
+
+function getPortfolioShareUiErrorMessage(error, fallbackMessage) {
+    const rawMessage = String(error?.message || '').trim();
+    if (!rawMessage) return fallbackMessage;
+
+    const lower = rawMessage.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('too many')) {
+        return rawMessage;
+    }
+    if (lower.includes('permission denied') || lower.includes('insufficient permissions')) {
+        return 'You do not have permission to update sharing right now. Please sign out and sign back in.';
+    }
+    if (lower.includes('logged in')) {
+        return 'Please sign in again and then retry enabling sharing.';
+    }
+
+    return rawMessage;
 }
 
 /**
@@ -291,7 +314,12 @@ async function handleExpiryOptionChange() {
         updateShareExpiryNotice(shareData, true);
     } catch (error) {
         console.error('Error updating share expiration settings:', error);
-        alert('Failed to update expiration settings. Please try again.');
+        const message = getPortfolioShareUiErrorMessage(error, 'Failed to update expiration settings.');
+        if (typeof showToast === 'function') {
+            showToast(`Error: ${message}`, 4200);
+        } else {
+            alert(message);
+        }
     }
 }
 

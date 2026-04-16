@@ -242,12 +242,22 @@ function assertAdminForLanguageEditing() {
     }
 }
 
+function enforceAdminWriteRateLimit() {
+    enforceClientRateLimit({
+        bucket: 'admin-language-resource-write',
+        limit: 80,
+        windowMs: 5 * 60 * 1000,
+        message: 'Too many admin edits in a short time. Please wait and try again.'
+    });
+}
+
 function wireAdminPanelListeners() {
     if (languageResourceAdminState.initialized) return;
 
     document.getElementById('adminAddLanguageBtn')?.addEventListener('click', async () => {
         try {
             assertAdminForLanguageEditing();
+            enforceAdminWriteRateLimit();
             const input = document.getElementById('adminLanguageNameInput');
             const languageName = normalizeLanguageName(input?.value || '');
 
@@ -286,6 +296,7 @@ function wireAdminPanelListeners() {
     document.getElementById('adminDeleteLanguageBtn')?.addEventListener('click', async () => {
         try {
             assertAdminForLanguageEditing();
+            enforceAdminWriteRateLimit();
             const language = normalizeLanguageName(languageResourceAdminState.activeLanguage);
             if (!language) {
                 throw new Error('Select a language first.');
@@ -314,6 +325,7 @@ function wireAdminPanelListeners() {
     document.getElementById('adminAddResourceBtn')?.addEventListener('click', async () => {
         try {
             assertAdminForLanguageEditing();
+            enforceAdminWriteRateLimit();
             const language = normalizeLanguageName(languageResourceAdminState.activeLanguage);
             if (!language) {
                 throw new Error('Select a language first.');
@@ -356,6 +368,7 @@ function wireAdminPanelListeners() {
 
         try {
             assertAdminForLanguageEditing();
+            enforceAdminWriteRateLimit();
             const language = normalizeLanguageName(languageResourceAdminState.activeLanguage);
             if (!language) {
                 throw new Error('Select a language first.');

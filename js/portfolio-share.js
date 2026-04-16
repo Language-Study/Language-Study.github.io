@@ -35,6 +35,25 @@ function isShareDataExpired(shareData) {
     return expiryDate.getTime() <= Date.now();
 }
 
+function isPermissionDeniedError(error) {
+    return error?.code === 'permission-denied'
+        || String(error?.message || '').toLowerCase().includes('insufficient permissions')
+        || String(error?.message || '').toLowerCase().includes('missing or insufficient permissions');
+}
+
+function notifyPortfolioShareUser(message, duration = 4200) {
+    if (!message) return;
+
+    if (typeof showToast === 'function') {
+        showToast(message, duration);
+        return;
+    }
+
+    if (typeof alert === 'function') {
+        alert(message);
+    }
+}
+
 async function getPortfolioShareDataRaw() {
     if (!currentUser) return null;
 
@@ -96,6 +115,7 @@ async function tryPublicPortfolioView() {
                 await db.collection('publicShareLinks').doc(portfolioCode).delete();
             } catch (disableError) {
                 console.warn('Unable to delete expired public share link:', disableError);
+                notifyPortfolioShareUser('This shared link expired but could not be cleaned up automatically.');
             }
         }
 
@@ -329,6 +349,13 @@ async function createPortfolioShareCode(options = {}) {
         throw new Error('User must be logged in');
     }
 
+    enforceClientRateLimit({
+        bucket: 'portfolio-share-code-create',
+        limit: 10,
+        windowMs: 60 * 60 * 1000,
+        message: 'Too many share link requests.'
+    });
+
     const expiryHours = normalizeShareExpiryHours(options.expiryHours);
     let code;
     let attempts = 0;
@@ -408,8 +435,9 @@ async function enablePortfolioSharing(options = {}) {
                         await db.collection('publicShareLinks').doc(code).delete();
                     } catch (error) {
                         const isNotFound = error?.code === 'not-found';
-                        if (!isNotFound) {
+                        if (!isNotFound && !isPermissionDeniedError(error)) {
                             console.warn('Unable to delete old portfolio share code:', error);
+                            notifyPortfolioShareUser('Could not remove an old share link, but we can still create a new one.');
                         }
                     }
                 } else {
@@ -422,6 +450,7 @@ async function enablePortfolioSharing(options = {}) {
                         const isNotFound = error?.code === 'not-found';
                         if (!isNotFound) {
                             console.warn('Unable to disable old portfolio share code:', error);
+                            notifyPortfolioShareUser('Could not disable the previous share link automatically.');
                         }
                     }
                 }
@@ -460,7 +489,14 @@ async function enablePortfolioSharing(options = {}) {
         }
     } catch (error) {
         console.error('Error enabling portfolio sharing:', error);
-        throw new Error('Failed to enable portfolio sharing');
+        const message = String(error?.message || '').trim();
+        if (message) {
+            throw new Error(message);
+        }
+        if (isPermissionDeniedError(error)) {
+            throw new Error('Permission denied while enabling sharing. Please sign out and back in, then try again.');
+        }
+        throw new Error('Failed to enable portfolio sharing.');
     }
 }
 
@@ -486,6 +522,7 @@ async function disablePortfolioSharing(options = {}) {
                     const isNotFound = error?.code === 'not-found';
                     if (!isNotFound) {
                         console.warn('Unable to delete portfolio share code during disable:', error);
+                        notifyPortfolioShareUser('Sharing was disabled, but we could not delete the previous link record.');
                     }
                 }
             } else {
@@ -498,6 +535,7 @@ async function disablePortfolioSharing(options = {}) {
                     const isNotFound = error?.code === 'not-found';
                     if (!isNotFound) {
                         console.warn('Unable to disable portfolio share code:', error);
+                        notifyPortfolioShareUser('Sharing settings were updated, but the old link state could not be synced.');
                     }
                 }
             }

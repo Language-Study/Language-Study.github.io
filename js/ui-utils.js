@@ -498,6 +498,13 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
             await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
         }
 
+        enforceClientRateLimit({
+            bucket: 'mentor-code-create',
+            limit: 6,
+            windowMs: 60 * 60 * 1000,
+            message: 'Too many mentor code changes. Please wait a bit before trying again.'
+        });
+
         let code, exists, attempts = 0;
         do {
             code = generateMentorCode();
