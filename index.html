@@ -198,7 +198,8 @@
                         <div id="mentorAccessLevelSection"
                             class="hidden p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
                             <label for="mentorAccessLevelSelect"
-                                class="text-sm sm:text-base text-gray-700 font-semibold block">Mentor Access Level</label>
+                                class="text-sm sm:text-base text-gray-700 font-semibold block">Mentor Access
+                                Level</label>
                             <p class="text-xs text-gray-600 mt-1 mb-2">Choose what mentors can do when using your mentor
                                 code. Default is read-only.</p>
                             <select id="mentorAccessLevelSelect" class="w-full p-2 border rounded text-sm bg-white">
@@ -292,7 +293,8 @@
                         <div class="flex items-center gap-2">
                             <input type="checkbox" id="portfolioShareExpiryToggle"
                                 class="form-checkbox h-4 w-4 text-blue-600 flex-shrink-0" />
-                            <label for="portfolioShareExpiryToggle" class="text-sm font-medium text-gray-700">Set link expiration</label>
+                            <label for="portfolioShareExpiryToggle" class="text-sm font-medium text-gray-700">Set link
+                                expiration</label>
                         </div>
                         <div class="flex items-center gap-2">
                             <label for="portfolioShareExpiryHours" class="text-xs text-gray-600">Expire after</label>
@@ -343,7 +345,8 @@
                 <!-- Disabled Message -->
                 <div id="shareDisabledMessage" class="text-center text-gray-600 py-4 hidden">
                     <p>Enable public sharing above to generate your shareable link and QR code.</p>
-                    <p class="text-xs text-amber-700 mt-2">By default, links do not expire unless you choose an expiration.</p>
+                    <p class="text-xs text-amber-700 mt-2">By default, links do not expire unless you choose an
+                        expiration.</p>
                 </div>
             </div>
         </div>
@@ -450,6 +453,32 @@
                             <p class="text-sm text-gray-500">Links to vocabulary and dictionary sites will appear here
                                 after
                                 you select a language.</p>
+                        </div>
+
+                        <div id="languageAdminPanel" class="mt-4 hidden border rounded p-3 bg-blue-50">
+                            <p class="text-sm font-semibold text-blue-800 mb-2">Admin: Manage Language Resources</p>
+                            <p class="text-xs text-blue-700 mb-3">Only admins can add, edit, and delete links shown for
+                                each language.</p>
+
+                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                                <input id="adminLanguageNameInput" type="text" placeholder="New language name"
+                                    class="flex-1 p-2 border rounded bg-white" />
+                                <button id="adminAddLanguageBtn"
+                                    class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Language</button>
+                                <button id="adminDeleteLanguageBtn"
+                                    class="p-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Language</button>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                                <input id="adminResourceNameInput" type="text" placeholder="Resource name"
+                                    class="flex-1 p-2 border rounded bg-white" />
+                                <input id="adminResourceUrlInput" type="url" placeholder="https://example.com"
+                                    class="flex-1 p-2 border rounded bg-white" />
+                                <button id="adminAddResourceBtn"
+                                    class="p-2 bg-green-600 text-white rounded hover:bg-green-700">Add Link</button>
+                            </div>
+
+                            <div id="adminLanguageResourcesList" class="space-y-2"></div>
                         </div>
                         <br>
                         <p class="text-sm text-gray-500">Don't see your language or favorite resource? Request it <a
@@ -710,6 +739,7 @@
     <script src="js/pages/app-skills.js" defer></script>
     <script src="js/pages/app-portfolio.js" defer></script>
     <script src="js/pages/app-portfolio-share.js" defer></script>
+    <script src="js/admin-resources.js" defer></script>
     <script src="js/pages/app-settings.js" defer></script>
 
     <!-- Mobile Bottom Navigation Rail -->

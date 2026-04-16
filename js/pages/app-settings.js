@@ -326,40 +326,8 @@ languageSelect?.addEventListener('change', async (e) => {
             { merge: true }
         );
 
-        const languageLinksContainer = document.getElementById('languageLinksContainer');
-        const linksSnapshot = await db.collection('languageLinks').doc(selectedLanguage).get();
-
-        if (linksSnapshot.exists) {
-            const links = Array.isArray(linksSnapshot.data().links) ? linksSnapshot.data().links : [];
-            languageLinksContainer.textContent = '';
-
-            const validLinks = links
-                .map(link => ({
-                    name: typeof link?.name === 'string' ? link.name : '',
-                    url: sanitizeExternalResourceUrl(link?.url)
-                }))
-                .filter(link => link.url);
-
-            if (validLinks.length === 0) {
-                languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
-                return;
-            }
-
-            validLinks.forEach((link, index) => {
-                const anchor = document.createElement('a');
-                anchor.href = link.url;
-                anchor.target = '_blank';
-                anchor.rel = 'noopener noreferrer';
-                anchor.className = 'text-blue-600 hover:underline';
-                anchor.textContent = link.name || link.url;
-                languageLinksContainer.appendChild(anchor);
-
-                if (index < validLinks.length - 1) {
-                    languageLinksContainer.appendChild(document.createElement('br'));
-                }
-            });
-        } else {
-            languageLinksContainer.innerHTML = '<p class="text-sm text-gray-500">No links available for this language.</p>';
+        if (typeof handleLanguageSelectionChange === 'function') {
+            await handleLanguageSelectionChange(selectedLanguage);
         }
     } catch (error) {
         console.error('Error updating language:', error);
@@ -371,6 +339,10 @@ onAuthStateChanged?.(async (user) => {
     if (!user) return;
 
     try {
+        if (typeof initializeLanguageResourceAdmin === 'function') {
+            await initializeLanguageResourceAdmin();
+        }
+
         const settingsDoc = await db.collection('users').doc(user.uid).collection('metadata').doc('settings').get();
         if (settingsDoc.exists && settingsDoc.data().languageLearning) {
             const languageSelect = document.getElementById('languageSelect');
@@ -378,6 +350,8 @@ onAuthStateChanged?.(async (user) => {
                 languageSelect.value = settingsDoc.data().languageLearning;
                 languageSelect.dispatchEvent(new Event('change'));
             }
+        } else if (typeof handleLanguageSelectionChange === 'function') {
+            await handleLanguageSelectionChange('');
         }
     } catch (error) {
         console.error('Error restoring language:', error);
