@@ -362,6 +362,25 @@ const MENTOR_ACCESS_LEVELS = {
     FULL: 'full'
 };
 
+function isMentorPermissionDeniedError(error) {
+    return error?.code === 'permission-denied'
+        || String(error?.message || '').toLowerCase().includes('insufficient permissions')
+        || String(error?.message || '').toLowerCase().includes('missing or insufficient permissions');
+}
+
+function normalizeMentorErrorMessage(error, fallbackMessage = 'Unable to update mentor code settings.') {
+    const rawMessage = String(error?.message || '').trim();
+    if (rawMessage) {
+        return rawMessage;
+    }
+
+    if (isMentorPermissionDeniedError(error)) {
+        return 'Permission denied. Please sign out and sign back in, then try again.';
+    }
+
+    return fallbackMessage;
+}
+
 function normalizeMentorAccessLevel(level) {
     if (level === MENTOR_ACCESS_LEVELS.STATUS || level === MENTOR_ACCESS_LEVELS.FULL) {
         return level;
@@ -399,6 +418,11 @@ async function setMentorCodeEnabled(val) {
     if (!currentUser) return;
 
     try {
+        // Enabling mentor access is only valid when a code exists (or can be created).
+        if (val === true) {
+            await getOrCreateMentorCode(false);
+        }
+
         await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
             { mentorCodeEnabled: val },
             { merge: true }
@@ -416,11 +440,11 @@ async function setMentorCodeEnabled(val) {
             }
         } catch (updateError) {
             console.warn('Could not update mentor code status:', updateError);
-            // Don't throw - continue with settings update
+            throw new Error(normalizeMentorErrorMessage(updateError, 'Could not sync mentor code status. Please try again.'));
         }
     } catch (e) {
         console.error('Error setting mentor code:', e);
-        throw e;
+        throw new Error(normalizeMentorErrorMessage(e, 'Could not update mentor access settings.'));
     }
 }
 
@@ -494,7 +518,7 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
         }
 
         if (!codeDoc.empty && forceRegenerate) {
-            // Delete old code on regeneration
+            // Delete old code on regeneration.
             await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
         }
 
@@ -502,26 +526,38 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
             bucket: 'mentor-code-create',
             limit: 6,
             windowMs: 60 * 60 * 1000,
-            message: 'Too many mentor code changes. Please wait a bit before trying again.'
+            message: 'Too many mentor code changes.'
         });
 
-        let code, exists, attempts = 0;
-        do {
-            code = generateMentorCode();
-            const doc = await db.collection('mentorCodes').doc(code).get();
-            exists = doc.exists;
-            attempts++;
-        } while (exists && attempts < 10);
+        let attempts = 0;
+        const maxAttempts = 10;
 
-        if (exists) {
-            throw new Error('Could not generate a unique mentor code. Please try again.');
+        while (attempts < maxAttempts) {
+            const code = generateMentorCode();
+            const doc = await db.collection('mentorCodes').doc(code).get();
+
+            if (doc.exists) {
+                attempts++;
+                continue;
+            }
+
+            try {
+                await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid, enabled: true });
+                return code;
+            } catch (writeError) {
+                if (isMentorPermissionDeniedError(writeError)) {
+                    attempts++;
+                    continue;
+                }
+
+                throw writeError;
+            }
         }
 
-        await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid, enabled: true });
-        return code;
+        throw new Error('Could not generate a unique mentor code. Please try again.');
     } catch (e) {
         console.error('Error managing mentor code:', e);
-        throw e;
+        throw new Error(normalizeMentorErrorMessage(e, 'Failed to generate mentor code.'));
     }
 }
 
@@ -531,7 +567,8 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
  * @param {boolean} forceRegenerate - Force regenerate code
  * @returns {Promise<void>}
  */
-async function showMentorCode(forceRegenerate = false) {
+async function showMentorCode(forceRegenerate = false, options = {}) {
+    const suppressErrorToast = options?.suppressErrorToast === true;
     const enabled = await getMentorCodeEnabled();
     const codeDiv = document.getElementById('mentorCodeDiv');
     const regenBtn = document.getElementById('regenerateMentorCodeBtn');
@@ -542,7 +579,7 @@ async function showMentorCode(forceRegenerate = false) {
         if (regenBtn) regenBtn.classList.add('hidden');
         if (infoDiv) infoDiv.classList.add('hidden');
         updateMentorAccessLevelUI();
-        return;
+        return true;
     }
 
     try {
@@ -555,8 +592,12 @@ async function showMentorCode(forceRegenerate = false) {
 
         // Update mentor access level section visibility
         updateMentorAccessLevelUI();
+        return true;
     } catch (e) {
-        showToast('Error generating mentor code: ' + e.message);
+        if (!suppressErrorToast) {
+            showToast('Error: ' + normalizeMentorErrorMessage(e, 'Failed to generate mentor code.'));
+        }
+        return false;
     }
 }
 
@@ -612,7 +653,24 @@ async function updateMentorCodeToggle() {
 
     if (!toggle) return;
 
-    const enabled = await getMentorCodeEnabled();
+    let enabled = await getMentorCodeEnabled();
+
+    // Self-heal inconsistent state from previous failures: enabled=true but no code exists.
+    if (enabled) {
+        try {
+            const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+            if (codeDoc.empty) {
+                await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
+                    { mentorCodeEnabled: false },
+                    { merge: true }
+                );
+                enabled = false;
+            }
+        } catch (error) {
+            console.warn('Could not verify mentor code consistency:', error);
+        }
+    }
+
     toggle.checked = enabled;
     await showMentorCode();
 }

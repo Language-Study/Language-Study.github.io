@@ -122,6 +122,21 @@ function sanitizeExternalResourceUrl(url) {
     }
 }
 
+function getMentorSettingsErrorMessage(error, fallbackMessage = 'Failed to update mentor settings.') {
+    const message = String(error?.message || '').trim();
+    if (!message) return fallbackMessage;
+
+    const lower = message.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('too many')) {
+        return message;
+    }
+    if (lower.includes('permission denied') || lower.includes('insufficient permissions')) {
+        return 'You do not have permission to update mentor settings right now. Please sign out and sign back in.';
+    }
+
+    return message;
+}
+
 // Progress metrics toggle
 const toggleProgress = document.getElementById('toggleProgress');
 toggleProgress?.addEventListener('change', async (e) => {
@@ -187,14 +202,26 @@ mentorViewForm?.addEventListener('submit', async (e) => {
 // Mentor code toggle with confirmation
 const mentorToggle = document.getElementById('toggleMentorCode');
 mentorToggle?.addEventListener('change', async (e) => {
-    if (!e.target.checked) {
+    const nextChecked = e.target.checked;
+    const previousChecked = !nextChecked;
+
+    if (!nextChecked) {
         if (!confirm('Are you sure you want to disable Mentor Access? Your mentor will no longer be able to view your progress.')) {
             mentorToggle.checked = true;
             return;
         }
     }
-    await setMentorCodeEnabled(e.target.checked);
-    await showMentorCode();
+
+    try {
+        await setMentorCodeEnabled(nextChecked);
+        const updated = await showMentorCode(false, { suppressErrorToast: true });
+        if (!updated) {
+            throw new Error('Mentor settings changed, but we could not refresh your mentor code display.');
+        }
+    } catch (error) {
+        mentorToggle.checked = previousChecked;
+        showToast('Error: ' + getMentorSettingsErrorMessage(error));
+    }
 });
 
 // Mentor access level selector
@@ -232,8 +259,16 @@ regenBtn?.addEventListener('click', async (e) => {
         e.preventDefault();
         return;
     }
-    await showMentorCode(true);
-    showToast('âœ“ Code regenerated!');
+
+    try {
+        const regenerated = await showMentorCode(true, { suppressErrorToast: true });
+        if (!regenerated) {
+            throw new Error('Could not regenerate mentor code.');
+        }
+        showToast('Code regenerated.');
+    } catch (error) {
+        showToast('Error: ' + getMentorSettingsErrorMessage(error, 'Could not regenerate mentor code.'));
+    }
 });
 
 // Delete account
