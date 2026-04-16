@@ -356,10 +356,7 @@ languageSelect?.addEventListener('change', async (e) => {
     const selectedLanguage = e.target.value;
 
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { languageLearning: selectedLanguage },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ languageLearning: selectedLanguage });
 
         if (typeof handleLanguageSelectionChange === 'function') {
             await handleLanguageSelectionChange(selectedLanguage);
@@ -378,11 +375,11 @@ onAuthStateChanged?.(async (user) => {
             await initializeLanguageResourceAdmin();
         }
 
-        const settingsDoc = await db.collection('users').doc(user.uid).collection('metadata').doc('settings').get();
-        if (settingsDoc.exists && settingsDoc.data().languageLearning) {
+        const settings = await getUserSettingsData(false, user.uid);
+        if (settings?.languageLearning) {
             const languageSelect = document.getElementById('languageSelect');
             if (languageSelect) {
-                languageSelect.value = settingsDoc.data().languageLearning;
+                languageSelect.value = settings.languageLearning;
                 languageSelect.dispatchEvent(new Event('change'));
             }
         } else if (typeof handleLanguageSelectionChange === 'function') {
@@ -408,10 +405,7 @@ async function setHomepageTab(tabName) {
     }
 
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { homepageTab: tabName },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ homepageTab: tabName });
     } catch (error) {
         console.error('Error saving homepage tab preference:', error);
         showToast('Error saving preference. Please try again.');
@@ -427,9 +421,9 @@ async function getHomepageTab() {
     if (!currentUser) return 'vocabulary';
 
     try {
-        const settingsDoc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (settingsDoc.exists && settingsDoc.data().homepageTab) {
-            return settingsDoc.data().homepageTab;
+        const settings = await getUserSettingsData();
+        if (settings?.homepageTab) {
+            return settings.homepageTab;
         }
     } catch (error) {
         console.error('Error loading homepage tab preference:', error);

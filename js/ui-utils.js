@@ -209,6 +209,107 @@ function showWelcomeModal() {
     if (continueBtn) continueBtn.onclick = close;
 }
 
+const SETTINGS_CACHE_TTL_MS = 60 * 1000;
+const userSettingsCache = {
+    uid: null,
+    data: null,
+    fetchedAt: 0
+};
+
+function invalidateUserSettingsCache() {
+    userSettingsCache.uid = null;
+    userSettingsCache.data = null;
+    userSettingsCache.fetchedAt = 0;
+}
+
+function upsertUserSettingsCache(uid, patch) {
+    if (!uid || !patch || typeof patch !== 'object') return;
+    if (userSettingsCache.uid !== uid || !userSettingsCache.data) {
+        userSettingsCache.uid = uid;
+        userSettingsCache.data = {};
+    }
+
+    userSettingsCache.data = {
+        ...userSettingsCache.data,
+        ...patch
+    };
+    userSettingsCache.fetchedAt = Date.now();
+}
+
+async function getUserSettingsData(forceRefresh = false, uidOverride = null) {
+    const uid = typeof uidOverride === 'string' && uidOverride
+        ? uidOverride
+        : currentUser?.uid;
+
+    if (!uid) return null;
+    const now = Date.now();
+    const isFresh = userSettingsCache.uid === uid
+        && userSettingsCache.data
+        && (now - userSettingsCache.fetchedAt) < SETTINGS_CACHE_TTL_MS;
+
+    if (!forceRefresh && isFresh) {
+        return userSettingsCache.data;
+    }
+
+    const doc = await db.collection('users').doc(uid).collection('metadata').doc('settings').get();
+    const data = doc.exists ? (doc.data() || {}) : {};
+
+    userSettingsCache.uid = uid;
+    userSettingsCache.data = data;
+    userSettingsCache.fetchedAt = now;
+
+    return data;
+}
+
+async function writeUserSettingsPatch(patch) {
+    if (!currentUser?.uid) return;
+
+    const uid = currentUser.uid;
+    await db.collection('users').doc(uid).collection('metadata').doc('settings').set(
+        patch,
+        { merge: true }
+    );
+
+    upsertUserSettingsCache(uid, patch);
+}
+
+const MENTOR_CODE_CACHE_TTL_MS = 60 * 1000;
+const mentorCodeCache = {
+    uid: null,
+    code: null,
+    fetchedAt: 0
+};
+
+function invalidateMentorCodeCache() {
+    mentorCodeCache.uid = null;
+    mentorCodeCache.code = null;
+    mentorCodeCache.fetchedAt = 0;
+}
+
+function setMentorCodeCache(uid, code) {
+    mentorCodeCache.uid = uid || null;
+    mentorCodeCache.code = code || null;
+    mentorCodeCache.fetchedAt = Date.now();
+}
+
+async function getMentorCodeIdForCurrentUser(forceRefresh = false) {
+    if (!currentUser?.uid) return null;
+
+    const uid = currentUser.uid;
+    const now = Date.now();
+    const isFresh = mentorCodeCache.uid === uid
+        && (now - mentorCodeCache.fetchedAt) < MENTOR_CODE_CACHE_TTL_MS;
+
+    if (!forceRefresh && isFresh) {
+        return mentorCodeCache.code;
+    }
+
+    const codeDoc = await db.collection('mentorCodes').where('uid', '==', uid).get();
+    const code = codeDoc.empty ? null : codeDoc.docs[0].id;
+    setMentorCodeCache(uid, code);
+    return code;
+}
+
 /**
  * Get achievements enabled setting
  * @async
@@ -218,9 +319,9 @@ async function getAchievementsEnabled() {
     if (!currentUser) return false;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists && typeof doc.data().achievementsEnabled === 'boolean') {
-            return doc.data().achievementsEnabled;
+        const settings = await getUserSettingsData();
+        if (settings && typeof settings.achievementsEnabled === 'boolean') {
+            return settings.achievementsEnabled;
         }
     } catch (e) {
         console.error('Error fetching achievements setting:', e);
@@ -239,10 +340,7 @@ async function setAchievementsEnabled(val) {
     if (!currentUser) return;
 
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { achievementsEnabled: val },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ achievementsEnabled: val });
     } catch (e) {
         console.error('Error setting achievements:', e);
     }
@@ -273,9 +371,9 @@ async function getProgressEnabled() {
     if (!currentUser) return false;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists && typeof doc.data().progressEnabled === 'boolean') {
-            return doc.data().progressEnabled;
+        const settings = await getUserSettingsData();
+        if (settings && typeof settings.progressEnabled === 'boolean') {
+            return settings.progressEnabled;
         }
     } catch (e) {
         console.error('Error fetching progress setting:', e);
@@ -294,10 +392,7 @@ async function setProgressEnabled(val) {
     if (!currentUser) return;
 
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { progressEnabled: val },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ progressEnabled: val });
     } catch (e) {
         console.error('Error setting progress:', e);
     }
@@ -397,9 +492,9 @@ async function getMentorCodeEnabled() {
     if (!currentUser) return false;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists && typeof doc.data().mentorCodeEnabled === 'boolean') {
-            return doc.data().mentorCodeEnabled;
+        const settings = await getUserSettingsData();
+        if (settings && typeof settings.mentorCodeEnabled === 'boolean') {
+            return settings.mentorCodeEnabled;
         }
     } catch (e) {
         console.error('Error fetching mentor code setting:', e);
@@ -423,19 +518,16 @@ async function setMentorCodeEnabled(val) {
             await getOrCreateMentorCode(false);
         }
 
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            { mentorCodeEnabled: val },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({ mentorCodeEnabled: val });
 
         try {
-            const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
-            if (!codeDoc.empty) {
-                const docId = codeDoc.docs[0].id;
+            const docId = await getMentorCodeIdForCurrentUser();
+            if (docId) {
                 // Update enabled flag based on val
                 await db.collection('mentorCodes').doc(docId).update({
                     enabled: val
                 });
+                setMentorCodeCache(currentUser.uid, docId);
                 console.log('Mentor code enabled status updated to:', val);
             }
         } catch (updateError) {
@@ -457,17 +549,14 @@ async function getMentorAccessLevel() {
     if (!currentUser) return MENTOR_ACCESS_LEVELS.VIEW;
 
     try {
-        const doc = await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').get();
-        if (doc.exists) {
-            const data = doc.data() || {};
-            if (typeof data.mentorAccessLevel === 'string') {
-                return normalizeMentorAccessLevel(data.mentorAccessLevel);
-            }
+        const data = await getUserSettingsData();
+        if (data && typeof data.mentorAccessLevel === 'string') {
+            return normalizeMentorAccessLevel(data.mentorAccessLevel);
+        }
 
-            // Backward compatibility: quick-review previously implied status-edit access.
-            if (data.mentorQuickReviewEnabled === true) {
-                return MENTOR_ACCESS_LEVELS.STATUS;
-            }
+        // Backward compatibility: quick-review previously implied status-edit access.
+        if (data?.mentorQuickReviewEnabled === true) {
+            return MENTOR_ACCESS_LEVELS.STATUS;
         }
     } catch (e) {
         console.error('Error fetching mentor access level setting:', e);
@@ -487,13 +576,10 @@ async function setMentorAccessLevel(level) {
 
     const normalized = normalizeMentorAccessLevel(level);
     try {
-        await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-            {
-                mentorAccessLevel: normalized,
-                mentorQuickReviewEnabled: normalized !== MENTOR_ACCESS_LEVELS.VIEW
-            },
-            { merge: true }
-        );
+        await writeUserSettingsPatch({
+            mentorAccessLevel: normalized,
+            mentorQuickReviewEnabled: normalized !== MENTOR_ACCESS_LEVELS.VIEW
+        });
         console.log('Mentor access level updated to:', normalized);
     } catch (e) {
         console.error('Error setting mentor access level:', e);
@@ -511,15 +597,16 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
     if (!currentUser) return null;
 
     try {
-        const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
+        const existingCode = await getMentorCodeIdForCurrentUser();
 
-        if (!codeDoc.empty && !forceRegenerate) {
-            return codeDoc.docs[0].id;
+        if (existingCode && !forceRegenerate) {
+            return existingCode;
         }
 
-        if (!codeDoc.empty && forceRegenerate) {
+        if (existingCode && forceRegenerate) {
             // Delete old code on regeneration.
-            await db.collection('mentorCodes').doc(codeDoc.docs[0].id).delete();
+            await db.collection('mentorCodes').doc(existingCode).delete();
+            setMentorCodeCache(currentUser.uid, null);
         }
 
         enforceClientRateLimit({
@@ -543,6 +630,7 @@ async function getOrCreateMentorCode(forceRegenerate = false) {
 
             try {
                 await db.collection('mentorCodes').doc(code).set({ uid: currentUser.uid, enabled: true });
+                setMentorCodeCache(currentUser.uid, code);
                 return code;
             } catch (writeError) {
                 if (isMentorPermissionDeniedError(writeError)) {
@@ -658,12 +746,9 @@ async function updateMentorCodeToggle() {
     // Self-heal inconsistent state from previous failures: enabled=true but no code exists.
     if (enabled) {
         try {
-            const codeDoc = await db.collection('mentorCodes').where('uid', '==', currentUser.uid).get();
-            if (codeDoc.empty) {
-                await db.collection('users').doc(currentUser.uid).collection('metadata').doc('settings').set(
-                    { mentorCodeEnabled: false },
-                    { merge: true }
-                );
+            const codeId = await getMentorCodeIdForCurrentUser(true);
+            if (!codeId) {
+                await writeUserSettingsPatch({ mentorCodeEnabled: false });
                 enabled = false;
             }
         } catch (error) {
