@@ -4,14 +4,14 @@
 :root {
     color-scheme: light;
 
-    --md-sys-color-primary: #6750a4;
+    --md-sys-color-primary: #c55a11;
     --md-sys-color-on-primary: #ffffff;
-    --md-sys-color-primary-container: #eaddff;
-    --md-sys-color-on-primary-container: #21005d;
-    --md-sys-color-secondary: #625b71;
-    --md-sys-color-secondary-container: #e8def8;
-    --md-sys-color-tertiary: #7d5260;
-    --md-sys-color-tertiary-container: #ffd8e4;
+    --md-sys-color-primary-container: #ffdcc2;
+    --md-sys-color-on-primary-container: #3b1f0b;
+    --md-sys-color-secondary: #6f5a4c;
+    --md-sys-color-secondary-container: #f4e1d6;
+    --md-sys-color-tertiary: #90543d;
+    --md-sys-color-tertiary-container: #ffdccc;
     --md-sys-color-surface: #fffbfe;
     --md-sys-color-surface-container-lowest: #ffffff;
     --md-sys-color-surface-container-low: #f7f2fa;
@@ -40,15 +40,15 @@
     --color-border: var(--md-sys-color-outline-variant);
     --color-border-light: var(--md-sys-color-outline);
     --color-primary: var(--md-sys-color-primary);
-    --color-primary-dark: #5a4193;
-    --color-primary-darker: #4f378b;
+    --color-primary-dark: #b04f0f;
+    --color-primary-darker: #8f400d;
     --color-success: #146c43;
     --color-warning: #b26a00;
     --color-error: var(--md-sys-color-error);
     --color-error-light: var(--md-sys-color-error-container);
 
     --hover-opacity: 0.92;
-    --focus-ring: 3px solid rgba(103, 80, 164, 0.35);
+    --focus-ring: 3px solid rgba(197, 90, 17, 0.35);
     --focus-ring-offset: 3px;
     --transition-fast: 140ms cubic-bezier(0.2, 0, 0, 1);
     --transition-normal: 220ms cubic-bezier(0.2, 0, 0, 1);
@@ -66,14 +66,14 @@
     :root {
         color-scheme: dark;
 
-        --md-sys-color-primary: #d0bcff;
-        --md-sys-color-on-primary: #381e72;
-        --md-sys-color-primary-container: #4f378b;
-        --md-sys-color-on-primary-container: #eaddff;
-        --md-sys-color-secondary: #cbc2dc;
-        --md-sys-color-secondary-container: #4a4458;
-        --md-sys-color-tertiary: #efb8c8;
-        --md-sys-color-tertiary-container: #633b48;
+        --md-sys-color-primary: #ffb876;
+        --md-sys-color-on-primary: #5b2d00;
+        --md-sys-color-primary-container: #7a3b00;
+        --md-sys-color-on-primary-container: #ffdcc2;
+        --md-sys-color-secondary: #e1c7b8;
+        --md-sys-color-secondary-container: #564235;
+        --md-sys-color-tertiary: #efc0aa;
+        --md-sys-color-tertiary-container: #6f3f27;
         --md-sys-color-surface: #141218;
         --md-sys-color-surface-container-lowest: #0f0d13;
         --md-sys-color-surface-container-low: #1d1b20;
@@ -90,8 +90,8 @@
         --md-sys-color-on-error: #601410;
         --md-sys-color-on-error-container: #f9dedc;
 
-        --color-primary-dark: #e1caff;
-        --color-primary-darker: #f4e8ff;
+        --color-primary-dark: #ffd4ac;
+        --color-primary-darker: #fff0e0;
         --color-success: #81c995;
         --color-warning: #fdc783;
         --color-error-light: rgba(179, 38, 30, 0.24);
@@ -132,8 +132,8 @@ body {
     min-height: 100vh;
     background-color: var(--color-bg-primary) !important;
     background-image:
-        radial-gradient(circle at top left, rgba(103, 80, 164, 0.12), transparent 28%),
-        radial-gradient(circle at top right, rgba(125, 82, 96, 0.10), transparent 24%),
+        radial-gradient(circle at top left, rgba(197, 90, 17, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.10), transparent 24%),
         linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 28%);
     background-attachment: fixed;
     color: var(--color-text-primary) !important;
@@ -569,7 +569,7 @@ select:hover {
 }
 
 select:focus {
-    box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.16), var(--md-elevation-2);
+    box-shadow: 0 0 0 3px rgba(197, 90, 17, 0.16), var(--md-elevation-2);
 }
 
 select.bg-white,
@@ -1069,8 +1069,8 @@ a.text-blue-600:hover {
     inset: 0;
     pointer-events: none;
     background-image:
-        radial-gradient(circle at 15% 10%, rgba(103, 80, 164, 0.08), transparent 22%),
-        radial-gradient(circle at 85% 14%, rgba(125, 82, 96, 0.08), transparent 18%);
+        radial-gradient(circle at 15% 10%, rgba(197, 90, 17, 0.08), transparent 22%),
+        radial-gradient(circle at 85% 14%, rgba(245, 158, 11, 0.08), transparent 18%);
     opacity: 0.8;
     z-index: -1;
 }
