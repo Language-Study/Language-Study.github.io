@@ -8,6 +8,7 @@ const MENTOR_VIEW_ACCESS_LEVELS = {
     STATUS: 'status',
     FULL: 'full'
 };
+const MENTOR_EXIT_LABEL = 'Exit Mentor Mode';
 
 function normalizeMentorAccessLevel(level) {
     if (level === MENTOR_VIEW_ACCESS_LEVELS.STATUS || level === MENTOR_VIEW_ACCESS_LEVELS.FULL) {
@@ -302,26 +303,8 @@ function addMentorBackButton() {
     if (!window.isMentorView) return;
 
     const logoutBtn = document.getElementById('logoutBtn');
-
-    // Hide logout button
-    if (logoutBtn) logoutBtn.style.display = 'none';
-
-    // Prevent duplicate
-    if (document.getElementById('mentorBackBtn')) return;
-
-    const btn = document.createElement('button');
-    btn.id = 'mentorBackBtn';
-    btn.textContent = 'Go back to my account';
-    btn.className = logoutBtn ? logoutBtn.className : 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors';
-    btn.setAttribute('aria-label', 'Return to your own account');
-
-    if (logoutBtn && logoutBtn.parentNode) {
-        logoutBtn.parentNode.insertBefore(btn, logoutBtn.nextSibling);
-    } else {
-        document.body.appendChild(btn);
-    }
-
-    btn.onclick = () => {
+    const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+    const exitMentorMode = () => {
         const url = new URL(window.location.href);
         url.searchParams.delete('mentor');
         let newUrl = url.pathname;
@@ -330,6 +313,30 @@ function addMentorBackButton() {
         }
         window.location.replace(newUrl);
     };
+
+    // Hide logout buttons while mentor mode is active
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
+
+    const createExitButton = (buttonId, sourceButton) => {
+        if (!sourceButton || document.getElementById(buttonId)) return;
+
+        const btn = document.createElement('button');
+        btn.id = buttonId;
+        btn.textContent = MENTOR_EXIT_LABEL;
+        btn.className = sourceButton.className || 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors';
+        btn.setAttribute('aria-label', 'Exit mentor mode and return to your account');
+        btn.onclick = exitMentorMode;
+
+        if (sourceButton.parentNode) {
+            sourceButton.parentNode.insertBefore(btn, sourceButton);
+        } else {
+            document.body.appendChild(btn);
+        }
+    };
+
+    createExitButton('mentorBackBtn', logoutBtn);
+    createExitButton('mentorBackBtnMobile', logoutBtnMobile);
 }
 
 /**
@@ -350,17 +357,20 @@ function getMentorViewEmailDisplay() {
  */
 function updateMentorViewUI() {
     const userEmail = document.getElementById('userEmail');
+    const userEmailMobile = document.getElementById('userEmailMobile');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutBtnMobile = document.getElementById('logoutBtnMobile');
 
     if (window.isMentorView) {
         if (userEmail) {
             userEmail.textContent = getMentorViewEmailDisplay();
         }
-
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.style.display = '';
-            logoutBtn.disabled = false;
+        if (userEmailMobile) {
+            userEmailMobile.textContent = getMentorViewEmailDisplay();
         }
+
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (logoutBtnMobile) logoutBtnMobile.style.display = 'none';
     }
 }
 
