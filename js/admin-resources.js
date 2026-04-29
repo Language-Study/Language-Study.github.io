@@ -223,9 +223,18 @@ async function handleLanguageSelectionChange(selectedLanguage) {
     const language = normalizeLanguageName(selectedLanguage);
     languageResourceAdminState.activeLanguage = language;
 
+    if (typeof setSelectedLearningLanguage === 'function') {
+        setSelectedLearningLanguage(language);
+    } else {
+        window.currentLanguageLearning = language;
+    }
+
     if (!language) {
         renderLanguageLinksForLearner([]);
         renderAdminResourceList();
+        renderVocabularyWithCurrentFilter?.();
+        renderSkillsWithCurrentFilter?.();
+        renderPortfolio?.();
         return;
     }
 
@@ -234,6 +243,9 @@ async function handleLanguageSelectionChange(selectedLanguage) {
 
     renderLanguageLinksForLearner(links);
     renderAdminResourceList();
+    renderVocabularyWithCurrentFilter?.();
+    renderSkillsWithCurrentFilter?.();
+    renderPortfolio?.();
 }
 
 function assertAdminForLanguageEditing() {

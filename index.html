@@ -160,6 +160,22 @@
                                 <option value="portfolio">Portfolio</option>
                             </select>
                         </div>
+                        <div class="mb-4">
+                            <label for="languageSelect" class="block text-sm sm:text-base text-gray-700 mb-2">Select the
+                                language you are studying:</label>
+                            <select id="languageSelect"
+                                class="w-full p-2 sm:p-3 border rounded text-sm sm:text-base bg-white">
+                                <option value="">-- Select a language --</option>
+                                <option value="ASL">ASL</option>
+                                <option value="Spanish">Spanish</option>
+                            </select>
+
+                            <p class="mt-4 text-sm text-gray-500">Don't see your language or favorite resource? Request
+                                it
+                                <a href="mailto:griggriley@gmail.com" target="_blank" rel="noopener noreferrer"
+                                    style="text-decoration: underline;">here</a>.
+                            </p>
+                        </div>
                         <div class="flex items-center gap-3 mb-4">
                             <input type="checkbox" id="toggleProgress"
                                 class="form-checkbox h-5 w-5 text-blue-600 flex-shrink-0">
@@ -432,58 +448,40 @@
                 </div>
 
                 <div id="vocabularyList" class="space-y-4 text-base sm:text-lg"></div>
-                <!-- Language Selection Section -->
+                <!-- Language Links Section -->
                 <div class="mb-4">
-                    <button id="toggleLanguageSection"
-                        class="p-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">View
-                        Language
-                        Study Resourses</button>
-                    <div id="languageSelectionContainer" class="mt-2 hidden">
-                        <label for="languageSelect" class="block text-sm font-medium text-gray-700">Select the language
-                            you
-                            are
-                            studying to view language resources:</label>
-                        <select id="languageSelect"
-                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                            <option value="">-- Select a language --</option>
-                            <option value="ASL">ASL</option>
-                            <option value="Spanish">Spanish</option>
-                        </select>
-                        <div id="languageLinksContainer" class="mt-4">
-                            <p class="text-sm text-gray-500">Links to vocabulary and dictionary sites will appear here
-                                after
-                                you select a language.</p>
+                    <br>
+
+                    <p class="block text-sm sm:text-base text-gray-700 mb-2">Language study resourses:</p>
+                    <div id="languageLinksContainer" class="mt-4">
+                        <p class="text-sm text-gray-500">Links to vocabulary and dictionary sites will appear here
+                            after you select a language.</p>
+                    </div>
+
+                    <div id="languageAdminPanel" class="mt-4 hidden border rounded p-3 bg-blue-50">
+                        <p class="text-sm font-semibold text-blue-800 mb-2">Admin: Manage Language Resources</p>
+                        <p class="text-xs text-blue-700 mb-3">Only admins can add, edit, and delete links shown for
+                            each language.</p>
+
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                            <input id="adminLanguageNameInput" type="text" placeholder="New language name"
+                                class="flex-1 p-2 border rounded bg-white" />
+                            <button id="adminAddLanguageBtn"
+                                class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Language</button>
+                            <button id="adminDeleteLanguageBtn"
+                                class="p-2 bg-red-600 text-white rounded hover:bg-blue-700">Delete Language</button>
                         </div>
 
-                        <div id="languageAdminPanel" class="mt-4 hidden border rounded p-3 bg-blue-50">
-                            <p class="text-sm font-semibold text-blue-800 mb-2">Admin: Manage Language Resources</p>
-                            <p class="text-xs text-blue-700 mb-3">Only admins can add, edit, and delete links shown for
-                                each language.</p>
-
-                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
-                                <input id="adminLanguageNameInput" type="text" placeholder="New language name"
-                                    class="flex-1 p-2 border rounded bg-white" />
-                                <button id="adminAddLanguageBtn"
-                                    class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Language</button>
-                                <button id="adminDeleteLanguageBtn"
-                                    class="p-2 bg-red-600 text-white rounded hover:bg-red-700">Delete Language</button>
-                            </div>
-
-                            <div class="flex flex-col sm:flex-row gap-2 mb-2">
-                                <input id="adminResourceNameInput" type="text" placeholder="Resource name"
-                                    class="flex-1 p-2 border rounded bg-white" />
-                                <input id="adminResourceUrlInput" type="url" placeholder="https://example.com"
-                                    class="flex-1 p-2 border rounded bg-white" />
-                                <button id="adminAddResourceBtn"
-                                    class="p-2 bg-green-600 text-white rounded hover:bg-green-700">Add Link</button>
-                            </div>
-
-                            <div id="adminLanguageResourcesList" class="space-y-2"></div>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                            <input id="adminResourceNameInput" type="text" placeholder="Resource name"
+                                class="flex-1 p-2 border rounded bg-white" />
+                            <input id="adminResourceUrlInput" type="url" placeholder="https://example.com"
+                                class="flex-1 p-2 border rounded bg-white" />
+                            <button id="adminAddResourceBtn"
+                                class="p-2 bg-green-600 text-white rounded hover:bg-green-700">Add Link</button>
                         </div>
-                        <br>
-                        <p class="text-sm text-gray-500">Don't see your language or favorite resource? Request it <a
-                                href="mailto:griggriley@gmail.com" target="_blank" rel="noopener noreferrer"
-                                style="text-decoration: underline;">here</a>.</p>
+
+                        <div id="adminLanguageResourcesList" class="space-y-2"></div>
                     </div>
                 </div>
             </div>

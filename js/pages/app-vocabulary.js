@@ -70,8 +70,9 @@ addVocabBtn?.addEventListener('click', async () => {
         const words = vocabularyInput.value;
         const translation = translationInput.value;
         const category = categorySelect.value;
+        const language = typeof getSelectedLearningLanguage === 'function' ? getSelectedLearningLanguage() : '';
 
-        await addVocabularyWords(words, translation, category);
+        await addVocabularyWords(words, translation, category, language);
         vocabularyInput.value = '';
         translationInput.value = '';
         await refreshUserData();
@@ -112,20 +113,22 @@ vocabularyListEl?.addEventListener('click', async (e) => {
                 subtitle: 'Update the word and translation/link',
                 fields: [
                     { name: 'word', label: 'Word or phrase', value: item.word },
-                    { name: 'translation', label: 'Translation or media link (optional)', value: item.translation || '', placeholder: 'Text, YouTube, or SoundCloud link' }
+                    { name: 'translation', label: 'Translation or media link (optional)', value: item.translation || '', placeholder: 'Text, YouTube, or SoundCloud link' },
+                    { name: 'language', label: 'Language', type: 'select', value: item.language || '', options: typeof getLanguageSelectOptions === 'function' ? [{ value: '', label: 'All languages' }, ...getLanguageSelectOptions()] : [{ value: '', label: 'All languages' }] }
                 ],
                 payload: { itemId }
             });
 
             const newWord = (result.word || '').trim();
             const newTranslation = (result.translation || '').trim();
+            const newLanguage = (result.language || '').trim();
 
             if (!newWord) {
                 showToast('Error: Word cannot be empty.');
                 return;
             }
 
-            await updateVocabularyItem(itemId, { word: newWord, translation: newTranslation });
+            await updateVocabularyItem(itemId, { word: newWord, translation: newTranslation, language: newLanguage });
             if (dataCache?.isCached) {
                 dataCache.vocabularyList = [...vocabularyList];
             }

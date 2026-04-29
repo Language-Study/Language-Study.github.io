@@ -14,7 +14,8 @@ if (portfolioForm) {
             return;
         }
         try {
-            await addPortfolioEntry(portfolioTitle.value, portfolioLink.value);
+            const language = typeof getSelectedLearningLanguage === 'function' ? getSelectedLearningLanguage() : '';
+            await addPortfolioEntry(portfolioTitle.value, portfolioLink.value, language);
             portfolioTitle.value = '';
             portfolioLink.value = '';
             await refreshUserData();
@@ -54,20 +55,22 @@ if (portfolioForm) {
                         subtitle: 'Update title and link',
                         fields: [
                             { name: 'title', label: 'Title', value: entry.title || '' },
-                            { name: 'link', label: 'Link (YouTube or SoundCloud)', value: entry.link || '', placeholder: 'https://...' }
+                            { name: 'link', label: 'Link (YouTube or SoundCloud)', value: entry.link || '', placeholder: 'https://...' },
+                            { name: 'language', label: 'Language', type: 'select', value: entry.language || '', options: typeof getLanguageSelectOptions === 'function' ? [{ value: '', label: 'All languages' }, ...getLanguageSelectOptions()] : [{ value: '', label: 'All languages' }] }
                         ],
                         payload: { id }
                     });
 
                     const newTitle = (result.title || '').trim();
                     const newLink = (result.link || '').trim();
+                    const newLanguage = (result.language || '').trim();
 
                     if (!newTitle || !newLink) {
                         showToast('Error: Title and link are required.');
                         return;
                     }
 
-                    await updatePortfolioEntry(id, newTitle, newLink);
+                    await updatePortfolioEntry(id, newTitle, newLink, newLanguage);
                 } else if (action === 'delete') {
                     if (confirm('Delete this portfolio entry?')) {
                         await deletePortfolioEntry(id);

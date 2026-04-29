@@ -11,7 +11,8 @@ addSkillBtn?.addEventListener('click', async () => {
             expandedSkills.add(btn.dataset.skillId);
         });
 
-        await addSkills(skillsInput.value);
+        const language = typeof getSelectedLearningLanguage === 'function' ? getSelectedLearningLanguage() : '';
+        await addSkills(skillsInput.value, language);
         skillsInput.value = '';
         await refreshUserData();
 
@@ -260,12 +261,14 @@ skillsList?.addEventListener('click', async (e) => {
                 title: 'Edit Skill',
                 subtitle: 'Update the skill name',
                 fields: [
-                    { name: 'name', label: 'Skill name', value: skill.name || '' }
+                    { name: 'name', label: 'Skill name', value: skill.name || '' },
+                    { name: 'language', label: 'Language', type: 'select', value: skill.language || '', options: typeof getLanguageSelectOptions === 'function' ? [{ value: '', label: 'All languages' }, ...getLanguageSelectOptions()] : [{ value: '', label: 'All languages' }] }
                 ],
                 payload: { itemId }
             });
 
             const newName = (result.name || '').trim();
+            const newLanguage = (result.language || '').trim();
             if (!newName) {
                 showToast('Error: Skill name cannot be empty.');
                 return;
@@ -276,7 +279,7 @@ skillsList?.addEventListener('click', async (e) => {
                 expandedSkills.add(btn.dataset.skillId);
             });
 
-            await updateSkillName(itemId, newName);
+            await updateSkillName(itemId, newName, newLanguage);
             skill.name = newName;
             if (dataCache?.isCached) {
                 dataCache.skills = [...skills];

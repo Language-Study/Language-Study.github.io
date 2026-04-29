@@ -69,12 +69,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const toggleButton = document.getElementById('toggleLanguageSection');
-    const languageContainer = document.getElementById('languageSelectionContainer');
-
-    if (toggleButton && languageContainer) {
-        toggleButton.addEventListener('click', () => {
-            languageContainer.classList.toggle('hidden');
-        });
-    }
 });

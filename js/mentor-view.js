@@ -186,7 +186,6 @@ function disableEditingUI() {
             '#skillsInput',
             '#portfolioTitle',
             '#portfolioLink',
-            '#toggleLanguageSection',
             '#openPrintPdfModalBtn'
         ];
 

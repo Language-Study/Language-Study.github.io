@@ -85,7 +85,7 @@ async function loadSkills() {
  * @param {string} link - Portfolio entry link (YouTube or SoundCloud)
  * @returns {Promise<void>}
  */
-async function addPortfolioEntry(title, link) {
+async function addPortfolioEntry(title, link, language = '') {
     assertMentorCanEditAllContent();
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
@@ -115,6 +115,7 @@ async function addPortfolioEntry(title, link) {
             videoId,
             isTop: false,
             isPrivate: false,
+            language: language || getSelectedLearningLanguage?.() || '',
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
         });
     } catch (error) {
@@ -131,7 +132,7 @@ async function addPortfolioEntry(title, link) {
  * @param {string} link - New link
  * @returns {Promise<void>}
  */
-async function updatePortfolioEntry(id, title, link) {
+async function updatePortfolioEntry(id, title, link, language = '') {
     assertMentorCanEditAllContent();
     const trimmedTitle = title.trim();
     let trimmedLink = link.trim();
@@ -159,12 +160,13 @@ async function updatePortfolioEntry(id, title, link) {
             title: trimmedTitle,
             link: trimmedLink,
             type,
-            videoId
+            videoId,
+            language: language || getSelectedLearningLanguage?.() || ''
         });
 
         const entry = portfolioEntries.find(e => e.id === id);
         if (entry) {
-            Object.assign(entry, { title: trimmedTitle, link: trimmedLink, type, videoId });
+            Object.assign(entry, { title: trimmedTitle, link: trimmedLink, type, videoId, language: language || getSelectedLearningLanguage?.() || '' });
         }
     } catch (error) {
         console.error('Error updating portfolio entry:', error);
@@ -250,7 +252,7 @@ async function togglePortfolioPrivacy(id) {
  * @param {string} skillsText - Newline-separated skills
  * @returns {Promise<void>}
  */
-async function addSkills(skillsText) {
+async function addSkills(skillsText, language = '') {
     assertMentorCanEditAllContent();
     const skillsToAdd = skillsText.trim().split('\n').filter(skill => skill.trim());
 
@@ -266,6 +268,7 @@ async function addSkills(skillsText) {
             name: skill.trim(),
             status: PROGRESS_STATUS.NOT_STARTED,
             subtasks: [],
+            language: language || getSelectedLearningLanguage?.() || '',
             dateAdded: firebase.firestore.FieldValue.serverTimestamp()
         }));
 
@@ -324,7 +327,7 @@ async function updateSkillStatus(itemId, newStatus) {
  * @param {string} newName - New skill name
  * @returns {Promise<void>}
  */
-async function updateSkillName(itemId, newName) {
+async function updateSkillName(itemId, newName, language = '') {
     assertMentorCanEditAllContent();
     const trimmed = newName.trim();
     if (!trimmed) {
@@ -333,8 +336,14 @@ async function updateSkillName(itemId, newName) {
 
     try {
         await db.collection('users').doc(currentUser.uid).collection('skills').doc(itemId).update({
-            name: trimmed
+            name: trimmed,
+            language: language || getSelectedLearningLanguage?.() || ''
         });
+
+        const skill = skills.find(s => s.id === itemId);
+        if (skill) {
+            Object.assign(skill, { name: trimmed, language: language || getSelectedLearningLanguage?.() || '' });
+        }
     } catch (error) {
         console.error('Error updating skill name:', error);
         throw error;
@@ -628,12 +637,14 @@ function renderSkillsList() {
     const skillsList = document.getElementById('skillsList');
     if (!skillsList) return;
 
-    if (skills.length === 0) {
+    const visibleSkills = skills.filter(skill => isVisibleForSelectedLanguage?.(skill.language) !== false);
+
+    if (visibleSkills.length === 0) {
         skillsList.innerHTML = '<p class="text-sm text-gray-500">No skills added yet.</p>';
         return;
     }
 
-    skillsList.innerHTML = skills.map(skill => renderSkillItem(skill)).join('');
+    skillsList.innerHTML = visibleSkills.map(skill => renderSkillItem(skill)).join('');
 }
 
 /**
@@ -731,7 +742,9 @@ function filterSkills(query) {
     }
 
     const lowerQuery = query.toLowerCase();
-    const filtered = skills.filter(skill => skill.name.toLowerCase().includes(lowerQuery));
+    const filtered = skills
+        .filter(skill => isVisibleForSelectedLanguage?.(skill.language) !== false)
+        .filter(skill => skill.name.toLowerCase().includes(lowerQuery));
 
     skillsList.innerHTML = filtered.length > 0 ? filtered.map(skill => renderSkillItem(skill)).join('') : '<p class="text-sm text-gray-500">No skills found.</p>';
 }
@@ -796,11 +809,18 @@ function isPortfolioEntryPrivate(entry) {
 }
 
 function getVisiblePortfolioEntries() {
+    const selectedLanguage = typeof getSelectedLearningLanguage === 'function' ? getSelectedLearningLanguage() : '';
+
+    const languageVisibleEntries = portfolioEntries.filter(entry => {
+        if (!selectedLanguage) return true;
+        return isVisibleForSelectedLanguage?.(entry.language) !== false;
+    });
+
     if (!window.isPublicPortfolioView) {
-        return portfolioEntries;
+        return languageVisibleEntries;
     }
 
-    return portfolioEntries.filter(entry => !isPortfolioEntryPrivate(entry));
+    return languageVisibleEntries.filter(entry => !isPortfolioEntryPrivate(entry));
 }
 
 // Helper functions

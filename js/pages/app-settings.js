@@ -354,12 +354,27 @@ if (googleSignInToggleBtn && typeof isGoogleLinked === 'function' && typeof curr
 const languageSelect = document.getElementById('languageSelect');
 languageSelect?.addEventListener('change', async (e) => {
     const selectedLanguage = e.target.value;
+    if (typeof setSelectedLearningLanguage === 'function') {
+        setSelectedLearningLanguage(selectedLanguage);
+    } else {
+        window.currentLanguageLearning = selectedLanguage;
+    }
 
     try {
         await writeUserSettingsPatch({ languageLearning: selectedLanguage });
 
         if (typeof handleLanguageSelectionChange === 'function') {
             await handleLanguageSelectionChange(selectedLanguage);
+        }
+
+        if (typeof renderVocabularyWithCurrentFilter === 'function') {
+            renderVocabularyWithCurrentFilter();
+        }
+        if (typeof renderSkillsWithCurrentFilter === 'function') {
+            renderSkillsWithCurrentFilter();
+        }
+        if (typeof renderPortfolio === 'function') {
+            renderPortfolio();
         }
     } catch (error) {
         console.error('Error updating language:', error);
@@ -383,6 +398,11 @@ onAuthStateChanged?.(async (user) => {
                 languageSelect.dispatchEvent(new Event('change'));
             }
         } else if (typeof handleLanguageSelectionChange === 'function') {
+            if (typeof setSelectedLearningLanguage === 'function') {
+                setSelectedLearningLanguage('');
+            } else {
+                window.currentLanguageLearning = '';
+            }
             await handleLanguageSelectionChange('');
         }
     } catch (error) {

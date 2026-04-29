@@ -171,6 +171,14 @@ function openEditModal({ title, subtitle = '', fields = [], payload = null }) {
                 <textarea name="${field.name}" class="${baseClasses} mt-1" placeholder="${field.placeholder || ''}">${field.value || ''}</textarea>
             </label>`;
         }
+        if (type === 'select') {
+            const options = Array.isArray(field.options) ? field.options : [];
+            return `<label class="block text-sm text-gray-700">${field.label}
+                <select name="${field.name}" class="${baseClasses} mt-1">
+                    ${options.map(option => `<option value="${option.value || ''}" ${String(option.value || '') === String(field.value || '') ? 'selected' : ''}>${option.label || option.value || ''}</option>`).join('')}
+                </select>
+            </label>`;
+        }
         return `<label class="block text-sm text-gray-700">${field.label}
             <input name="${field.name}" type="${type}" class="${baseClasses} mt-1" value="${field.value || ''}" placeholder="${field.placeholder || ''}" />
         </label>`;
@@ -208,6 +216,45 @@ function showWelcomeModal() {
     if (closeBtn) closeBtn.onclick = close;
     if (continueBtn) continueBtn.onclick = close;
 }
+
+function normalizeLanguageValue(value) {
+    return typeof value === 'string' ? value.trim() : '';
+}
+
+function setSelectedLearningLanguage(value) {
+    window.currentLanguageLearning = normalizeLanguageValue(value);
+    return window.currentLanguageLearning;
+}
+
+function getSelectedLearningLanguage() {
+    return normalizeLanguageValue(window.currentLanguageLearning || '');
+}
+
+function getLanguageSelectOptions() {
+    const select = document.getElementById('languageSelect');
+    if (!select) return [];
+
+    return Array.from(select.querySelectorAll('option'))
+        .map((option) => ({
+            value: normalizeLanguageValue(option.value),
+            label: normalizeLanguageValue(option.textContent) || normalizeLanguageValue(option.value)
+        }))
+        .filter((option) => option.value);
+}
+
+function isVisibleForSelectedLanguage(itemLanguage) {
+    const selectedLanguage = getSelectedLearningLanguage();
+    const normalizedItemLanguage = normalizeLanguageValue(itemLanguage);
+
+    if (!selectedLanguage) return true;
+    if (!normalizedItemLanguage) return true;
+    return normalizedItemLanguage === selectedLanguage;
+}
+
+window.setSelectedLearningLanguage = setSelectedLearningLanguage;
+window.getSelectedLearningLanguage = getSelectedLearningLanguage;
+window.getLanguageSelectOptions = getLanguageSelectOptions;
+window.isVisibleForSelectedLanguage = isVisibleForSelectedLanguage;
 
 const SETTINGS_CACHE_TTL_MS = 60 * 1000;
 const userSettingsCache = {

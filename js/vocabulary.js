@@ -99,7 +99,7 @@ async function saveCategories() {
  * @param {string} category - Category to add words to
  * @returns {Promise<void>}
  */
-async function addVocabularyWords(wordsText, translation, category) {
+async function addVocabularyWords(wordsText, translation, category, language = '') {
     assertMentorCanEditAll();
     const words = wordsText.trim().split('\n').filter(word => word.trim());
 
@@ -116,6 +116,7 @@ async function addVocabularyWords(wordsText, translation, category) {
             word: word.trim(),
             translation: normalizedTranslation,
             category: category === 'new' ? 'General' : category,
+            language: language || getSelectedLearningLanguage?.() || '',
             status: PROGRESS_STATUS.NOT_STARTED,
             reviewCount: 0,
             easeFactor: SRS_DEFAULT_EASE_FACTOR,
@@ -196,7 +197,7 @@ async function updateVocabularyStatus(itemId, newStatus) {
  * Update vocabulary word/translation
  * @async
  * @param {string} itemId - Document ID
- * @param {{word?: string, translation?: string}} updates - Fields to update
+ * @param {{word?: string, translation?: string, language?: string}} updates - Fields to update
  * @returns {Promise<void>}
  */
 async function updateVocabularyItem(itemId, updates) {
@@ -213,6 +214,10 @@ async function updateVocabularyItem(itemId, updates) {
 
     if (updates.translation !== undefined) {
         payload.translation = await normalizeTranslationLink(updates.translation || '');
+    }
+
+    if (updates.language !== undefined) {
+        payload.language = typeof updates.language === 'string' ? updates.language.trim() : '';
     }
 
     if (Object.keys(payload).length === 0) return;
@@ -302,6 +307,7 @@ function renderVocabularyList() {
 
     // Remove selections that no longer exist (e.g., after deletions)
     const validIds = new Set(vocabularyList.map(item => item.id));
+    const visibleVocabulary = vocabularyList.filter(item => isVisibleForSelectedLanguage?.(item.language) !== false);
 
     const expandedCategories = new Set(
         Array.from(document.querySelectorAll('#vocabularyList .category-content'))
@@ -310,7 +316,7 @@ function renderVocabularyList() {
     );
 
     const groupedVocab = categories.reduce((acc, category) => {
-        acc[category] = vocabularyList.filter(item => item.category === category);
+        acc[category] = visibleVocabulary.filter(item => item.category === category);
         return acc;
     }, {});
 
@@ -428,7 +434,8 @@ function filterVocabulary(query) {
     }
 
     const lowerQuery = query.toLowerCase();
-    const filtered = vocabularyList.filter(item =>
+    const visibleVocabulary = vocabularyList.filter(item => isVisibleForSelectedLanguage?.(item.language) !== false);
+    const filtered = visibleVocabulary.filter(item =>
         item.word.toLowerCase().includes(lowerQuery) ||
         (item.category && item.category.toLowerCase().includes(lowerQuery))
     );
