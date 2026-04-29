@@ -573,7 +573,7 @@ function renderPortfolioCard(entry, isFeatured) {
             </div>
             ${privateBadgeHtml}
             <div class="font-semibold text-center mb-1">${escapeHtml(entry.title)}</div>
-            ${actionsHtml}
+            ${actionsHtml.replace('class="flex gap-2"', 'class="portfolio-actions flex flex-wrap justify-center gap-2"')}
         </div>
     `;
 }
@@ -618,13 +618,13 @@ function renderPortfolioListItem(entry, topCount) {
     `;
 
     return `
-        <div class="flex items-center justify-between p-2 border rounded">
-            <div class="flex flex-col">
+        <div class="flex flex-col gap-3 p-2 border rounded sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex min-w-0 flex-col">
                 <span class="font-medium">${escapeHtml(entry.title)}</span>
-                ${linkHtml}
+                <div class="portfolio-entry-link">${linkHtml}</div>
                 ${privateBadgeHtml}
             </div>
-            ${actionsHtml}
+            ${actionsHtml.replace('class="flex gap-2"', 'class="portfolio-actions flex flex-wrap gap-2 sm:justify-end"')}
         </div>
     `;
 }

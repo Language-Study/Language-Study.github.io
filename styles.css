@@ -1743,3 +1743,38 @@ body.public-portfolio-view .portfolio-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+@media (max-width: 640px) {
+    #portfolio .bg-white {
+        padding: 1rem;
+    }
+
+    #portfolioTop3,
+    #portfolioList {
+        gap: 0.75rem;
+    }
+
+    #portfolioList .portfolio-item {
+        align-items: stretch;
+    }
+
+    #portfolioList .portfolio-entry-link a,
+    #portfolioTop3 a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .portfolio-actions {
+        width: 100%;
+    }
+
+    #portfolioList .portfolio-actions,
+    #portfolioTop3 .portfolio-actions {
+        justify-content: flex-start;
+    }
+
+    #portfolioList .portfolio-actions>button,
+    #portfolioTop3 .portfolio-actions>button {
+        flex: 1 1 7rem;
+    }
+}
