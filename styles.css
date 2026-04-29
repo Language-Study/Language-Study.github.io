@@ -154,7 +154,7 @@ select {
     color: var(--color-text-primary);
     border: 1px solid var(--color-border);
     border-radius: 0.875rem;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
 }
 
 input::placeholder,
@@ -550,7 +550,34 @@ kbd {
 
 /* ===== FORM ELEMENTS ===== */
 select {
-    padding: 0.5rem;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.875rem 3rem 0.875rem 1rem;
+    border-radius: var(--shape-corner-medium);
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%), linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
+    background-position: calc(100% - 1.1rem) calc(50% - 0.15rem), calc(100% - 0.8rem) calc(50% - 0.15rem);
+    background-size: 0.36rem 0.36rem, 0.36rem 0.36rem;
+    background-repeat: no-repeat;
+    box-shadow: var(--md-elevation-1);
+}
+
+select:hover {
+    box-shadow: var(--md-elevation-2);
+}
+
+select:focus {
+    box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.16), var(--md-elevation-2);
+}
+
+select.bg-white,
+select.rounded,
+select.rounded-lg {
+    background-color: var(--color-bg-secondary) !important;
+    border-radius: var(--shape-corner-medium) !important;
+    box-shadow: var(--md-elevation-1) !important;
 }
 
 input[type="checkbox"] {
@@ -1106,6 +1133,7 @@ a.text-blue-600:hover {
         background-color: var(--color-bg-tertiary);
         color: var(--color-text-primary);
         border-color: var(--color-border);
+        box-shadow: var(--md-elevation-1);
     }
 
     .vocab-item,
@@ -1227,11 +1255,10 @@ select:focus-visible {
     gap: 1rem;
 }
 
-background-color: var(--md-sys-color-surface-container);
-
-.desktop-nav-menu {
-    display: flex;
-}
+@media (min-width: 768px) {
+    .desktop-nav-menu {
+        display: flex;
+    }
 }
 
 /* Mobile Menu Button */
