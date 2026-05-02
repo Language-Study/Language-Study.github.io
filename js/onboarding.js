@@ -77,6 +77,8 @@ const onboarding = {
                 <select id="onboardingLanguageSelect" class="w-full p-2 border rounded bg-white">
                     <option value="">Loading languages...</option>
                 </select>
+                <p class="text-xs text-gray-600 mt-2">When you switch languages, your vocabulary, skills, and portfolio entries are saved per language and reload when you return to that language.</p>
+                <p class="text-xs text-gray-600 mt-1">Language resource links also update based on your selected language.</p>
                 <p class="text-xs text-gray-500 mt-2">Don't see your language? Request it in Settings.</p>
             `;
 
