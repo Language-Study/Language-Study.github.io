@@ -42,6 +42,10 @@ function getLanguageSelectElement() {
     return document.getElementById('languageSelect');
 }
 
+function getAdminLanguageSelectElement() {
+    return document.getElementById('adminLanguageSelect');
+}
+
 function getLanguageLinksContainerElement() {
     return document.getElementById('languageLinksContainer');
 }
@@ -247,9 +251,11 @@ async function saveLanguageLinks(languageName, links) {
 
 async function populateLanguageSelectOptions(selectedLanguage) {
     const languageSelect = getLanguageSelectElement();
-    if (!languageSelect) return;
+    const adminLanguageSelect = getAdminLanguageSelectElement();
 
-    const existing = Array.from(languageSelect.querySelectorAll('option'))
+    if (!languageSelect && !adminLanguageSelect) return;
+
+    const existing = Array.from(languageSelect?.querySelectorAll('option') || [])
         .map((opt) => opt.value)
         .filter((value) => value);
 
@@ -261,18 +267,34 @@ async function populateLanguageSelectOptions(selectedLanguage) {
     const languages = Array.from(new Set([...existing, ...dynamicLanguages]))
         .sort((a, b) => a.localeCompare(b));
 
-    const targetValue = normalizeLanguageName(selectedLanguage) || languageSelect.value;
+    const targetValue = normalizeLanguageName(selectedLanguage) || languageSelect?.value || '';
 
-    languageSelect.innerHTML = '<option value="">-- Select a language --</option>';
-    languages.forEach((language) => {
-        const option = document.createElement('option');
-        option.value = language;
-        option.textContent = language;
-        languageSelect.appendChild(option);
-    });
+    if (languageSelect) {
+        languageSelect.innerHTML = '<option value="">-- Select a language --</option>';
+        languages.forEach((language) => {
+            const option = document.createElement('option');
+            option.value = language;
+            option.textContent = language;
+            languageSelect.appendChild(option);
+        });
 
-    if (targetValue && languages.includes(targetValue)) {
-        languageSelect.value = targetValue;
+        if (targetValue && languages.includes(targetValue)) {
+            languageSelect.value = targetValue;
+        }
+    }
+
+    if (adminLanguageSelect) {
+        adminLanguageSelect.innerHTML = '<option value="">-- Select a language --</option>';
+        languages.forEach((language) => {
+            const option = document.createElement('option');
+            option.value = language;
+            option.textContent = language;
+            adminLanguageSelect.appendChild(option);
+        });
+
+        if (targetValue && languages.includes(targetValue)) {
+            adminLanguageSelect.value = targetValue;
+        }
     }
 }
 
@@ -322,6 +344,13 @@ function enforceAdminWriteRateLimit() {
 
 function wireAdminPanelListeners() {
     if (languageResourceAdminState.initialized) return;
+
+    document.getElementById('adminLanguageSelect')?.addEventListener('change', async (e) => {
+        const selectedLanguage = e.target.value;
+        if (typeof handleLanguageSelectionChange === 'function') {
+            await handleLanguageSelectionChange(selectedLanguage);
+        }
+    });
 
     document.getElementById('adminAddLanguageBtn')?.addEventListener('click', async () => {
         try {
@@ -380,8 +409,12 @@ function wireAdminPanelListeners() {
             languageResourceAdminState.links = [];
             await populateLanguageSelectOptions('');
             const languageSelect = getLanguageSelectElement();
+            const adminLanguageSelect = getAdminLanguageSelectElement();
             if (languageSelect) {
                 languageSelect.value = '';
+            }
+            if (adminLanguageSelect) {
+                adminLanguageSelect.value = '';
             }
             renderLanguageLinksForLearner([]);
             renderAdminResourceList();
