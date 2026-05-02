@@ -180,7 +180,7 @@ const onboarding = {
                 } else if (action === 'next') {
                     this.next();
                 } else if (action === 'skip') {
-                    this.next();
+                    this.skipToFinalStep();
                 }
             });
 
@@ -206,6 +206,12 @@ const onboarding = {
         if (this.currentStep < this.steps.length) {
             this.renderStep();
         }
+    },
+
+    skipToFinalStep() {
+        const finalStepIndex = this.steps.findIndex((step) => step.id === 'finish');
+        this.currentStep = finalStepIndex >= 0 ? finalStepIndex : this.steps.length - 1;
+        this.renderStep();
     },
 
     complete() {
