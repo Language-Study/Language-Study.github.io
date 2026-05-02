@@ -388,6 +388,10 @@ onAuthStateChanged?.(async (user) => {
     try {
         if (typeof initializeLanguageResourceAdmin === 'function') {
             await initializeLanguageResourceAdmin();
+            const requestedTab = new URLSearchParams(window.location.search).get('tab');
+            if (requestedTab === 'admin' && typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin() && window.tabController) {
+                window.tabController.activateTab('admin');
+            }
         }
 
         const settings = await getUserSettingsData(false, user.uid);

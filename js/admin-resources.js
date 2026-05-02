@@ -50,6 +50,58 @@ function getLanguageAdminPanelElement() {
     return document.getElementById('languageAdminPanel');
 }
 
+function getAdminTabButtonElements() {
+    return [
+        document.getElementById('adminTabBtn'),
+        document.getElementById('adminMobileTabBtn')
+    ].filter(Boolean);
+}
+
+function buildAdminTabButton({ mobile = false } = {}) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = mobile ? 'mobile-nav-item tab-button' : 'tab-button';
+    button.setAttribute('data-tab-target', '#admin');
+    button.id = mobile ? 'adminMobileTabBtn' : 'adminTabBtn';
+
+    if (mobile) {
+        button.innerHTML = `
+            <svg class="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 2l3 7h7l-5.5 4.1L18.5 20 12 15.8 5.5 20l2-6.9L2 9h7l3-7z" />
+            </svg>
+            <span class="mobile-nav-label">Admin</span>
+        `;
+    } else {
+        button.textContent = 'Admin';
+    }
+
+    return button;
+}
+
+function ensureAdminTabButtons() {
+    const desktopPortfolioButton = document.querySelector('button[data-tab-target="#portfolio"]');
+    const desktopNav = desktopPortfolioButton?.parentElement;
+    const mobileNav = document.getElementById('mobileBottomNav');
+
+    const existingDesktopButton = document.getElementById('adminTabBtn');
+    const existingMobileButton = document.getElementById('adminMobileTabBtn');
+
+    if (languageResourceAdminState.isAdmin && !window.isMentorView && !window.isPublicPortfolioView) {
+        if (!existingDesktopButton && desktopNav) {
+            desktopNav.insertBefore(buildAdminTabButton(), desktopPortfolioButton?.nextSibling || null);
+        }
+
+        if (!existingMobileButton && mobileNav) {
+            const portfolioButton = mobileNav.querySelector('[data-tab-target="#portfolio"]');
+            mobileNav.insertBefore(buildAdminTabButton({ mobile: true }), portfolioButton?.nextSibling || null);
+        }
+    } else {
+        existingDesktopButton?.remove();
+        existingMobileButton?.remove();
+    }
+}
+
 function normalizeLanguageName(value) {
     if (typeof value !== 'string') return '';
     return value.trim();
@@ -94,12 +146,17 @@ async function resolveAdminStatus(forceRefresh = false) {
 
 function setAdminPanelVisibility(isVisible) {
     const adminPanel = getLanguageAdminPanelElement();
+    const isAdminTabActive = typeof window.tabController?.getCurrentTab === 'function' && window.tabController.getCurrentTab() === 'admin';
+
     if (!adminPanel) return;
 
     if (isVisible && !window.isMentorView && !window.isPublicPortfolioView) {
         adminPanel.classList.remove('hidden');
     } else {
         adminPanel.classList.add('hidden');
+        if (isAdminTabActive && typeof window.tabController?.activateTab === 'function') {
+            window.tabController.activateTab('vocabulary');
+        }
     }
 }
 
@@ -420,6 +477,7 @@ function wireAdminPanelListeners() {
 
 async function initializeLanguageResourceAdmin(selectedLanguage = '') {
     await resolveAdminStatus();
+    ensureAdminTabButtons();
     setAdminPanelVisibility(languageResourceAdminState.isAdmin);
     wireAdminPanelListeners();
     await populateLanguageSelectOptions(selectedLanguage);

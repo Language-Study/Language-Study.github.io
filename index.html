@@ -285,6 +285,7 @@
                             </button>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -383,7 +384,7 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
             <button class="tab-button active" data-tab-target="#vocabulary">Vocabulary</button>
             <button class="tab-button" data-tab-target="#skills">Skills</button>
             <button class="tab-button" data-tab-target="#portfolio">Portfolio</button>
@@ -458,32 +459,6 @@
                         <p class="text-sm text-gray-500">Links to vocabulary and dictionary sites will appear here
                             after you select a language.</p>
                     </div>
-
-                    <div id="languageAdminPanel" class="mt-4 hidden border rounded p-3 bg-blue-50">
-                        <p class="text-sm font-semibold text-blue-800 mb-2">Admin: Manage Language Resources</p>
-                        <p class="text-xs text-blue-700 mb-3">Only admins can add, edit, and delete links shown for
-                            each language.</p>
-
-                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
-                            <input id="adminLanguageNameInput" type="text" placeholder="New language name"
-                                class="flex-1 p-2 border rounded bg-white" />
-                            <button id="adminAddLanguageBtn"
-                                class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Language</button>
-                            <button id="adminDeleteLanguageBtn"
-                                class="p-2 bg-red-600 text-white rounded hover:bg-blue-700">Delete Language</button>
-                        </div>
-
-                        <div class="flex flex-col sm:flex-row gap-2 mb-2">
-                            <input id="adminResourceNameInput" type="text" placeholder="Resource name"
-                                class="flex-1 p-2 border rounded bg-white" />
-                            <input id="adminResourceUrlInput" type="url" placeholder="https://example.com"
-                                class="flex-1 p-2 border rounded bg-white" />
-                            <button id="adminAddResourceBtn"
-                                class="p-2 bg-green-600 text-white rounded hover:bg-green-700">Add Link</button>
-                        </div>
-
-                        <div id="adminLanguageResourcesList" class="space-y-2"></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -535,6 +510,40 @@
                 </div>
                 <div id="portfolioTop3" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
                 <div id="portfolioList" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <div id="admin" data-tab-content class="hidden">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <h2 class="text-2xl font-bold">Language Resource Admin</h2>
+                </div>
+
+                <div id="languageAdminPanel" class="border rounded p-3 bg-blue-50">
+                    <p class="text-sm font-semibold text-blue-800 mb-2">Admin: Manage Language Resources</p>
+                    <p class="text-xs text-blue-700 mb-3">Only admins can add, edit, and delete links shown for
+                        each language.</p>
+
+                    <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                        <input id="adminLanguageNameInput" type="text" placeholder="New language name"
+                            class="flex-1 p-2 border rounded bg-white" />
+                        <button id="adminAddLanguageBtn"
+                            class="p-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Language</button>
+                        <button id="adminDeleteLanguageBtn"
+                            class="p-2 bg-red-600 text-white rounded hover:bg-blue-700">Delete Language</button>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                        <input id="adminResourceNameInput" type="text" placeholder="Resource name"
+                            class="flex-1 p-2 border rounded bg-white" />
+                        <input id="adminResourceUrlInput" type="url" placeholder="https://example.com"
+                            class="flex-1 p-2 border rounded bg-white" />
+                        <button id="adminAddResourceBtn"
+                            class="p-2 bg-green-600 text-white rounded hover:bg-green-700">Add Link</button>
+                    </div>
+
+                    <div id="adminLanguageResourcesList" class="space-y-2"></div>
+                </div>
             </div>
         </div>
 

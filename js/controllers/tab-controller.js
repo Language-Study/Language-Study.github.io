@@ -7,19 +7,35 @@
 class TabController {
     constructor() {
         this.currentTab = 'vocabulary';
-        this.tabs = ['vocabulary', 'skills', 'portfolio'];
+        this.tabs = ['vocabulary', 'skills', 'portfolio', 'admin'];
         this.initializeListeners();
+    }
+
+    canAccessTab(tabId) {
+        if (tabId !== 'admin') {
+            return true;
+        }
+
+        if (typeof window.isCurrentUserAdmin === 'function') {
+            return window.isCurrentUserAdmin() === true;
+        }
+
+        return false;
     }
 
     /**
      * Activate a specific tab
-     * @param {string} tabId - The tab ID to activate (vocabulary, skills, or portfolio)
+    * @param {string} tabId - The tab ID to activate (vocabulary, skills, portfolio, or admin)
      */
     activateTab(tabId) {
         // Validate tab ID
         if (!this.tabs.includes(tabId)) {
             console.warn(`Invalid tab ID: ${tabId}`);
             return;
+        }
+
+        if (!this.canAccessTab(tabId)) {
+            tabId = 'vocabulary';
         }
 
         this.currentTab = tabId;
@@ -90,6 +106,9 @@ class TabController {
                 const tabId = tabButton.getAttribute('data-tab-target').replace('#', '');
                 // Only handle main navigation tabs (vocabulary, skills, portfolio)
                 if (this.tabs.includes(tabId)) {
+                    if (!this.canAccessTab(tabId)) {
+                        return;
+                    }
                     this.activateTab(tabId);
                 }
             }
@@ -100,7 +119,7 @@ class TabController {
             const params = new URLSearchParams(window.location.search);
             const tabParam = params.get('tab') || 'vocabulary';
             if (this.tabs.includes(tabParam)) {
-                this.activateTab(tabParam);
+                this.activateTab(this.canAccessTab(tabParam) ? tabParam : 'vocabulary');
             }
         });
     }
@@ -114,7 +133,7 @@ class TabController {
 
         // If tab is explicitly in URL, use it
         if (tabParam && this.tabs.includes(tabParam)) {
-            this.activateTab(tabParam);
+            this.activateTab(this.canAccessTab(tabParam) ? tabParam : 'vocabulary');
             return;
         }
 
