@@ -1005,33 +1005,47 @@ a.text-blue-600:hover {
 }
 
 #settingsModal .bg-white,
-#welcomeModal .bg-white {
+#onboardingModal .bg-white {
     background-color: var(--md-sys-color-surface-container-low);
     color: var(--color-text-primary);
 }
 
-#welcomeModal .bg-white>h2,
-#welcomeModal .bg-white>div {
+#onboardingModal {
+    animation: fadeIn 300ms var(--transition-normal);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+#onboardingModal .bg-white>h2,
+#onboardingModal .bg-white>div {
     color: var(--color-text-primary);
 }
 
-#welcomeModal .bg-white>div {
+#onboardingModal .bg-white>div {
     background-color: var(--md-sys-color-surface-container-low);
     border-color: var(--color-primary);
     color: var(--color-text-primary);
 }
 
-#welcomeModal .bg-white>div p,
-#welcomeModal .bg-white>div ul {
+#onboardingModal .bg-white>div p,
+#onboardingModal .bg-white>div ul {
     color: var(--color-text-primary);
 }
 
-#welcomeModal .bg-white>div span {
+#onboardingModal .bg-white>div span {
     color: var(--color-text-secondary);
 }
 
 #settingsModal button,
-#welcomeModal button {
+#onboardingModal button {
     transition: all var(--transition-normal);
 }
 

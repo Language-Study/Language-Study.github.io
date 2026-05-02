@@ -99,11 +99,10 @@ async function loadUserData() {
         await updateProgressVisibility();
         renderProgressMetrics();
 
-        // Show welcome modal if first login
+        // Show onboarding if first login
         const settings = await getUserSettingsData();
         if (!settings || settings.firstLogin !== false) {
-            showWelcomeModal();
-            await writeUserSettingsPatch({ firstLogin: false });
+            showOnboarding();
         }
 
 

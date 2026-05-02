@@ -279,9 +279,9 @@ function showPublicPortfolioUI() {
     // Add class to body for styling
     document.body.classList.add('public-portfolio-view');
 
-    // Hide the welcome modal if it appears
-    const welcomeModal = document.getElementById('welcomeModal');
-    if (welcomeModal) welcomeModal.classList.add('hidden');
+    // Hide the onboarding modal if it appears
+    const onboardingModal = document.getElementById('onboardingModal');
+    if (onboardingModal) onboardingModal.classList.add('hidden');
 
     // Hide search and progress sections
     const searchSection = document.querySelector('.mb-6:has(#searchInput)');
