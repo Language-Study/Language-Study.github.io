@@ -86,11 +86,14 @@
     </nav>
 
     <!-- Site Message Banner (hidden by default) -->
-    <div id="siteMessageBanner" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 max-w-4xl mx-auto my-4 rounded" role="region" aria-live="polite">
+    <div id="siteMessageBanner"
+        class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 max-w-4xl mx-auto my-4 rounded" role="region"
+        aria-live="polite">
         <div class="flex items-start justify-between gap-3">
-            <div class="site-message-content text-sm text-yellow-900"></div>
+            <div class="site-message-content text-sm"></div>
             <div class="flex items-start gap-2">
-                <button id="siteMessageCloseBtn" class="text-yellow-800 hover:text-yellow-900 text-xl leading-none" aria-label="Dismiss message">&times;</button>
+                <button id="siteMessageCloseBtn" class="site-message-close-btn text-xl leading-none"
+                    aria-label="Dismiss message">&times;</button>
             </div>
         </div>
     </div>
@@ -572,18 +575,23 @@
                 <!-- Site Message Admin Panel -->
                 <div id="siteMessageAdminPanel" class="border rounded p-3 bg-yellow-50 mt-4 hidden">
                     <p class="text-sm font-semibold text-yellow-800 mb-2">Admin: Site Message Banner</p>
-                    <p class="text-xs text-yellow-700 mb-3">Set a message that appears at the top of the site. Click clear to remove.</p>
+                    <p class="text-xs text-yellow-700 mb-3">Set a message that appears at the top of the site. Click
+                        clear to remove.</p>
 
                     <div class="mb-3">
-                        <label for="adminMessageTextarea" class="block text-sm text-gray-700 mb-1">Message (HTML allowed)</label>
-                        <textarea id="adminMessageTextarea" class="w-full p-2 border rounded" rows="3" placeholder="Enter site-wide message"></textarea>
+                        <label for="adminMessageTextarea" class="block text-sm text-gray-700 mb-1">Message (HTML
+                            allowed)</label>
+                        <textarea id="adminMessageTextarea" class="w-full p-2 border rounded" rows="3"
+                            placeholder="Enter site-wide message"></textarea>
                     </div>
 
                     <div class="flex gap-2 items-center mb-3">
                         <label for="adminMessageExpiry" class="text-sm text-gray-700">Expires (optional)</label>
                         <input id="adminMessageExpiry" type="datetime-local" class="p-2 border rounded" />
-                        <button id="adminSaveSiteMessageBtn" class="p-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Save Message</button>
-                        <button id="adminClearSiteMessageBtn" class="p-2 bg-red-600 text-white rounded hover:bg-red-700">Clear</button>
+                        <button id="adminSaveSiteMessageBtn"
+                            class="p-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Save Message</button>
+                        <button id="adminClearSiteMessageBtn"
+                            class="p-2 bg-red-600 text-white rounded hover:bg-red-700">Clear</button>
                     </div>
 
                     <div id="adminSiteMessageStatus" class="text-xs text-gray-600"></div>

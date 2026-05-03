@@ -645,6 +645,32 @@ a.text-blue-600:hover {
     padding: 1rem;
 }
 
+#siteMessageBanner {
+    background-color: var(--color-primary-container);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary-container);
+    box-shadow: var(--md-elevation-1);
+}
+
+#siteMessageBanner .site-message-content {
+    color: inherit;
+}
+
+#siteMessageBanner .site-message-expiry {
+    color: var(--color-text-secondary);
+}
+
+#siteMessageBanner .site-message-close-btn {
+    color: inherit;
+    opacity: 0.8;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+#siteMessageBanner .site-message-close-btn:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
 .border-l-4 {
     border-left-width: 4px;
 }
@@ -1115,6 +1141,16 @@ a.text-blue-600:hover {
     .bg-yellow-50 {
         background-color: var(--color-bg-secondary);
         border-color: var(--color-border);
+    }
+
+    #siteMessageBanner {
+        background-color: var(--color-bg-secondary);
+        border-color: var(--color-primary);
+        color: var(--color-text-primary);
+    }
+
+    #siteMessageBanner .site-message-expiry {
+        color: var(--color-text-secondary);
     }
 
     #achievementsSection {

@@ -61,7 +61,7 @@
         content.innerHTML = html || '';
         if (expiresAt) {
             const expiryText = document.createElement('div');
-            expiryText.className = 'text-xs text-yellow-800 mt-1';
+            expiryText.className = 'site-message-expiry text-xs mt-1';
             expiryText.textContent = 'Expires: ' + new Date(expiresAt).toLocaleString();
             content.appendChild(expiryText);
         }
