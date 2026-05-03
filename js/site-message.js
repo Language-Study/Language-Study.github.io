@@ -10,6 +10,77 @@
     const BANNER_CONTENT_CLASS = 'site-message-content';
     const CLOSE_BTN_ID = 'siteMessageCloseBtn';
     const ADMIN_PANEL_ID = 'siteMessageAdminPanel';
+    const ALLOWED_SITE_MESSAGE_TAGS = new Set([
+        'a', 'b', 'br', 'code', 'div', 'em', 'i', 'li', 'ol', 'p', 'pre', 'small', 'span', 'strong', 'sub', 'sup', 'u', 'ul'
+    ]);
+
+    function sanitizeSiteMessageHtml(input) {
+        const source = String(input || '');
+        if (!source.trim()) return '';
+
+        const template = document.createElement('template');
+        template.innerHTML = source;
+
+        const walk = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return document.createTextNode(node.textContent || '');
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return document.createDocumentFragment();
+            }
+
+            const tagName = node.tagName.toLowerCase();
+            if (!ALLOWED_SITE_MESSAGE_TAGS.has(tagName)) {
+                const fragment = document.createDocumentFragment();
+                node.childNodes.forEach((child) => {
+                    fragment.appendChild(walk(child));
+                });
+                return fragment;
+            }
+
+            const clone = document.createElement(tagName);
+
+            if (tagName === 'a') {
+                const rawHref = node.getAttribute('href') || '';
+                try {
+                    const url = new URL(rawHref, window.location.origin);
+                    if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:' || url.protocol === 'tel:') {
+                        clone.setAttribute('href', url.toString());
+                        clone.setAttribute('rel', 'noopener noreferrer');
+                    }
+                } catch (e) {
+                    // Ignore invalid links.
+                }
+
+                const target = node.getAttribute('target');
+                if (target === '_blank') {
+                    clone.setAttribute('target', '_blank');
+                    clone.setAttribute('rel', 'noopener noreferrer');
+                }
+
+                const title = node.getAttribute('title');
+                if (title) {
+                    clone.setAttribute('title', title);
+                }
+            }
+
+            node.childNodes.forEach((child) => {
+                clone.appendChild(walk(child));
+            });
+
+            return clone;
+        };
+
+        const fragment = document.createDocumentFragment();
+        template.content.childNodes.forEach((child) => {
+            fragment.appendChild(walk(child));
+        });
+
+        const container = document.createElement('div');
+        container.appendChild(fragment);
+        return container.innerHTML;
+    }
 
     function toLocalDatetimeInputValue(date) {
         if (!date) return '';
@@ -58,7 +129,7 @@
             // ignore localStorage errors
         }
 
-        content.innerHTML = html || '';
+        content.innerHTML = sanitizeSiteMessageHtml(html);
         if (expiresAt) {
             const expiryText = document.createElement('div');
             expiryText.className = 'site-message-expiry text-xs mt-1';
@@ -89,6 +160,67 @@
         if (!obj || !obj.message) return false;
         if (obj.expiresAt && new Date(obj.expiresAt) < new Date()) return false;
         return true;
+    }
+
+    function wireAdminPanelControls({ textarea, expiryInput, statusEl, saveBtn, clearBtn, refreshPanel }) {
+        if (saveBtn && !saveBtn.dataset.siteMessageWired) {
+            saveBtn.dataset.siteMessageWired = 'true';
+            saveBtn.addEventListener('click', async () => {
+                try {
+                    enforceClientRateLimit({ bucket: 'admin-site-message-write', limit: 40, windowMs: 5 * 60 * 1000, message: 'Too many message saves' });
+                    await window.resolveAdminStatus();
+                    const isAdminNow = typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
+                    if (!isAdminNow) throw new Error('Admin access required');
+
+                    const message = textarea.value || '';
+                    const expiry = parseLocalDatetimeInput(expiryInput.value);
+                    const sanitizedMessage = sanitizeSiteMessageHtml(message);
+
+                    if (!sanitizedMessage.trim()) {
+                        throw new Error('Please enter a message or use Clear to remove it.');
+                    }
+
+                    const payload = {
+                        message: sanitizedMessage,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedBy: currentUser?.uid || null
+                    };
+                    if (expiry) {
+                        payload.expiresAt = firebase.firestore.Timestamp.fromDate(expiry);
+                    } else {
+                        payload.expiresAt = null;
+                    }
+
+                    await db.collection(COLLECTION).doc(DOC_ID).set(payload, { merge: true });
+                    showToast('✓ Message saved');
+                    await refreshPanel();
+                } catch (err) {
+                    showToast('Error: ' + (err.message || 'Could not save message'));
+                }
+            });
+        }
+
+        if (clearBtn && !clearBtn.dataset.siteMessageWired) {
+            clearBtn.dataset.siteMessageWired = 'true';
+            clearBtn.addEventListener('click', async () => {
+                try {
+                    enforceClientRateLimit({ bucket: 'admin-site-message-write', limit: 40, windowMs: 5 * 60 * 1000, message: 'Too many clears' });
+                    await window.resolveAdminStatus();
+                    const isAdminNow = typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
+                    if (!isAdminNow) throw new Error('Admin access required');
+
+                    if (!confirm('Clear site message for all users?')) return;
+                    await db.collection(COLLECTION).doc(DOC_ID).delete();
+                    showToast('✓ Message cleared');
+                    textarea.value = '';
+                    expiryInput.value = '';
+                    statusEl.textContent = '';
+                    await refreshPanel();
+                } catch (err) {
+                    showToast('Error: ' + (err.message || 'Could not clear message'));
+                }
+            });
+        }
     }
 
     async function refreshAndRender() {
@@ -154,56 +286,13 @@
             statusEl.textContent = (data.updatedAt ? 'Last updated: ' + new Date(data.updatedAt.toDate()).toLocaleString() : 'Not yet saved');
         }
 
-        saveBtn?.addEventListener('click', async () => {
-            try {
-                enforceClientRateLimit({ bucket: 'admin-site-message-write', limit: 40, windowMs: 5 * 60 * 1000, message: 'Too many message saves' });
-                await window.resolveAdminStatus();
-                const isAdminNow = typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
-                if (!isAdminNow) throw new Error('Admin access required');
-
-                const message = textarea.value || '';
-                const expiry = parseLocalDatetimeInput(expiryInput.value);
-
-                if (!message.trim()) {
-                    throw new Error('Please enter a message or use Clear to remove it.');
-                }
-
-                const payload = {
-                    message: message,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy: currentUser?.uid || null
-                };
-                if (expiry) {
-                    payload.expiresAt = firebase.firestore.Timestamp.fromDate(expiry);
-                } else {
-                    payload.expiresAt = null;
-                }
-
-                await db.collection(COLLECTION).doc(DOC_ID).set(payload, { merge: true });
-                showToast('✓ Message saved');
-                await populate();
-            } catch (err) {
-                showToast('Error: ' + (err.message || 'Could not save message'));
-            }
-        });
-
-        clearBtn?.addEventListener('click', async () => {
-            try {
-                enforceClientRateLimit({ bucket: 'admin-site-message-write', limit: 40, windowMs: 5 * 60 * 1000, message: 'Too many clears' });
-                await window.resolveAdminStatus();
-                const isAdminNow = typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
-                if (!isAdminNow) throw new Error('Admin access required');
-
-                if (!confirm('Clear site message for all users?')) return;
-                await db.collection(COLLECTION).doc(DOC_ID).delete();
-                showToast('✓ Message cleared');
-                textarea.value = '';
-                expiryInput.value = '';
-                statusEl.textContent = '';
-                await refreshAndRender();
-            } catch (err) {
-                showToast('Error: ' + (err.message || 'Could not clear message'));
-            }
+        wireAdminPanelControls({
+            textarea,
+            expiryInput,
+            statusEl,
+            saveBtn,
+            clearBtn,
+            refreshPanel: populate
         });
 
         await populate();
