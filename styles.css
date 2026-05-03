@@ -533,8 +533,7 @@ kbd {
 }
 
 .skill-item.drag-over {
-    background-color: var(--color-primary);
-    background-opacity: 0.1;
+    background-color: rgba(var(--color-primary-rgb), 0.1);
     border: 2px solid var(--color-primary);
     box-shadow: inset 0 0 0 2px var(--color-primary);
 }
@@ -654,6 +653,21 @@ a.text-blue-600:hover {
 
 #siteMessageBanner .site-message-content {
     color: inherit;
+}
+
+#siteMessageBanner .site-message-content a {
+    color: var(--color-primary-darker);
+    text-decoration: underline;
+    word-break: break-word;
+}
+
+#siteMessageBanner .site-message-content a:hover {
+    color: var(--color-primary);
+}
+
+#siteMessageBanner .site-message-content a:focus-visible {
+    outline: var(--focus-ring);
+    border-radius: 0.25rem;
 }
 
 #siteMessageBanner .site-message-expiry {
@@ -1222,6 +1236,14 @@ a.text-blue-600:hover {
 
     #siteMessageBanner .site-message-expiry {
         color: var(--color-text-secondary);
+    }
+
+    #siteMessageBanner .site-message-content a {
+        color: var(--color-primary);
+    }
+
+    #siteMessageBanner .site-message-content a:hover {
+        color: var(--color-primary-darker);
     }
 
     .message-tool-btn,
