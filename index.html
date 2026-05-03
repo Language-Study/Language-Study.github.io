@@ -579,10 +579,28 @@
                         clear to remove.</p>
 
                     <div class="mb-3">
-                        <label for="adminMessageTextarea" class="block text-sm text-gray-700 mb-1">Message (HTML
+                        <label for="adminMessageTextarea" class="block text-sm text-gray-700 mb-1">Message (Some HTML
                             allowed)</label>
-                        <textarea id="adminMessageTextarea" class="w-full p-2 border rounded" rows="3"
-                            placeholder="Enter site-wide message"></textarea>
+                        <div id="adminMessageToolbar" class="message-toolbar mb-2" role="toolbar"
+                            aria-label="Message formatting toolbar">
+                            <button type="button" class="message-tool-btn" data-message-action="bold"
+                                aria-label="Bold text"><strong>B</strong></button>
+                            <button type="button" class="message-tool-btn" data-message-action="italic"
+                                aria-label="Italic text"><em>I</em></button>
+                            <button type="button" class="message-tool-btn" data-message-action="underline"
+                                aria-label="Underline text"><u>U</u></button>
+                            <button type="button" class="message-tool-btn" data-message-action="link"
+                                aria-label="Insert link">Link</button>
+                            <button type="button" class="message-tool-btn" data-message-action="unorderedList"
+                                aria-label="Bulleted list">• List</button>
+                            <button type="button" class="message-tool-btn" data-message-action="orderedList"
+                                aria-label="Numbered list">1. List</button>
+                            <button type="button" class="message-tool-btn" data-message-action="removeFormat"
+                                aria-label="Clear formatting">Clear</button>
+                        </div>
+                        <div id="adminMessageEditor" class="message-editor" contenteditable="true" role="textbox"
+                            aria-multiline="true" spellcheck="true" data-placeholder="Enter site-wide message"></div>
+                        <textarea id="adminMessageTextarea" class="hidden" aria-hidden="true" tabindex="-1"></textarea>
                     </div>
 
                     <div class="flex gap-2 items-center mb-3">

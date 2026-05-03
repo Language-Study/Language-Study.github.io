@@ -10,6 +10,8 @@
     const BANNER_CONTENT_CLASS = 'site-message-content';
     const CLOSE_BTN_ID = 'siteMessageCloseBtn';
     const ADMIN_PANEL_ID = 'siteMessageAdminPanel';
+    const EDITOR_ID = 'adminMessageEditor';
+    const TOOLBAR_ID = 'adminMessageToolbar';
     const ALLOWED_SITE_MESSAGE_TAGS = new Set([
         'a', 'b', 'br', 'code', 'div', 'em', 'i', 'li', 'ol', 'p', 'pre', 'small', 'span', 'strong', 'sub', 'sup', 'u', 'ul'
     ]);
@@ -82,6 +84,8 @@
         return container.innerHTML;
     }
 
+    let savedEditorRange = null;
+
     function toLocalDatetimeInputValue(date) {
         if (!date) return '';
         const pad = (n) => String(n).padStart(2, '0');
@@ -97,6 +101,160 @@
         if (!value) return null;
         const d = new Date(value);
         return isNaN(d.getTime()) ? null : d;
+    }
+
+    function getEditorEl() {
+        return document.getElementById(EDITOR_ID);
+    }
+
+    function sanitizeSiteMessageUrl(rawHref) {
+        const href = String(rawHref || '').trim();
+        if (!href) return '';
+
+        try {
+            const url = new URL(href, window.location.origin);
+            if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:' || url.protocol === 'tel:') {
+                return url.toString();
+            }
+        } catch (e) {
+            // Ignore invalid links.
+        }
+
+        return '';
+    }
+
+    function setEditorContent(editor, textarea, html) {
+        const sanitized = sanitizeSiteMessageHtml(html);
+        if (editor) {
+            editor.innerHTML = sanitized;
+        }
+        if (textarea) {
+            textarea.value = sanitized;
+        }
+    }
+
+    function syncEditorContent(editor, textarea) {
+        if (!editor || !textarea) return;
+        textarea.value = sanitizeSiteMessageHtml(editor.innerHTML);
+    }
+
+    function saveEditorSelection(editor) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+        if (editor && editor.contains(range.commonAncestorContainer)) {
+            savedEditorRange = range.cloneRange();
+        }
+    }
+
+    function restoreEditorSelection(editor) {
+        const selection = window.getSelection();
+        if (!selection || !savedEditorRange) return false;
+        if (editor && !editor.contains(savedEditorRange.commonAncestorContainer)) return false;
+
+        selection.removeAllRanges();
+        selection.addRange(savedEditorRange);
+        return true;
+    }
+
+    function insertLinkAtSelection(editor, href) {
+        const safeHref = sanitizeSiteMessageUrl(href);
+        if (!safeHref) return false;
+
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return false;
+
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return false;
+
+        const link = document.createElement('a');
+        link.setAttribute('href', safeHref);
+        link.setAttribute('rel', 'noopener noreferrer');
+        link.setAttribute('target', '_blank');
+
+        if (selection.isCollapsed) {
+            const linkText = window.prompt('Link text', safeHref) || safeHref;
+            link.textContent = linkText;
+            range.insertNode(link);
+            range.setStartAfter(link);
+            range.setEndAfter(link);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return true;
+        }
+
+        const fragment = range.extractContents();
+        link.appendChild(fragment);
+        range.insertNode(link);
+        selection.removeAllRanges();
+
+        const afterRange = document.createRange();
+        afterRange.setStartAfter(link);
+        afterRange.collapse(true);
+        selection.addRange(afterRange);
+        return true;
+    }
+
+    function insertListAtSelection(editor, ordered) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return false;
+
+        const range = selection.getRangeAt(0);
+        if (!editor.contains(range.commonAncestorContainer)) return false;
+
+        const list = document.createElement(ordered ? 'ol' : 'ul');
+        const item = document.createElement('li');
+
+        if (selection.isCollapsed) {
+            item.appendChild(document.createElement('br'));
+        } else {
+            const fragment = range.extractContents();
+            item.appendChild(fragment);
+            if (!item.textContent.trim()) {
+                item.appendChild(document.createElement('br'));
+            }
+        }
+
+        list.appendChild(item);
+        range.insertNode(list);
+
+        selection.removeAllRanges();
+        const nextRange = document.createRange();
+        nextRange.setStart(item, 0);
+        nextRange.collapse(true);
+        selection.addRange(nextRange);
+        return true;
+    }
+
+    function runEditorAction(editor, action) {
+        if (!editor) return;
+        editor.focus();
+        restoreEditorSelection(editor);
+
+        if (action === 'link') {
+            const href = window.prompt('Enter link URL');
+            if (!href) return;
+            insertLinkAtSelection(editor, href);
+            return;
+        }
+
+        if (action === 'unorderedList' || action === 'orderedList') {
+            insertListAtSelection(editor, action === 'orderedList');
+            return;
+        }
+
+        const commandMap = {
+            bold: 'bold',
+            italic: 'italic',
+            underline: 'underline',
+            removeFormat: 'removeFormat'
+        };
+
+        const command = commandMap[action];
+        if (!command) return;
+
+        document.execCommand(command, false, null);
     }
 
     function getBannerEl() {
@@ -162,7 +320,46 @@
         return true;
     }
 
-    function wireAdminPanelControls({ textarea, expiryInput, statusEl, saveBtn, clearBtn, refreshPanel }) {
+    function wireAdminPanelControls({ editor, textarea, expiryInput, statusEl, saveBtn, clearBtn, toolbar, refreshPanel }) {
+        if (editor && textarea && !editor.dataset.siteMessageWired) {
+            editor.dataset.siteMessageWired = 'true';
+            editor.addEventListener('input', () => {
+                syncEditorContent(editor, textarea);
+            });
+            editor.addEventListener('mouseup', () => {
+                saveEditorSelection(editor);
+            });
+            editor.addEventListener('keyup', () => {
+                saveEditorSelection(editor);
+            });
+            editor.addEventListener('blur', () => {
+                saveEditorSelection(editor);
+                syncEditorContent(editor, textarea);
+            });
+            editor.addEventListener('paste', (event) => {
+                event.preventDefault();
+                const plainText = event.clipboardData?.getData('text/plain') || '';
+                document.execCommand('insertText', false, plainText);
+                syncEditorContent(editor, textarea);
+            });
+        }
+
+        if (toolbar && !toolbar.dataset.siteMessageWired) {
+            toolbar.dataset.siteMessageWired = 'true';
+            toolbar.addEventListener('mousedown', (event) => {
+                if (event.target.closest('[data-message-action]')) {
+                    event.preventDefault();
+                }
+            });
+            toolbar.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-message-action]');
+                if (!button) return;
+                event.preventDefault();
+                runEditorAction(editor, button.dataset.messageAction);
+                syncEditorContent(editor, textarea);
+            });
+        }
+
         if (saveBtn && !saveBtn.dataset.siteMessageWired) {
             saveBtn.dataset.siteMessageWired = 'true';
             saveBtn.addEventListener('click', async () => {
@@ -172,7 +369,7 @@
                     const isAdminNow = typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
                     if (!isAdminNow) throw new Error('Admin access required');
 
-                    const message = textarea.value || '';
+                    const message = editor ? editor.innerHTML : (textarea.value || '');
                     const expiry = parseLocalDatetimeInput(expiryInput.value);
                     const sanitizedMessage = sanitizeSiteMessageHtml(message);
 
@@ -193,6 +390,9 @@
 
                     await db.collection(COLLECTION).doc(DOC_ID).set(payload, { merge: true });
                     showToast('✓ Message saved');
+                    if (editor && textarea) {
+                        setEditorContent(editor, textarea, sanitizedMessage);
+                    }
                     await refreshPanel();
                 } catch (err) {
                     showToast('Error: ' + (err.message || 'Could not save message'));
@@ -212,6 +412,9 @@
                     if (!confirm('Clear site message for all users?')) return;
                     await db.collection(COLLECTION).doc(DOC_ID).delete();
                     showToast('✓ Message cleared');
+                    if (editor) {
+                        editor.innerHTML = '';
+                    }
                     textarea.value = '';
                     expiryInput.value = '';
                     statusEl.textContent = '';
@@ -266,32 +469,38 @@
 
         if (!isAdmin) return;
 
+        const editor = document.getElementById(EDITOR_ID);
         const textarea = document.getElementById('adminMessageTextarea');
         const expiryInput = document.getElementById('adminMessageExpiry');
         const saveBtn = document.getElementById('adminSaveSiteMessageBtn');
         const clearBtn = document.getElementById('adminClearSiteMessageBtn');
         const statusEl = document.getElementById('adminSiteMessageStatus');
+        const toolbar = document.getElementById(TOOLBAR_ID);
 
         async function populate() {
             const doc = await db.collection(COLLECTION).doc(DOC_ID).get();
             if (!doc.exists) {
-                textarea.value = '';
+                setEditorContent(editor, textarea, '');
                 expiryInput.value = '';
                 statusEl.textContent = '';
+                savedEditorRange = null;
                 return;
             }
             const data = doc.data() || {};
-            textarea.value = data.message || '';
+            setEditorContent(editor, textarea, data.message || '');
             expiryInput.value = data.expiresAt ? toLocalDatetimeInputValue(data.expiresAt.toDate()) : '';
             statusEl.textContent = (data.updatedAt ? 'Last updated: ' + new Date(data.updatedAt.toDate()).toLocaleString() : 'Not yet saved');
+            savedEditorRange = null;
         }
 
         wireAdminPanelControls({
+            editor,
             textarea,
             expiryInput,
             statusEl,
             saveBtn,
             clearBtn,
+            toolbar,
             refreshPanel: populate
         });
 
