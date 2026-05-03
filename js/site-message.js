@@ -45,18 +45,9 @@
 
             if (tagName === 'a') {
                 const rawHref = node.getAttribute('href') || '';
-                try {
-                    const url = new URL(rawHref, window.location.origin);
-                    if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:' || url.protocol === 'tel:') {
-                        clone.setAttribute('href', url.toString());
-                        clone.setAttribute('rel', 'noopener noreferrer');
-                    }
-                } catch (e) {
-                    // Ignore invalid links.
-                }
-
-                const target = node.getAttribute('target');
-                if (target === '_blank') {
+                const safeHref = sanitizeSiteMessageUrl(rawHref);
+                if (safeHref) {
+                    clone.setAttribute('href', safeHref);
                     clone.setAttribute('target', '_blank');
                     clone.setAttribute('rel', 'noopener noreferrer');
                 }
@@ -111,10 +102,23 @@
         const href = String(rawHref || '').trim();
         if (!href) return '';
 
+        if (href.startsWith('/') || href.startsWith('#')) {
+            return '';
+        }
+
         try {
-            const url = new URL(href, window.location.origin);
+            const url = new URL(href);
             if (url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'mailto:' || url.protocol === 'tel:') {
                 return url.toString();
+            }
+        } catch (e) {
+            // Fall through to https normalization.
+        }
+
+        try {
+            const normalizedUrl = new URL(`https://${href}`);
+            if (normalizedUrl.protocol === 'http:' || normalizedUrl.protocol === 'https:') {
+                return normalizedUrl.toString();
             }
         } catch (e) {
             // Ignore invalid links.
