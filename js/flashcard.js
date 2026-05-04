@@ -9,6 +9,7 @@ let isFlashcardFlipped = false;
 let flashcardRenderToken = 0;
 let reviewWakeLock = null;
 let reviewWakeLockWarningShown = false;
+let reviewEnteredFullscreen = false;
 
 const flashcardModal = document.getElementById('flashcardModal');
 const flashcard = document.getElementById('flashcard');
@@ -58,6 +59,54 @@ async function releaseReviewWakeLock() {
     }
 }
 
+function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+async function enterReviewFullscreen() {
+    if (!flashcardModal) return;
+    if (getFullscreenElement()) {
+        reviewEnteredFullscreen = false;
+        return;
+    }
+
+    try {
+        if (typeof flashcardModal.requestFullscreen === 'function') {
+            await flashcardModal.requestFullscreen();
+            reviewEnteredFullscreen = true;
+            return;
+        }
+        if (typeof flashcardModal.webkitRequestFullscreen === 'function') {
+            await flashcardModal.webkitRequestFullscreen();
+            reviewEnteredFullscreen = true;
+            return;
+        }
+    } catch (error) {
+        reviewEnteredFullscreen = false;
+        console.warn('Fullscreen unavailable during review:', error);
+    }
+}
+
+async function exitReviewFullscreen() {
+    if (!reviewEnteredFullscreen) return;
+    if (!getFullscreenElement()) {
+        reviewEnteredFullscreen = false;
+        return;
+    }
+
+    try {
+        if (typeof document.exitFullscreen === 'function') {
+            await document.exitFullscreen();
+        } else if (typeof document.webkitExitFullscreen === 'function') {
+            await document.webkitExitFullscreen();
+        }
+    } catch (error) {
+        // no-op
+    } finally {
+        reviewEnteredFullscreen = false;
+    }
+}
+
 function closeFlashcardReviewModal() {
     flashcardModal.classList.add('hidden');
     if (flashcardVideo) {
@@ -66,6 +115,7 @@ function closeFlashcardReviewModal() {
     if (flashcardAudio) {
         flashcardAudio.src = '';
     }
+    exitReviewFullscreen();
     releaseReviewWakeLock();
     renderVocabularyWithCurrentFilter();
 }
@@ -94,6 +144,7 @@ startReviewBtn?.addEventListener('click', () => {
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
     flashcardModal.classList.remove('hidden');
+    enterReviewFullscreen();
     acquireReviewWakeLock();
     renderFlashcard();
     flashcard.focus();
