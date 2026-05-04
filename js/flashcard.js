@@ -37,15 +37,13 @@ startReviewBtn?.addEventListener('click', () => {
         return;
     }
 
-    const duePool = vocabularyList.filter(item => isVocabularyItemDue(item));
-    if (duePool.length === 0) {
-        showToast('No words are due right now. Great work!');
-        return;
-    }
-
     flashcardReviewList = buildDueFirstReviewList(vocabularyList, FLASHCARD_TARGET_COUNT);
     const dueCountInSession = flashcardReviewList.filter(item => isVocabularyItemDue(item)).length;
-    showToast(`${dueCountInSession} due card${dueCountInSession === 1 ? '' : 's'} in this session`);
+    if (dueCountInSession > 0) {
+        showToast(`${dueCountInSession} due card${dueCountInSession === 1 ? '' : 's'} in this session`);
+    } else {
+        showToast('No words are due right now. Starting mixed practice review.');
+    }
 
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
