@@ -367,6 +367,8 @@ function renderVocabularyList() {
             }
         });
     });
+
+    renderVocabularyReviewMessageBar();
 }
 
 /**
@@ -448,6 +450,7 @@ function filterVocabulary(query) {
     const totalResults = Object.values(grouped).reduce((sum, arr) => sum + arr.length, 0);
     if (totalResults === 0) {
         vocabularyListEl.innerHTML = '<p class="text-sm text-gray-500">No vocabulary results found.</p>';
+        renderVocabularyReviewMessageBar();
         return;
     }
 
@@ -467,6 +470,50 @@ function filterVocabulary(query) {
                 </div>
             `;
         }).join('');
+
+    renderVocabularyReviewMessageBar();
+}
+
+function getDueVocabularyCount(nowMs = Date.now()) {
+    const visibleVocabulary = vocabularyList.filter(item => isVisibleForSelectedLanguage?.(item.language) !== false);
+    return visibleVocabulary.filter(item => isVocabularyItemDue(item, nowMs)).length;
+}
+
+function renderVocabularyReviewMessageBar() {
+    const appMessageBar = document.getElementById('appMessageBar');
+    if (!appMessageBar) return;
+
+    if (window.isMentorView === true || !Array.isArray(vocabularyList) || vocabularyList.length === 0) {
+        appMessageBar.classList.add('hidden');
+        appMessageBar.innerHTML = '';
+        return;
+    }
+
+    const dueCount = getDueVocabularyCount();
+    if (dueCount <= 0) {
+        appMessageBar.classList.add('hidden');
+        appMessageBar.innerHTML = '';
+        return;
+    }
+
+    const dueLabel = dueCount === 1 ? 'word is' : 'words are';
+    appMessageBar.innerHTML = `
+        <div class="rounded border-l-4 border-indigo-500 bg-indigo-50 p-3 text-indigo-900">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm font-semibold">Time to study: ${dueCount} ${dueLabel} due for review.</p>
+                <button id="appMessageBarReviewBtn" type="button" class="inline-flex items-center justify-center rounded bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700">
+                    Start Review
+                </button>
+            </div>
+        </div>
+    `;
+    appMessageBar.classList.remove('hidden');
+
+    const reviewBtn = document.getElementById('appMessageBarReviewBtn');
+    reviewBtn?.addEventListener('click', () => {
+        window.tabController?.activateTab('vocabulary');
+        document.getElementById('startReviewBtn')?.click();
+    });
 }
 
 /**
