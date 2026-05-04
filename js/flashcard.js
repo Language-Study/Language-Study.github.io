@@ -7,6 +7,8 @@ let flashcardReviewList = [];
 let currentFlashcardIndex = 0;
 let isFlashcardFlipped = false;
 let flashcardRenderToken = 0;
+let reviewWakeLock = null;
+let reviewWakeLockWarningShown = false;
 
 const flashcardModal = document.getElementById('flashcardModal');
 const flashcard = document.getElementById('flashcard');
@@ -30,6 +32,50 @@ const flashcardInProgress = document.getElementById('flashcardInProgress');
 const flashcardProficient = document.getElementById('flashcardProficient');
 const FLASHCARD_TARGET_COUNT = 10;
 
+async function acquireReviewWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+        reviewWakeLock = await navigator.wakeLock.request('screen');
+        reviewWakeLock.addEventListener('release', () => {
+            reviewWakeLock = null;
+        });
+    } catch (error) {
+        if (!reviewWakeLockWarningShown) {
+            console.warn('Screen wake lock unavailable during review:', error);
+            reviewWakeLockWarningShown = true;
+        }
+    }
+}
+
+async function releaseReviewWakeLock() {
+    if (!reviewWakeLock) return;
+    try {
+        await reviewWakeLock.release();
+    } catch (error) {
+        // no-op
+    } finally {
+        reviewWakeLock = null;
+    }
+}
+
+function closeFlashcardReviewModal() {
+    flashcardModal.classList.add('hidden');
+    if (flashcardVideo) {
+        flashcardVideo.src = '';
+    }
+    if (flashcardAudio) {
+        flashcardAudio.src = '';
+    }
+    releaseReviewWakeLock();
+    renderVocabularyWithCurrentFilter();
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (flashcardModal.classList.contains('hidden')) return;
+    acquireReviewWakeLock();
+});
+
 // Start review session
 startReviewBtn?.addEventListener('click', () => {
     if (!vocabularyList || vocabularyList.length === 0) {
@@ -48,33 +94,20 @@ startReviewBtn?.addEventListener('click', () => {
     currentFlashcardIndex = 0;
     isFlashcardFlipped = false;
     flashcardModal.classList.remove('hidden');
+    acquireReviewWakeLock();
     renderFlashcard();
     flashcard.focus();
 });
 
 // Close modal
 closeFlashcardBtn?.addEventListener('click', () => {
-    flashcardModal.classList.add('hidden');
-    if (flashcardVideo) {
-        flashcardVideo.src = '';
-    }
-    if (flashcardAudio) {
-        flashcardAudio.src = '';
-    }
-    renderVocabularyWithCurrentFilter();
+    closeFlashcardReviewModal();
 });
 
 // Close on escape
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !flashcardModal.classList.contains('hidden')) {
-        flashcardModal.classList.add('hidden');
-        if (flashcardVideo) {
-            flashcardVideo.src = '';
-        }
-        if (flashcardAudio) {
-            flashcardAudio.src = '';
-        }
-        renderVocabularyWithCurrentFilter();
+        closeFlashcardReviewModal();
     }
 });
 
@@ -114,8 +147,7 @@ flashcardNext?.addEventListener('click', () => {
     } else {
         // End of review
         showToast('🎉 Review complete!');
-        flashcardModal.classList.add('hidden');
-        renderVocabularyWithCurrentFilter();
+        closeFlashcardReviewModal();
     }
 });
 
@@ -169,8 +201,7 @@ async function updateFlashcardStatus(newStatus) {
 
             if (flashcardReviewList.length === 0) {
                 showToast('🎉 All words reviewed!');
-                flashcardModal.classList.add('hidden');
-                renderVocabularyWithCurrentFilter();
+                closeFlashcardReviewModal();
                 return;
             }
 
