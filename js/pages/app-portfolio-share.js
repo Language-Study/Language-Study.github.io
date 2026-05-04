@@ -139,6 +139,7 @@ async function handleShareToggle(event) {
         if (isEnabled) {
             await enablePortfolioSharing({ expiryHours: selectedExpiryHours });
             const shareData = await getPortfolioShareData();
+            syncExpiryControlsWithShareData(shareData, true);
             updateShareExpiryNotice(shareData, true);
             showShareContent();
             const shareLink = await generatePortfolioShareLink();
@@ -147,6 +148,7 @@ async function handleShareToggle(event) {
         } else {
             await disablePortfolioSharing();
             const shareData = await getPortfolioShareData();
+            syncExpiryControlsWithShareData(shareData, false);
             updateShareExpiryNotice(shareData, false);
             hideShareContent();
             resetShareLinkDisplay();
@@ -249,11 +251,13 @@ function syncExpiryControlsWithShareData(shareData, isEnabled) {
 
     if (!isEnabled) {
         expiryToggle.checked = false;
+        expiryToggle.disabled = true;
         expiryHours.disabled = true;
         expiryHours.value = '24';
         return;
     }
 
+    expiryToggle.disabled = false;
     const selectedHours = inferShareExpiryHoursFromData(shareData);
     const hasExpiry = Number.isFinite(selectedHours) && selectedHours > 0;
 
