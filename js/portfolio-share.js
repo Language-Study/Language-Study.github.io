@@ -403,7 +403,6 @@ async function createPortfolioShareCode(options = {}) {
             // Retry with another code instead of failing immediately.
             await db.collection('publicShareLinks').doc(code).set({
                 uid: currentUser.uid,
-                shareType: 'full-site-24h',
                 enabled: true,
                 expiresAt: expiresAt,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -414,7 +413,6 @@ async function createPortfolioShareCode(options = {}) {
             await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
                 code: code,
                 enabled: true,
-                shareType: 'full-site-24h',
                 expiresAt: expiresAt,
                 disabledAt: null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -424,7 +422,6 @@ async function createPortfolioShareCode(options = {}) {
             setPortfolioShareCache(currentUser.uid, {
                 code,
                 enabled: true,
-                shareType: 'full-site-24h',
                 expiresAt,
                 disabledAt: null
             });
@@ -500,7 +497,6 @@ async function enablePortfolioSharing(options = {}) {
             try {
                 await db.collection('publicShareLinks').doc(code).set({
                     uid: currentUser.uid,
-                    shareType: 'full-site-24h',
                     enabled: true,
                     expiresAt: expiresAt,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -519,7 +515,6 @@ async function enablePortfolioSharing(options = {}) {
             await db.collection('users').doc(currentUser.uid).collection('settings').doc('portfolioShare').set({
                 enabled: true,
                 code: code,
-                shareType: 'full-site-24h',
                 expiresAt: expiresAt,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -530,7 +525,6 @@ async function enablePortfolioSharing(options = {}) {
                 ...(shareData || {}),
                 enabled: true,
                 code,
-                shareType: 'full-site-24h',
                 expiresAt,
                 disabledAt: null
             });
