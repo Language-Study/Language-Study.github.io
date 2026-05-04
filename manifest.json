@@ -453,36 +453,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Vocabulary",
-      "short_name": "Vocabulary",
-      "description": "Study vocabulary words and phrases",
-      "url": "/index.html?tab=vocabulary",
-      "icons": [
-        {
-          "src": "icons/ios/192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Skills",
-      "short_name": "Skills",
-      "description": "Track your language skills",
-      "url": "/index.html?tab=skills",
-      "icons": [
-        {
-          "src": "icons/ios/192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Portfolio",
-      "short_name": "Portfolio",
-      "description": "View your learning portfolio",
-      "url": "/index.html?tab=portfolio",
+      "name": "Quick Vocabulary Review",
+      "short_name": "Review",
+      "description": "Start a quick vocabulary review session",
+      "url": "/index.html?tab=vocabulary&review=quick",
       "icons": [
         {
           "src": "icons/ios/192.png",

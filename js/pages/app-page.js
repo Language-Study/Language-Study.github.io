@@ -5,6 +5,21 @@
 
 let currentUser = null;
 
+function launchQuickReviewFromShortcutIfRequested() {
+    const params = new URLSearchParams(window.location.search);
+    const shouldLaunchQuickReview = params.get('review') === 'quick';
+    if (!shouldLaunchQuickReview) return;
+
+    const startReviewBtn = document.getElementById('startReviewBtn');
+    if (startReviewBtn) {
+        startReviewBtn.click();
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('review');
+    window.history.replaceState({}, '', url);
+}
+
 // Detect mentor view early
 (async function detectMentorViewEarly() {
     if (isMentorViewEarly()) {
@@ -16,7 +31,7 @@ let currentUser = null;
 (async function detectPublicPortfolioViewEarly() {
     if (isPublicPortfolioViewEarly()) {
         window.isPublicPortfolioView = true;
-        
+
         // Wait for Firebase to be ready (config.js defines db)
         const maxWait = 50; // 5 seconds max
         let attempts = 0;
@@ -24,13 +39,13 @@ let currentUser = null;
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
-        
+
         if (typeof db === 'undefined') {
             console.error('Firebase not loaded in time');
             alert('Error loading portfolio. Please refresh the page.');
             return;
         }
-        
+
         // Load public portfolio immediately, bypassing auth
         await tryPublicPortfolioView();
     }
@@ -101,6 +116,8 @@ onAuthStateChanged(async (user) => {
         if (window.tabController) {
             window.tabController.initializeFromURL();
         }
+
+        launchQuickReviewFromShortcutIfRequested();
     } else {
         window.location.href = 'login.html';
     }
