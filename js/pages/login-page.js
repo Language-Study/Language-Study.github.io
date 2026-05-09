@@ -122,7 +122,7 @@ resetPasswordBtn.addEventListener('click', async () => {
 
     try {
         await sendPasswordResetEmail(email);
-        resetSuccessMessage.textContent = 'Password reset email sent! Check your inbox.';
+        resetSuccessMessage.textContent = 'Password reset email sent! Check your inbox. Check spam if email doesn\'t arrive within 5 minutes.';
         resetSuccessMessage.classList.remove('hidden');
         resetErrorMessage.classList.add('hidden');
     } catch (error) {
@@ -193,7 +193,7 @@ onAuthStateChanged(async (user) => {
         }
         await logoutUser();
         if (errorMessage) {
-            errorMessage.textContent = 'Please verify your email before signing in. We just sent you a new link.';
+            errorMessage.textContent = 'Please verify your email before signing in. We just sent you a new link. Check your spam folder if the link is not in your inbox.';
             errorMessage.classList.remove('hidden');
         }
         return;
