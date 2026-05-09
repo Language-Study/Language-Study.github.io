@@ -468,6 +468,28 @@
   ],
   "start_url": "/login.html",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait-primary",
+  "theme_color": "#c55a11",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "description": "Learn and master languages with interactive vocabulary, skills, and portfolio tracking.",
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "screenshots": [
+    {
+      "src": "icons/ios/192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "icons/windows11/Square150x150Logo.scale-200.png",
+      "sizes": "300x300",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "prefer_related_applications": false
 }
