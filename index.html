@@ -464,8 +464,8 @@
                     </p>
                 </div>
 
-                <!-- Quick Review / Quiz Buttons -->
-                <div class="mb-4 flex justify-center gap-2 flex-wrap">
+                <!-- Quick Review Button -->
+                <div class="mb-4 flex justify-center">
                     <button id="startReviewBtn"
                         class="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2 font-semibold">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -473,15 +473,6 @@
                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         Quick Review
-                    </button>
-                    <button id="startQuizBtn"
-                        class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2 font-semibold text-white"
-                        aria-label="Start vocabulary quiz mode">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.228 9c.549-1.247 1.65-2 3.272-2 1.934 0 3.5 1.567 3.5 3.5 0 1.347-.767 2.51-1.89 3.09-.654.338-1.11.955-1.11 1.69V16m0 3h.01M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
-                        </svg>
-                        Quiz Mode
                     </button>
                 </div>
 
@@ -784,40 +775,6 @@
             </div>
         </div>
 
-        <!-- Vocabulary Quiz Modal -->
-        <div id="quizModal"
-            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 hidden px-3" role="dialog"
-            aria-modal="true" aria-labelledby="quizHeading">
-            <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-                <button id="closeQuizBtn" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl z-10"
-                    aria-label="Close quiz dialog">&times;</button>
-
-                <div class="p-5 sm:p-7">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 id="quizHeading" class="text-xl sm:text-2xl font-bold">Vocabulary Quiz</h2>
-                        <p id="quizScore" class="text-sm sm:text-base text-gray-600" aria-live="polite">Score: 0</p>
-                    </div>
-                    <p id="quizCounter" class="text-sm text-gray-600 mb-4">Question 1 of 10</p>
-
-                    <div class="mb-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
-                        <p class="text-xs uppercase tracking-wide text-gray-500 mb-1">Prompt</p>
-                        <p id="quizPrompt" class="text-lg sm:text-2xl font-semibold break-words"></p>
-                    </div>
-
-                    <div id="quizOptions" class="grid grid-cols-1 gap-2 mb-4" role="group"
-                        aria-label="Quiz answer options"></div>
-
-                    <p id="quizFeedback" class="min-h-[1.5rem] text-sm font-medium" aria-live="polite"></p>
-
-                    <div class="flex justify-end gap-2 mt-3">
-                        <button id="quizNextBtn"
-                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
-                            disabled>Next</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Toast Notification -->
         <div id="toast"
             class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded shadow-lg z-50 hidden transition-opacity duration-300">
@@ -863,7 +820,6 @@
     <script src="js/mentor-view.js" defer></script>
     <script src="js/portfolio-share.js" defer></script>
     <script src="js/flashcard.js" defer></script>
-    <script src="js/quiz.js" defer></script>
     <script src="js/app-inline.js" defer></script>
     <script src="js/pages/app-page.js" defer></script>
     <script src="js/pages/app-vocabulary.js" defer></script>
