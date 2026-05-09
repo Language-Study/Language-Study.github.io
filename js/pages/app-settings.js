@@ -151,9 +151,9 @@ toggleAchievements?.addEventListener('change', async (e) => {
     await setAchievementsEnabled(e.target.checked);
     await updateAchievementsVisibility();
     const section = document.getElementById('achievementsSection');
-    if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
-        renderASLClubAchievements();
-    }
+    // if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+    //     renderASLClubAchievements();
+    // }
 });
 
 // Mentor view form submission

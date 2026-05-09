@@ -107,10 +107,10 @@ onAuthStateChanged(async (user) => {
         }
 
         // Render ASL Club achievements if available
-        const section = document.getElementById('achievementsSection');
-        if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
-            renderASLClubAchievements();
-        }
+        // const section = document.getElementById('achievementsSection');
+        // if (section && section.style.display !== 'none' && typeof renderASLClubAchievements === 'function') {
+        //     renderASLClubAchievements();
+        // }
 
         // Activate tab from URL parameter (or default behavior) AFTER all data is loaded and rendered
         if (window.tabController) {
