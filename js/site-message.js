@@ -275,7 +275,7 @@
         el.classList.add('hidden');
     }
 
-    function showBanner(html, expiresAt, updatedAt) {
+    function showBanner(html, expiresAt, updatedAt, { showExpiry = false } = {}) {
         const el = getBannerEl();
         const content = getBannerContentEl();
         if (!el || !content) return;
@@ -292,7 +292,7 @@
         }
 
         content.innerHTML = sanitizeSiteMessageHtml(html);
-        if (expiresAt) {
+        if (showExpiry && expiresAt) {
             const expiryText = document.createElement('div');
             expiryText.className = 'site-message-expiry text-xs mt-1';
             expiryText.textContent = 'Expires: ' + new Date(expiresAt).toLocaleString();
@@ -322,6 +322,18 @@
         if (!obj || !obj.message) return false;
         if (obj.expiresAt && new Date(obj.expiresAt) < new Date()) return false;
         return true;
+    }
+
+    async function canViewSiteMessageExpiration() {
+        if (typeof window.resolveAdminStatus === 'function') {
+            try {
+                await window.resolveAdminStatus();
+            } catch (e) {
+                console.warn('resolveAdminStatus failed', e);
+            }
+        }
+
+        return typeof window.isCurrentUserAdmin === 'function' ? window.isCurrentUserAdmin() : false;
     }
 
     function wireAdminPanelControls({ editor, textarea, expiryInput, statusEl, saveBtn, clearBtn, toolbar, refreshPanel }) {
@@ -436,7 +448,7 @@
             hideBanner();
             return;
         }
-        showBanner(doc.message, doc.expiresAt, doc.updatedAt);
+        showBanner(doc.message, doc.expiresAt, doc.updatedAt, { showExpiry: await canViewSiteMessageExpiration() });
     }
 
     function wireBannerClose() {
@@ -515,22 +527,26 @@
         if (typeof db === 'undefined' || !db.collection) return;
         try {
             db.collection(COLLECTION).doc(DOC_ID).onSnapshot((snap) => {
-                if (!snap.exists) {
-                    hideBanner();
-                } else {
-                    const d = snap.data() || {};
-                    const message = d.message || '';
-                    const expiresAt = d.expiresAt ? d.expiresAt.toDate() : null;
-                    const updatedAt = d.updatedAt ? d.updatedAt.toDate() : null;
-                    if (message && (!expiresAt || expiresAt > new Date())) {
-                        showBanner(message, expiresAt, updatedAt);
-                    } else {
+                (async () => {
+                    if (!snap.exists) {
                         hideBanner();
+                    } else {
+                        const d = snap.data() || {};
+                        const message = d.message || '';
+                        const expiresAt = d.expiresAt ? d.expiresAt.toDate() : null;
+                        const updatedAt = d.updatedAt ? d.updatedAt.toDate() : null;
+                        if (message && (!expiresAt || expiresAt > new Date())) {
+                            showBanner(message, expiresAt, updatedAt, { showExpiry: await canViewSiteMessageExpiration() });
+                        } else {
+                            hideBanner();
+                        }
                     }
-                }
 
-                // Update admin controls if visible
-                ensureAdminPanel();
+                    // Update admin controls if visible
+                    ensureAdminPanel();
+                })().catch((err) => {
+                    console.warn('Site message render error', err);
+                });
             }, (err) => {
                 console.warn('Site message realtime listener error', err);
             });
