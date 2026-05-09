@@ -18,6 +18,7 @@
 </head>
 
 <body class="bg-gray-50 overflow-x-hidden">
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
     <nav class="top-nav">
         <div class="max-w-4xl mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
@@ -27,7 +28,7 @@
                 <div class="desktop-nav-menu">
                     <span id="userEmail" class="text-gray-600 truncate max-w-[200px]"></span>
                     <button id="openSettingsBtn"
-                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 focus:outline-none flex items-center gap-2"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center gap-2"
                         title="Settings">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -48,7 +49,8 @@
                 </div>
 
                 <!-- Mobile Hamburger Button -->
-                <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu" aria-expanded="false">
+                <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Menu" aria-expanded="false"
+                    aria-controls="mobileNavDropdown">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path class="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h16" />
@@ -98,13 +100,14 @@
         </div>
     </div>
 
-    <div class="app-shell max-w-4xl mx-auto p-2 sm:p-4">
+    <main id="mainContent" role="main" class="app-shell max-w-4xl mx-auto p-2 sm:p-4">
         <!-- Onboarding Modal -->
         <div id="onboardingModal"
             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
             <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-lg relative max-h-screen overflow-y-auto">
                 <button id="onboardingCloseBtn"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-light">&times;</button>
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-light"
+                    aria-label="Close onboarding">&times;</button>
 
                 <!-- Progress Bar -->
                 <div class="mb-6">
@@ -134,7 +137,8 @@
             <div class="settings-modal-container">
                 <div class="settings-modal-header">
                     <h2 class="text-xl sm:text-2xl font-bold text-center">Settings</h2>
-                    <button id="closeSettingsBtn" class="settings-modal-close">&times;</button>
+                    <button id="closeSettingsBtn" class="settings-modal-close"
+                        aria-label="Close settings">&times;</button>
                 </div>
 
                 <!-- Settings Tab Navigation -->
@@ -314,7 +318,8 @@
             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden px-4">
             <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
                 <button id="closePortfolioShareBtn"
-                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                    aria-label="Close share dialog">&times;</button>
                 <h2 class="text-2xl font-bold mb-4 text-center">Share Your Portfolio</h2>
 
                 <!-- Enable/Disable Toggle -->
@@ -669,7 +674,8 @@
             <div
                 class="bg-white rounded-t-lg md:rounded-lg shadow-2xl w-full md:max-w-2xl mx-0 md:mx-3 relative max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
                 <button id="closeFlashcardBtn"
-                    class="absolute top-3 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-600 text-2xl md:text-3xl z-10">&times;</button>
+                    class="absolute top-3 md:top-4 right-3 md:right-4 text-gray-400 hover:text-gray-600 text-2xl md:text-3xl z-10"
+                    aria-label="Close review dialog">&times;</button>
 
                 <!-- Progress Bar -->
                 <div class="bg-gray-200 h-2 rounded-t-lg">
@@ -801,7 +807,7 @@
         <div class="text-center mt-4 mb-20 md:mb-4">
             <a href="privacy-policy.html" class="text-xs text-gray-500 hover:text-gray-700">Privacy Policy</a>
         </div>
-    </div>
+    </main>
     <script src="js/config.js" defer></script>
     <script src="js/auth.js" defer></script>
     <script src="js/onboarding.js" defer></script>
@@ -848,6 +854,15 @@
             <span class="mobile-nav-label">Portfolio</span>
         </button>
     </nav>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                    console.error('Service worker registration failed:', err);
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>

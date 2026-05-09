@@ -18,7 +18,8 @@
 </head>
 
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
-    <div class="auth-shell max-w-md w-full mx-4">
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+    <main id="mainContent" role="main" class="auth-shell max-w-md w-full mx-4">
         <!-- Login Form -->
         <div id="loginForm" class="bg-white rounded-lg shadow p-8 space-y-6">
             <h2 class="text-2xl font-bold text-center text-gray-900">Language Study</h2>
@@ -96,7 +97,8 @@
             class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 hidden">
             <div class="bg-white rounded-lg shadow p-8 w-full max-w-sm relative">
                 <button id="closeResetModal"
-                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                    class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                    aria-label="Close reset dialog">&times;</button>
                 <h2 class="text-xl font-bold text-center text-gray-900 mb-4">Reset Password</h2>
                 <div class="mb-4">
                     <label for="resetEmail" class="block text-sm font-medium text-gray-700">Email</label>
@@ -114,11 +116,20 @@
         <div class="text-center mt-4">
             <a href="privacy-policy.html" class="text-xs text-gray-500 hover:text-gray-700">Privacy Policy</a>
         </div>
-    </div>
+    </main>
     <script src="js/config.js" defer></script>
     <script src="js/auth.js" defer></script>
     <script src="js/ui-utils.js" defer></script>
     <script src="js/pages/login-page.js" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (err) {
+                    console.error('Service worker registration failed:', err);
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>

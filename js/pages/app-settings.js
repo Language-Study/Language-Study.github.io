@@ -66,6 +66,14 @@ const openSettingsHandler = () => {
         mobileNavDropdown.classList.remove('active');
         mobileMenuBtn.setAttribute('aria-expanded', 'false');
     }
+    // Move focus into the modal for keyboard users
+    const settingsModalEl = document.getElementById('settingsModal');
+    if (settingsModalEl) {
+        settingsModalEl.focus();
+        // Also focus first interactive element inside modal if present
+        const firstFocusable = settingsModalEl.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (firstFocusable) firstFocusable.focus();
+    }
 };
 
 document.getElementById('openSettingsBtn')?.addEventListener('click', openSettingsHandler);
