@@ -37,7 +37,7 @@ document.getElementById('showLoginBtn').addEventListener('click', () => {
 // Surface verification requirement messages from redirects
 const params = new URLSearchParams(window.location.search);
 if (params.get('verify') === 'required' && errorMessage) {
-    errorMessage.textContent = 'Please verify your email before signing in. Check your inbox for the verification link.';
+    errorMessage.textContent = 'Please verify your email before signing in. Check your inbox or spam folder for the verification link.';
     errorMessage.classList.remove('hidden');
 }
 
