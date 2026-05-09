@@ -234,7 +234,7 @@
     function runEditorAction(editor, action) {
         if (!editor) return;
         editor.focus();
-        restoreEditorSelection(editor);
+        const selectionRestored = restoreEditorSelection(editor);
 
         if (action === 'link') {
             const href = window.prompt('Enter link URL');
@@ -257,6 +257,15 @@
 
         const command = commandMap[action];
         if (!command) return;
+
+        // If selection restore failed, ensure we have a valid selection
+        if (!selectionRestored) {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
 
         document.execCommand(command, false, null);
     }
