@@ -250,38 +250,24 @@ async function saveLanguageLinks(languageName, links) {
 }
 
 async function populateLanguageSelectOptions(selectedLanguage) {
-    const languageSelect = getLanguageSelectElement();
     const adminLanguageSelect = getAdminLanguageSelectElement();
 
-    if (!languageSelect && !adminLanguageSelect) return;
+    // Note: The main language select is now a set of checkboxes (languageCheckboxesContainer)
+    // and is populated by populateLanguageCheckboxes() in app-settings.js
 
-    const existing = Array.from(languageSelect?.querySelectorAll('option') || [])
-        .map((opt) => opt.value)
-        .filter((value) => value);
+    if (!adminLanguageSelect) return;
 
     const docs = await db.collection('languageLinks').get();
     const dynamicLanguages = docs.docs
         .map((doc) => normalizeLanguageName(doc.id))
         .filter(Boolean);
 
-    const languages = Array.from(new Set([...existing, ...dynamicLanguages]))
+    // Include hardcoded languages as well
+    const hardcodedLanguages = ['ASL', 'Spanish'];
+    const languages = Array.from(new Set([...hardcodedLanguages, ...dynamicLanguages]))
         .sort((a, b) => a.localeCompare(b));
 
-    const targetValue = normalizeLanguageName(selectedLanguage) || languageSelect?.value || '';
-
-    if (languageSelect) {
-        languageSelect.innerHTML = '<option value="">-- Select a language --</option>';
-        languages.forEach((language) => {
-            const option = document.createElement('option');
-            option.value = language;
-            option.textContent = language;
-            languageSelect.appendChild(option);
-        });
-
-        if (targetValue && languages.includes(targetValue)) {
-            languageSelect.value = targetValue;
-        }
-    }
+    const targetValue = normalizeLanguageName(selectedLanguage) || adminLanguageSelect?.value || '';
 
     if (adminLanguageSelect) {
         adminLanguageSelect.innerHTML = '<option value="">-- Select a language --</option>';

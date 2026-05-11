@@ -61,6 +61,12 @@ const openSettingsHandler = () => {
     updateMentorAccessLevelUI();
     // Load current homepage setting
     loadHomepageTabSetting();
+    // Ensure language switcher is properly shown/hidden based on selected languages
+    const checkboxes = document.querySelectorAll('#languageCheckboxesContainer input[type="checkbox"]');
+    const selectedLanguages = Array.from(checkboxes)
+        .filter((cb) => cb.checked)
+        .map((cb) => cb.value);
+    updateLanguageSwitcher(selectedLanguages);
     // Close mobile menu if open
     if (mobileNavDropdown && mobileMenuBtn) {
         mobileNavDropdown.classList.remove('active');
@@ -358,15 +364,140 @@ if (googleSignInToggleBtn && typeof isGoogleLinked === 'function' && typeof curr
     googleSignInToggleBtn.textContent = isGoogleLinked() ? 'Unlink Google Account' : 'Link Google Account';
 }
 
-// Language selection
-const languageSelect = document.getElementById('languageSelect');
-languageSelect?.addEventListener('change', async (e) => {
-    const selectedLanguage = e.target.value;
-    if (typeof setSelectedLearningLanguage === 'function') {
-        setSelectedLearningLanguage(selectedLanguage);
-    } else {
-        window.currentLanguageLearning = selectedLanguage;
+// Language selection with checkboxes
+async function populateLanguageCheckboxes() {
+    const container = document.getElementById('languageCheckboxesContainer');
+    if (!container) return;
+
+    try {
+        // Fetch available languages from Firestore
+        const docs = await db.collection('languageLinks').get();
+        const availableLanguages = docs.docs
+            .map((doc) => {
+                const name = String(doc.id || '').trim();
+                return name ? name : null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+
+        // Also include hardcoded options if not already in the list
+        const hardcodedLanguages = ['ASL', 'Spanish'];
+        const allLanguages = Array.from(new Set([...availableLanguages, ...hardcodedLanguages])).sort((a, b) => a.localeCompare(b));
+
+        container.innerHTML = '';
+        allLanguages.forEach((language) => {
+            const label = document.createElement('label');
+            label.className = 'flex items-center gap-2 cursor-pointer';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = language;
+            checkbox.className = 'h-4 w-4 text-blue-600 rounded cursor-pointer';
+            checkbox.id = `lang-checkbox-${language}`;
+            checkbox.addEventListener('change', handleLanguageCheckboxChange);
+
+            const text = document.createElement('span');
+            text.className = 'text-sm sm:text-base text-gray-700';
+            text.textContent = language;
+
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            container.appendChild(label);
+        });
+
+        // Restore checked state from settings
+        const settings = await getUserSettingsData();
+        const learnedLanguages = settings?.learnedLanguages || [];
+        learnedLanguages.forEach((lang) => {
+            const checkbox = document.getElementById(`lang-checkbox-${lang}`);
+            if (checkbox) checkbox.checked = true;
+        });
+    } catch (error) {
+        console.error('Error populating language checkboxes:', error);
     }
+}
+
+async function handleLanguageCheckboxChange() {
+    const checkboxes = document.querySelectorAll('#languageCheckboxesContainer input[type="checkbox"]');
+    const selectedLanguages = Array.from(checkboxes)
+        .filter((cb) => cb.checked)
+        .map((cb) => cb.value);
+
+    try {
+        // Save the list of learned languages
+        await writeUserSettingsPatch({ learnedLanguages: selectedLanguages });
+
+        // Update the language switcher dropdown
+        await updateLanguageSwitcher(selectedLanguages);
+
+        // If exactly one language selected, set it as current
+        if (selectedLanguages.length === 1) {
+            const language = selectedLanguages[0];
+            setSelectedLearningLanguage(language);
+            await writeUserSettingsPatch({ languageLearning: language });
+        } else if (selectedLanguages.length === 0) {
+            // No languages selected, clear current
+            setSelectedLearningLanguage('');
+            await writeUserSettingsPatch({ languageLearning: '' });
+        }
+        // If multiple languages selected, current language is managed by the switcher
+
+        // Trigger UI updates
+        if (typeof handleLanguageSelectionChange === 'function') {
+            await handleLanguageSelectionChange(getSelectedLearningLanguage());
+        }
+        if (typeof renderVocabularyWithCurrentFilter === 'function') {
+            renderVocabularyWithCurrentFilter();
+        }
+        if (typeof renderSkillsWithCurrentFilter === 'function') {
+            renderSkillsWithCurrentFilter();
+        }
+        if (typeof renderPortfolio === 'function') {
+            renderPortfolio();
+        }
+    } catch (error) {
+        console.error('Error updating language selection:', error);
+    }
+}
+
+async function updateLanguageSwitcher(languages) {
+    const container = document.getElementById('languageSwitcherContainer');
+    const switcher = document.getElementById('languageSwitcher');
+
+    if (!container || !switcher) return;
+
+    if (languages.length <= 1) {
+        // Hide switcher if one or fewer languages
+        container.classList.add('hidden');
+    } else {
+        // Show switcher if multiple languages
+        container.classList.remove('hidden');
+
+        // Populate switcher options
+        switcher.innerHTML = '';
+        languages.forEach((language) => {
+            const option = document.createElement('option');
+            option.value = language;
+            option.textContent = language;
+            switcher.appendChild(option);
+        });
+
+        // Set current language if it's in the list
+        const currentLang = getSelectedLearningLanguage();
+        if (currentLang && languages.includes(currentLang)) {
+            switcher.value = currentLang;
+        } else if (languages.length > 0) {
+            switcher.value = languages[0];
+            setSelectedLearningLanguage(languages[0]);
+        }
+    }
+}
+
+// Language switcher change handler
+const languageSwitcher = document.getElementById('languageSwitcher');
+languageSwitcher?.addEventListener('change', async (e) => {
+    const selectedLanguage = e.target.value;
+    setSelectedLearningLanguage(selectedLanguage);
 
     try {
         await writeUserSettingsPatch({ languageLearning: selectedLanguage });
@@ -385,7 +516,7 @@ languageSelect?.addEventListener('change', async (e) => {
             renderPortfolio();
         }
     } catch (error) {
-        console.error('Error updating language:', error);
+        console.error('Error switching language:', error);
     }
 });
 
@@ -402,19 +533,14 @@ onAuthStateChanged?.(async (user) => {
             }
         }
 
+        // Populate checkboxes
+        await populateLanguageCheckboxes();
+
         const settings = await getUserSettingsData(false, user.uid);
         if (settings?.languageLearning) {
-            const languageSelect = document.getElementById('languageSelect');
-            if (languageSelect) {
-                languageSelect.value = settings.languageLearning;
-                languageSelect.dispatchEvent(new Event('change'));
-            }
+            setSelectedLearningLanguage(settings.languageLearning);
         } else if (typeof handleLanguageSelectionChange === 'function') {
-            if (typeof setSelectedLearningLanguage === 'function') {
-                setSelectedLearningLanguage('');
-            } else {
-                window.currentLanguageLearning = '';
-            }
+            setSelectedLearningLanguage('');
             await handleLanguageSelectionChange('');
         }
     } catch (error) {

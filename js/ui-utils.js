@@ -231,15 +231,29 @@ function getSelectedLearningLanguage() {
 }
 
 function getLanguageSelectOptions() {
-    const select = document.getElementById('languageSelect');
-    if (!select) return [];
+    const switcher = document.getElementById('languageSwitcher');
+    const switcherContainer = document.getElementById('languageSwitcherContainer');
+    const checkboxContainer = document.getElementById('languageCheckboxesContainer');
 
-    return Array.from(select.querySelectorAll('option'))
-        .map((option) => ({
-            value: normalizeLanguageValue(option.value),
-            label: normalizeLanguageValue(option.textContent) || normalizeLanguageValue(option.value)
-        }))
-        .filter((option) => option.value);
+    if (switcher && switcherContainer && !switcherContainer.classList.contains('hidden')) {
+        // If switcher is visible, get options from there
+        return Array.from(switcher.querySelectorAll('option'))
+            .map((option) => ({
+                value: normalizeLanguageValue(option.value),
+                label: normalizeLanguageValue(option.textContent) || normalizeLanguageValue(option.value)
+            }))
+            .filter((option) => option.value);
+    } else if (checkboxContainer) {
+        // Get from checked checkboxes
+        return Array.from(checkboxContainer.querySelectorAll('input[type="checkbox"]:checked'))
+            .map((checkbox) => ({
+                value: normalizeLanguageValue(checkbox.value),
+                label: normalizeLanguageValue(checkbox.value)
+            }))
+            .filter((option) => option.value);
+    }
+
+    return [];
 }
 
 function isVisibleForSelectedLanguage(itemLanguage) {

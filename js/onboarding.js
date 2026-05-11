@@ -99,27 +99,37 @@ const onboarding = {
     },
 
     async getAvailableLanguages() {
-        const mainSelect = document.getElementById('languageSelect');
-        const selectedMainLanguage = mainSelect?.value || '';
+        // Try to get languages from checkboxes first
+        const checkboxContainer = document.getElementById('languageCheckboxesContainer');
+        if (checkboxContainer) {
+            const fromCheckboxes = Array.from(checkboxContainer.querySelectorAll('input[type="checkbox"]'))
+                .map((cb) => (cb.value || '').trim())
+                .filter(Boolean);
+            if (fromCheckboxes.length > 0) {
+                return Array.from(new Set(fromCheckboxes)).sort((a, b) => a.localeCompare(b));
+            }
+        }
 
         // Keep onboarding in sync with the same dynamic source used by settings/admin.
         if (typeof populateLanguageSelectOptions === 'function') {
             try {
-                await populateLanguageSelectOptions(selectedMainLanguage);
+                await populateLanguageSelectOptions('');
             } catch (err) {
                 console.warn('Could not refresh language options for onboarding:', err);
             }
         }
 
-        const fromMainSelect = Array.from(mainSelect?.querySelectorAll('option') || [])
+        // Try to get from admin language select (which is still a dropdown)
+        const adminSelect = document.getElementById('adminLanguageSelect');
+        const fromAdminSelect = Array.from(adminSelect?.querySelectorAll('option') || [])
             .map((opt) => (opt.value || '').trim())
             .filter(Boolean);
 
-        if (fromMainSelect.length > 0) {
-            return Array.from(new Set(fromMainSelect)).sort((a, b) => a.localeCompare(b));
+        if (fromAdminSelect.length > 0) {
+            return Array.from(new Set(fromAdminSelect)).sort((a, b) => a.localeCompare(b));
         }
 
-        // Fallback for environments where options are not yet populated in the main select.
+        // Fallback for environments where options are not yet populated.
         if (typeof db !== 'undefined' && db?.collection) {
             try {
                 const docs = await db.collection('languageLinks').get();
@@ -216,7 +226,7 @@ const onboarding = {
         this.renderStep();
     },
 
-    complete() {
+    async complete() {
         const modal = document.getElementById('onboardingModal');
         if (modal) {
             modal.classList.add('hidden');
@@ -224,11 +234,31 @@ const onboarding = {
 
         // Save language selection if made
         if (this.selectedLanguage) {
-            const languageSelect = document.getElementById('languageSelect');
-            if (languageSelect) {
-                languageSelect.value = this.selectedLanguage;
-                // Trigger change event to load language resources
-                languageSelect.dispatchEvent(new Event('change'));
+            // Check the checkbox for the selected language
+            const checkbox = document.getElementById(`lang-checkbox-${this.selectedLanguage}`);
+            if (checkbox) {
+                checkbox.checked = true;
+                // Trigger change event to update settings
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            // Also set as current language
+            if (typeof setSelectedLearningLanguage === 'function') {
+                setSelectedLearningLanguage(this.selectedLanguage);
+            } else {
+                window.currentLanguageLearning = this.selectedLanguage;
+            }
+
+            // Save to settings
+            try {
+                if (typeof writeUserSettingsPatch === 'function') {
+                    await writeUserSettingsPatch({
+                        learnedLanguages: [this.selectedLanguage],
+                        languageLearning: this.selectedLanguage
+                    });
+                }
+            } catch (err) {
+                console.warn('Could not save language to settings:', err);
             }
         }
 

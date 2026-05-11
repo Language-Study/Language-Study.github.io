@@ -181,18 +181,28 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="languageSelect" class="block text-sm sm:text-base text-gray-700 mb-2">Select the
-                                language you are studying:</label>
-                            <select id="languageSelect"
-                                class="w-full p-2 sm:p-3 border rounded text-sm sm:text-base bg-white">
-                                <option value="">-- Select a language --</option>
-                                <option value="ASL">ASL</option>
-                                <option value="Spanish">Spanish</option>
-                            </select>
-                            <p class="mt-2 text-xs sm:text-sm text-gray-600">Switching languages saves and shows your
-                                data for that language (vocabulary, skills, and portfolio).</p>
-                            <p class="mt-1 text-xs sm:text-sm text-gray-600">Resource links below Vocabulary also update
-                                to match the currently selected language.</p>
+                            <label class="block text-sm sm:text-base text-gray-700 mb-3">Languages you are
+                                learning:</label>
+                            <div id="languageCheckboxesContainer" class="space-y-2 mb-4 p-3 bg-gray-50 border rounded">
+                                <!-- Checkboxes will be populated here -->
+                            </div>
+                            <p class="text-xs sm:text-sm text-gray-600">Select all languages you're learning. You can
+                                switch between them using the dropdown below.</p>
+
+                            <!-- Language Switcher Dropdown (shows when learning multiple languages) -->
+                            <div id="languageSwitcherContainer" class="hidden mt-4">
+                                <label for="languageSwitcher"
+                                    class="block text-sm sm:text-base text-gray-700 mb-2">Switch between
+                                    languages:</label>
+                                <select id="languageSwitcher"
+                                    class="w-full p-2 sm:p-3 border rounded text-sm sm:text-base bg-white">
+                                    <!-- Options will be populated here -->
+                                </select>
+                                <p class="mt-2 text-xs sm:text-sm text-gray-600">Switching languages saves and shows
+                                    your data for that language (vocabulary, skills, and portfolio).</p>
+                                <p class="mt-1 text-xs sm:text-sm text-gray-600">Resource links below Vocabulary also
+                                    update to match the currently selected language.</p>
+                            </div>
 
                             <p class="mt-4 text-sm text-gray-500">Don't see your language or favorite resource? Request
                                 it
