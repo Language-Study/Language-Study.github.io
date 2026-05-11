@@ -1337,6 +1337,71 @@ a.text-blue-600:hover {
         background-color: var(--color-bg-tertiary);
         border-color: var(--color-border-light);
     }
+
+    /* Language Settings Dark Mode */
+    #languageSettingsSection {
+        color: var(--color-text-primary);
+    }
+
+    #languageSettingsSection label {
+        color: var(--color-text-primary);
+    }
+
+    #languageSettingsSection p {
+        color: var(--color-text-secondary);
+    }
+
+    #languageCheckboxesContainer {
+        background-color: var(--color-bg-secondary);
+        border-color: var(--color-border);
+    }
+
+    #languageCheckboxesContainer label {
+        color: var(--color-text-primary);
+    }
+
+    #languageCheckboxesContainer input[type="checkbox"] {
+        accent-color: var(--md-sys-color-primary);
+        background-color: var(--color-bg-tertiary);
+        border-color: var(--color-border);
+    }
+
+    #languageCheckboxesContainer input[type="checkbox"]:hover {
+        background-color: var(--color-bg-tertiary);
+        border-color: var(--color-border-light);
+    }
+
+    #languageCheckboxesContainer input[type="checkbox"]:checked {
+        background-color: var(--md-sys-color-primary);
+    }
+
+    #languageSwitcherContainer {
+        color: var(--color-text-primary);
+    }
+
+    #languageSwitcherContainer label {
+        color: var(--color-text-primary);
+    }
+
+    #languageSwitcherContainer select {
+        background-color: var(--color-bg-tertiary);
+        color: var(--color-text-primary);
+        border-color: var(--color-border);
+    }
+
+    #languageSwitcherContainer select:hover {
+        border-color: var(--color-border-light);
+    }
+
+    #languageSwitcherContainer select:focus {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+        box-shadow: 0 0 0 3px rgba(255, 184, 118, 0.1);
+    }
+
+    #languageSwitcherContainer p {
+        color: var(--color-text-secondary);
+    }
 }
 
 /* ===== ACCESSIBILITY ===== */
