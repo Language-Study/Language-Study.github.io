@@ -6,6 +6,16 @@
 let journalEntries = [];
 let journalEditingId = null;
 let journalSearchQuery = '';
+let journalDraftLocalTimer = null;
+let journalDraftRemoteTimer = null;
+let journalDraftApplying = false;
+let journalDraftSavedSnapshot = null;
+let journalDraftLatestSnapshot = null;
+
+const JOURNAL_DRAFT_STORAGE_PREFIX = 'ls_journalDraft:';
+const JOURNAL_DRAFT_DOC_ID = 'current';
+const JOURNAL_DRAFT_LOCAL_INTERVAL_MS = 10000;
+const JOURNAL_DRAFT_REMOTE_INTERVAL_MS = 60000;
 
 const JOURNAL_ACCESS_LEVELS = {
     VIEW: 'view',
@@ -72,6 +82,385 @@ function normalizeJournalEntry(doc) {
 function syncJournalCache() {
     if (typeof dataCache === 'undefined' || !dataCache) return;
     dataCache.journalEntries = [...journalEntries];
+}
+
+function getJournalDraftStorageKey() {
+    return currentUser?.uid ? `${JOURNAL_DRAFT_STORAGE_PREFIX}${currentUser.uid}` : null;
+}
+
+function getJournalDraftCollection() {
+    if (!currentUser) return null;
+    return db.collection('users').doc(currentUser.uid).collection('journalDrafts');
+}
+
+function getJournalDraftDocRef() {
+    const collection = getJournalDraftCollection();
+    return collection ? collection.doc(JOURNAL_DRAFT_DOC_ID) : null;
+}
+
+function getJournalDraftTimestamp(draft) {
+    if (!draft) return 0;
+    const rawTimestamp = draft.updatedAtMs ?? draft.updatedAt ?? draft.savedAtMs ?? draft.savedAt ?? 0;
+
+    if (typeof rawTimestamp === 'number' && Number.isFinite(rawTimestamp)) {
+        return rawTimestamp;
+    }
+
+    if (typeof rawTimestamp === 'string') {
+        const parsed = Date.parse(rawTimestamp);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    const normalizedDate = timestampToDate(rawTimestamp);
+    return normalizedDate ? normalizedDate.getTime() : 0;
+}
+
+function normalizeJournalDraft(data) {
+    if (!data || typeof data !== 'object') return null;
+
+    return {
+        title: String(data.title || ''),
+        content: String(data.content || ''),
+        language: String(data.language || ''),
+        mentorVisible: normalizeJournalVisibility(data.mentorVisible),
+        mentorAccessLevel: normalizeJournalAccessLevel(data.mentorAccessLevel),
+        editingId: String(data.editingId || ''),
+        updatedAtMs: getJournalDraftTimestamp(data)
+    };
+}
+
+function buildJournalDraftSnapshot() {
+    return normalizeJournalDraft({
+        title: document.getElementById('journalTitleInput')?.value || '',
+        content: document.getElementById('journalContentInput')?.value || '',
+        language: document.getElementById('journalLanguageSelect')?.value || '',
+        mentorVisible: document.getElementById('journalMentorVisibleSelect')?.value === 'true',
+        mentorAccessLevel: document.getElementById('journalMentorAccessSelect')?.value || JOURNAL_ACCESS_LEVELS.VIEW,
+        editingId: journalEditingId || '',
+        updatedAtMs: Date.now()
+    });
+}
+
+function isJournalDraftMeaningful(draft) {
+    if (!draft) return false;
+    return Boolean(
+        String(draft.title || '').trim() ||
+        String(draft.content || '').trim() ||
+        String(draft.language || '').trim() ||
+        draft.mentorVisible === true ||
+        draft.mentorAccessLevel === JOURNAL_ACCESS_LEVELS.EDIT ||
+        String(draft.editingId || '').trim()
+    );
+}
+
+function areJournalDraftsEqual(leftDraft, rightDraft) {
+    const left = normalizeJournalDraft(leftDraft);
+    const right = normalizeJournalDraft(rightDraft);
+
+    return Boolean(left && right) &&
+        left.title === right.title &&
+        left.content === right.content &&
+        left.language === right.language &&
+        left.mentorVisible === right.mentorVisible &&
+        left.mentorAccessLevel === right.mentorAccessLevel &&
+        left.editingId === right.editingId;
+}
+
+function getJournalDraftStatusElements() {
+    return {
+        bar: document.getElementById('journalDraftBar'),
+        status: document.getElementById('journalDraftStatus'),
+        saveBtn: document.getElementById('journalSaveDraftBtn')
+    };
+}
+
+function updateJournalDraftUI(draft = journalDraftLatestSnapshot) {
+    const { bar, status, saveBtn } = getJournalDraftStatusElements();
+    const hasDraft = isJournalDraftMeaningful(draft);
+
+    if (bar) {
+        bar.classList.toggle('hidden', !hasDraft);
+    }
+
+    if (status) {
+        if (!hasDraft) {
+            status.textContent = '';
+        } else if (journalDraftSavedSnapshot && areJournalDraftsEqual(draft, journalDraftSavedSnapshot)) {
+            status.textContent = `Draft saved${draft.updatedAtMs ? ` at ${new Date(draft.updatedAtMs).toLocaleString()}` : ''}`;
+        } else {
+            status.textContent = 'Draft in progress';
+        }
+    }
+
+    if (saveBtn) {
+        saveBtn.disabled = !hasDraft;
+    }
+}
+
+function persistJournalDraftToLocalStorage(draft) {
+    const storageKey = getJournalDraftStorageKey();
+    if (!storageKey || typeof localStorage === 'undefined') return;
+
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch (error) {
+        console.warn('Unable to save journal draft locally:', error);
+    }
+}
+
+function readJournalDraftFromLocalStorage() {
+    const storageKey = getJournalDraftStorageKey();
+    if (!storageKey || typeof localStorage === 'undefined') return null;
+
+    try {
+        const raw = localStorage.getItem(storageKey);
+        return raw ? normalizeJournalDraft(JSON.parse(raw)) : null;
+    } catch (error) {
+        console.warn('Unable to read journal draft locally:', error);
+        return null;
+    }
+}
+
+async function persistJournalDraftToRemoteStorage(draft) {
+    const draftDoc = getJournalDraftDocRef();
+    if (!draftDoc) return;
+
+    await draftDoc.set({
+        ...draft,
+        updatedAtMs: draft.updatedAtMs || Date.now()
+    }, { merge: true });
+}
+
+async function readJournalDraftFromRemoteStorage() {
+    const draftDoc = getJournalDraftDocRef();
+    if (!draftDoc) return null;
+
+    const snapshot = await draftDoc.get();
+    if (!snapshot.exists) return null;
+
+    return normalizeJournalDraft(snapshot.data());
+}
+
+async function clearJournalDraftStorage() {
+    stopJournalDraftTimers();
+
+    const storageKey = getJournalDraftStorageKey();
+    if (storageKey && typeof localStorage !== 'undefined') {
+        try {
+            localStorage.removeItem(storageKey);
+        } catch (error) {
+            console.warn('Unable to clear local journal draft:', error);
+        }
+    }
+
+    const draftDoc = getJournalDraftDocRef();
+    if (draftDoc) {
+        try {
+            await draftDoc.delete();
+        } catch (error) {
+            console.warn('Unable to clear remote journal draft:', error);
+        }
+    }
+
+    journalDraftLatestSnapshot = null;
+    journalDraftSavedSnapshot = null;
+    updateJournalDraftUI();
+}
+
+function setJournalDraftForm(snapshot) {
+    if (!snapshot) return;
+
+    journalDraftApplying = true;
+    try {
+        const titleInput = document.getElementById('journalTitleInput');
+        const contentInput = document.getElementById('journalContentInput');
+        const languageSelect = document.getElementById('journalLanguageSelect');
+        const mentorVisibleSelect = document.getElementById('journalMentorVisibleSelect');
+        const mentorAccessSelect = document.getElementById('journalMentorAccessSelect');
+
+        if (titleInput) titleInput.value = snapshot.title || '';
+        if (contentInput) contentInput.value = snapshot.content || '';
+        if (languageSelect) languageSelect.value = snapshot.language || '';
+        if (mentorVisibleSelect) mentorVisibleSelect.value = snapshot.mentorVisible ? 'true' : 'false';
+        if (mentorAccessSelect) mentorAccessSelect.value = snapshot.mentorAccessLevel || JOURNAL_ACCESS_LEVELS.VIEW;
+
+        journalEditingId = snapshot.editingId || null;
+        populateJournalLanguageSelect(snapshot.language || '');
+        updateJournalAccessSelectState();
+    } finally {
+        journalDraftApplying = false;
+    }
+}
+
+function captureJournalDraftFromForm() {
+    return buildJournalDraftSnapshot();
+}
+
+function syncJournalDraftTimers() {
+    const hasDraft = isJournalDraftMeaningful(buildJournalDraftSnapshot());
+
+    if (!hasDraft) {
+        if (journalDraftLocalTimer) {
+            clearInterval(journalDraftLocalTimer);
+            journalDraftLocalTimer = null;
+        }
+
+        if (journalDraftRemoteTimer) {
+            clearInterval(journalDraftRemoteTimer);
+            journalDraftRemoteTimer = null;
+        }
+        return;
+    }
+
+    if (!journalDraftLocalTimer) {
+        journalDraftLocalTimer = setInterval(() => {
+            saveJournalDraft({ source: 'local', silent: true });
+        }, JOURNAL_DRAFT_LOCAL_INTERVAL_MS);
+    }
+
+    if (!journalDraftRemoteTimer) {
+        journalDraftRemoteTimer = setInterval(() => {
+            saveJournalDraft({ source: 'remote', silent: true });
+        }, JOURNAL_DRAFT_REMOTE_INTERVAL_MS);
+    }
+}
+
+async function saveJournalDraft({ source = 'local', silent = false } = {}) {
+    if (!currentUser || window.isMentorView) return null;
+
+    const snapshot = captureJournalDraftFromForm();
+    const hasMeaningfulContent = isJournalDraftMeaningful(snapshot);
+
+    if (!hasMeaningfulContent) {
+        await clearJournalDraftStorage();
+        stopJournalDraftTimers();
+        return null;
+    }
+
+    const hasUnchangedDraft = journalDraftSavedSnapshot && areJournalDraftsEqual(snapshot, journalDraftSavedSnapshot);
+    if (hasUnchangedDraft && source !== 'manual') {
+        journalDraftLatestSnapshot = snapshot;
+        updateJournalDraftUI(snapshot);
+        return null;
+    }
+
+    const nextDraft = {
+        ...snapshot,
+        updatedAtMs: Date.now()
+    };
+
+    persistJournalDraftToLocalStorage(nextDraft);
+
+    if (source === 'remote' || source === 'manual') {
+        try {
+            await persistJournalDraftToRemoteStorage(nextDraft);
+        } catch (error) {
+            console.warn('Unable to save journal draft remotely:', error);
+            if (!silent) {
+                showToast('Draft saved locally. Online sync will retry automatically.');
+            }
+        }
+    }
+
+    journalDraftLatestSnapshot = nextDraft;
+    journalDraftSavedSnapshot = nextDraft;
+    updateJournalDraftUI(nextDraft);
+    syncJournalDraftTimers();
+
+    if (!silent) {
+        showToast(source === 'remote' || source === 'manual' ? 'Draft saved.' : 'Draft saved locally.');
+    }
+
+    return nextDraft;
+}
+
+async function loadJournalDraft() {
+    if (!currentUser || window.isMentorView) {
+        journalDraftLatestSnapshot = null;
+        journalDraftSavedSnapshot = null;
+        updateJournalDraftUI();
+        return;
+    }
+
+    const localDraft = readJournalDraftFromLocalStorage();
+
+    let remoteDraft = null;
+    try {
+        remoteDraft = await readJournalDraftFromRemoteStorage();
+    } catch (error) {
+        console.warn('Unable to load remote journal draft:', error);
+    }
+
+    const selectedDraft = [localDraft, remoteDraft]
+        .filter(isJournalDraftMeaningful)
+        .sort((left, right) => getJournalDraftTimestamp(right) - getJournalDraftTimestamp(left))[0] || null;
+
+    journalDraftLatestSnapshot = selectedDraft;
+    journalDraftSavedSnapshot = selectedDraft;
+
+    if (selectedDraft) {
+        setJournalDraftForm(selectedDraft);
+        populateJournalLanguageSelect(selectedDraft.language || '');
+        updateJournalEditorUI();
+        updateJournalDraftUI(selectedDraft);
+    } else {
+        updateJournalDraftUI();
+    }
+
+    if (localDraft && remoteDraft && !areJournalDraftsEqual(localDraft, remoteDraft)) {
+        const newestDraft = selectedDraft;
+        if (newestDraft) {
+            persistJournalDraftToLocalStorage(newestDraft);
+            persistJournalDraftToRemoteStorage(newestDraft).catch((error) => {
+                console.warn('Unable to reconcile journal drafts:', error);
+            });
+        }
+    }
+
+    syncJournalDraftTimers();
+}
+
+function handleJournalDraftFieldChange() {
+    if (journalDraftApplying || !currentUser || window.isMentorView) return;
+
+    journalDraftLatestSnapshot = captureJournalDraftFromForm();
+    updateJournalDraftUI(journalDraftLatestSnapshot);
+    syncJournalDraftTimers();
+}
+
+function flushJournalDraftLocal() {
+    if (!currentUser || window.isMentorView) return;
+
+    const snapshot = captureJournalDraftFromForm();
+    if (!isJournalDraftMeaningful(snapshot)) return;
+
+    if (journalDraftSavedSnapshot && areJournalDraftsEqual(snapshot, journalDraftSavedSnapshot)) {
+        journalDraftLatestSnapshot = snapshot;
+        updateJournalDraftUI(snapshot);
+        return;
+    }
+
+    const nextDraft = {
+        ...snapshot,
+        updatedAtMs: Date.now()
+    };
+
+    persistJournalDraftToLocalStorage(nextDraft);
+    journalDraftLatestSnapshot = nextDraft;
+    journalDraftSavedSnapshot = nextDraft;
+    updateJournalDraftUI(nextDraft);
+}
+
+function stopJournalDraftTimers() {
+    if (journalDraftLocalTimer) {
+        clearInterval(journalDraftLocalTimer);
+        journalDraftLocalTimer = null;
+    }
+
+    if (journalDraftRemoteTimer) {
+        clearInterval(journalDraftRemoteTimer);
+        journalDraftRemoteTimer = null;
+    }
 }
 
 function getJournalLanguageOptions() {
@@ -281,6 +670,7 @@ async function loadJournal() {
         journalEntries = snapshot.docs.map(normalizeJournalEntry);
         syncJournalCache();
         renderJournalList();
+        await loadJournalDraft();
     } catch (error) {
         console.error('Error loading journal entries:', error);
     }
@@ -329,6 +719,7 @@ async function addJournalEntry(title, content, language = '', mentorVisible = fa
     journalEntries = [newEntry, ...journalEntries];
     syncJournalCache();
     renderJournalList();
+    await clearJournalDraftStorage();
     return docRef.id;
 }
 
@@ -382,6 +773,7 @@ async function updateJournalEntry(entryId, updates) {
     journalEntries = [...journalEntries];
     syncJournalCache();
     renderJournalList();
+    await clearJournalDraftStorage();
 }
 
 async function deleteJournalEntry(entryId) {
@@ -419,6 +811,10 @@ function initJournalModule() {
     const cancelBtn = document.getElementById('journalCancelBtn');
     const visibilitySelect = document.getElementById('journalMentorVisibleSelect');
     const accessSelect = document.getElementById('journalMentorAccessSelect');
+    const titleInput = document.getElementById('journalTitleInput');
+    const contentInput = document.getElementById('journalContentInput');
+    const languageSelect = document.getElementById('journalLanguageSelect');
+    const saveDraftBtn = document.getElementById('journalSaveDraftBtn');
 
     if (form && !form.dataset.journalInitialized) {
         form.dataset.journalInitialized = 'true';
@@ -443,11 +839,13 @@ function initJournalModule() {
                     journalEditingId = null;
                     resetJournalForm(null);
                     updateJournalEditorUI();
+                    await clearJournalDraftStorage();
                     showToast('✓ Journal entry updated!');
                 } else {
                     await addJournalEntry(title, content, language, mentorVisible, mentorAccessLevel);
                     resetJournalForm(null);
                     updateJournalEditorUI();
+                    await clearJournalDraftStorage();
                     showToast('✓ Journal entry added!');
                 }
             } catch (error) {
@@ -476,12 +874,45 @@ function initJournalModule() {
                 : 'Hidden reflections stay private.';
 
             updateJournalAccessSelectState();
+            handleJournalDraftFieldChange();
         });
+    }
+
+    if (titleInput && !titleInput.dataset.journalInitialized) {
+        titleInput.dataset.journalInitialized = 'true';
+        titleInput.addEventListener('input', handleJournalDraftFieldChange);
+        titleInput.addEventListener('blur', flushJournalDraftLocal);
+    }
+
+    if (contentInput && !contentInput.dataset.journalInitialized) {
+        contentInput.dataset.journalInitialized = 'true';
+        contentInput.addEventListener('input', handleJournalDraftFieldChange);
+        contentInput.addEventListener('blur', flushJournalDraftLocal);
+    }
+
+    if (languageSelect && !languageSelect.dataset.journalInitialized) {
+        languageSelect.dataset.journalInitialized = 'true';
+        languageSelect.addEventListener('change', handleJournalDraftFieldChange);
+    }
+
+    if (accessSelect && !accessSelect.dataset.journalInitialized) {
+        accessSelect.dataset.journalInitialized = 'true';
+        accessSelect.addEventListener('change', handleJournalDraftFieldChange);
     }
 
     populateJournalLanguageSelect();
     resetJournalForm(null);
     updateJournalEditorUI();
+    updateJournalDraftUI();
+
+    if (saveDraftBtn && !saveDraftBtn.dataset.journalInitialized) {
+        saveDraftBtn.dataset.journalInitialized = 'true';
+        saveDraftBtn.addEventListener('click', () => {
+            saveJournalDraft({ source: 'manual', silent: false }).catch((error) => {
+                showToast('Error: ' + error.message);
+            });
+        });
+    }
 
     document.addEventListener('click', (event) => {
         const button = event.target.closest('button[data-action]');
@@ -518,7 +949,20 @@ function initJournalModule() {
 
     window.addEventListener('tabChanged', () => {
         updateJournalEditorUI();
+        if (document.getElementById('journal')?.classList.contains('hidden')) {
+            flushJournalDraftLocal();
+        }
     });
+
+    window.addEventListener('beforeunload', flushJournalDraftLocal);
+    window.addEventListener('pagehide', flushJournalDraftLocal);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            flushJournalDraftLocal();
+        }
+    });
+
+    syncJournalDraftTimers();
 }
 
 window.loadJournal = loadJournal;
@@ -527,6 +971,7 @@ window.filterJournal = filterJournal;
 window.addJournalEntry = addJournalEntry;
 window.updateJournalEntry = updateJournalEntry;
 window.deleteJournalEntry = deleteJournalEntry;
+window.loadJournalDraft = loadJournalDraft;
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initJournalModule);
