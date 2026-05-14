@@ -318,11 +318,13 @@ function syncJournalDraftTimers() {
         }, JOURNAL_DRAFT_LOCAL_INTERVAL_MS);
     }
 
-    if (!journalDraftRemoteTimer) {
-        journalDraftRemoteTimer = setInterval(() => {
-            saveJournalDraft({ source: 'remote', silent: true });
-        }, JOURNAL_DRAFT_REMOTE_INTERVAL_MS);
+    // Reset remote timer to fire 60s from now (not from page load)
+    if (journalDraftRemoteTimer) {
+        clearInterval(journalDraftRemoteTimer);
     }
+    journalDraftRemoteTimer = setInterval(() => {
+        saveJournalDraft({ source: 'remote', silent: true });
+    }, JOURNAL_DRAFT_REMOTE_INTERVAL_MS);
 }
 
 async function saveJournalDraft({ source = 'local', silent = false } = {}) {
