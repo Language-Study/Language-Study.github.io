@@ -84,8 +84,8 @@ function buildAdminTabButton({ mobile = false } = {}) {
 }
 
 function ensureAdminTabButtons() {
-    const desktopPortfolioButton = document.querySelector('button[data-tab-target="#portfolio"]');
-    const desktopNav = desktopPortfolioButton?.parentElement;
+    const desktopJournalButton = document.querySelector('button[data-tab-target="#journal"]');
+    const desktopNav = desktopJournalButton?.parentElement;
     const mobileNav = document.getElementById('mobileBottomNav');
 
     const existingDesktopButton = document.getElementById('adminTabBtn');
@@ -93,12 +93,12 @@ function ensureAdminTabButtons() {
 
     if (languageResourceAdminState.isAdmin && !window.isMentorView && !window.isPublicPortfolioView) {
         if (!existingDesktopButton && desktopNav) {
-            desktopNav.insertBefore(buildAdminTabButton(), desktopPortfolioButton?.nextSibling || null);
+            desktopNav.insertBefore(buildAdminTabButton(), desktopJournalButton?.nextSibling || null);
         }
 
         if (!existingMobileButton && mobileNav) {
-            const portfolioButton = mobileNav.querySelector('[data-tab-target="#portfolio"]');
-            mobileNav.insertBefore(buildAdminTabButton({ mobile: true }), portfolioButton?.nextSibling || null);
+            const journalButton = mobileNav.querySelector('[data-tab-target="#journal"]');
+            mobileNav.insertBefore(buildAdminTabButton({ mobile: true }), journalButton?.nextSibling || null);
         }
     } else {
         existingDesktopButton?.remove();
