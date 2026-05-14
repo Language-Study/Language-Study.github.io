@@ -338,9 +338,14 @@ async function saveJournalDraft({ source = 'local', silent = false } = {}) {
     }
 
     const hasUnchangedDraft = journalDraftSavedSnapshot && areJournalDraftsEqual(snapshot, journalDraftSavedSnapshot);
-    if (hasUnchangedDraft && source !== 'manual') {
+    if (hasUnchangedDraft) {
         journalDraftLatestSnapshot = snapshot;
         updateJournalDraftUI(snapshot);
+
+        if (!silent && source === 'manual') {
+            showToast('Draft already saved.');
+        }
+
         return null;
     }
 
@@ -395,14 +400,15 @@ async function loadJournalDraft() {
         .filter(isJournalDraftMeaningful)
         .sort((left, right) => getJournalDraftTimestamp(right) - getJournalDraftTimestamp(left))[0] || null;
 
-    journalDraftLatestSnapshot = selectedDraft;
-    journalDraftSavedSnapshot = selectedDraft;
+    // Initialize both snapshots independently to avoid aliasing issues
+    journalDraftLatestSnapshot = selectedDraft ? normalizeJournalDraft(selectedDraft) : null;
+    journalDraftSavedSnapshot = selectedDraft ? normalizeJournalDraft(selectedDraft) : null;
 
     if (selectedDraft) {
         setJournalDraftForm(selectedDraft);
         populateJournalLanguageSelect(selectedDraft.language || '');
         updateJournalEditorUI();
-        updateJournalDraftUI(selectedDraft);
+        updateJournalDraftUI(journalDraftLatestSnapshot);
     } else {
         updateJournalDraftUI();
     }
@@ -434,9 +440,8 @@ function flushJournalDraftLocal() {
     const snapshot = captureJournalDraftFromForm();
     if (!isJournalDraftMeaningful(snapshot)) return;
 
-    if (journalDraftSavedSnapshot && areJournalDraftsEqual(snapshot, journalDraftSavedSnapshot)) {
-        journalDraftLatestSnapshot = snapshot;
-        updateJournalDraftUI(snapshot);
+    // Only save if text has changed since last capture
+    if (journalDraftLatestSnapshot && areJournalDraftsEqual(snapshot, journalDraftLatestSnapshot)) {
         return;
     }
 
@@ -447,7 +452,6 @@ function flushJournalDraftLocal() {
 
     persistJournalDraftToLocalStorage(nextDraft);
     journalDraftLatestSnapshot = nextDraft;
-    journalDraftSavedSnapshot = nextDraft;
     updateJournalDraftUI(nextDraft);
 }
 
