@@ -148,6 +148,20 @@ function updateJournalEditorUI() {
     populateJournalLanguageSelect(document.getElementById('journalLanguageSelect')?.value || '');
 }
 
+function updateJournalAccessSelectState() {
+    const visibilitySelect = document.getElementById('journalMentorVisibleSelect');
+    const accessSelect = document.getElementById('journalMentorAccessSelect');
+
+    if (!accessSelect || !visibilitySelect) return;
+
+    const isMentorVisible = visibilitySelect.value === 'true';
+    accessSelect.disabled = !isMentorVisible;
+
+    if (!isMentorVisible) {
+        accessSelect.value = JOURNAL_ACCESS_LEVELS.VIEW;
+    }
+}
+
 function resetJournalForm(entry = null) {
     const titleInput = document.getElementById('journalTitleInput');
     const contentInput = document.getElementById('journalContentInput');
@@ -162,6 +176,7 @@ function resetJournalForm(entry = null) {
     if (mentorAccessSelect) mentorAccessSelect.value = entry?.mentorAccessLevel || JOURNAL_ACCESS_LEVELS.VIEW;
 
     populateJournalLanguageSelect(entry?.language || '');
+    updateJournalAccessSelectState();
 }
 
 function beginJournalEdit(entryId) {
@@ -459,6 +474,8 @@ function initJournalModule() {
             mentorVisibilityNote.textContent = visibilitySelect.value === 'true'
                 ? 'Visible reflections can be shared with mentors. Pick whether they are read only or editable.'
                 : 'Hidden reflections stay private.';
+
+            updateJournalAccessSelectState();
         });
     }
 
