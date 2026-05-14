@@ -7,7 +7,7 @@
 class TabController {
     constructor() {
         this.currentTab = 'vocabulary';
-        this.tabs = ['vocabulary', 'skills', 'portfolio', 'admin'];
+        this.tabs = ['vocabulary', 'skills', 'portfolio', 'journal', 'admin'];
         this.initializeListeners();
     }
 
@@ -58,13 +58,17 @@ class TabController {
      * @private
      */
     updateTabButtons(tabId) {
-        const tabButtons = document.querySelectorAll('[data-tab-target]');
+        // Only target the main navigation buttons to avoid interfering with settings or modal tabs
+        const tabButtons = document.querySelectorAll('.tab-button[data-tab-target]');
         tabButtons.forEach(btn => {
-            const btnTabId = btn.getAttribute('data-tab-target').replace('#', '');
-            if (btnTabId === tabId) {
-                btn.classList.add('active');
+            const raw = btn.getAttribute('data-tab-target') || '';
+            const btnTabId = String(raw).replace('#', '').trim();
+            const isActive = btnTabId === tabId;
+            btn.classList.toggle('active', isActive);
+            if (isActive) {
+                btn.setAttribute('aria-current', 'page');
             } else {
-                btn.classList.remove('active');
+                btn.removeAttribute('aria-current');
             }
         });
     }

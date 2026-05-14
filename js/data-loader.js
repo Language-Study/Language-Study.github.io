@@ -9,6 +9,7 @@ let dataCache = {
     skills: [],
     categories: [],
     portfolioEntries: [],
+    journalEntries: [],
     earnedBadges: [],
     lastLoadTime: null,
     isCached: false
@@ -41,6 +42,7 @@ function clearDataCache() {
         skills: [],
         categories: [],
         portfolioEntries: [],
+        journalEntries: [],
         earnedBadges: [],
         lastLoadTime: null,
         isCached: false
@@ -56,11 +58,14 @@ async function loadUserData() {
     if (!currentUser) return;
 
     // Serve from cache if still valid to avoid extra reads
-    if (isCacheValid() && dataCache.vocabularyList.length) {
+    if (isCacheValid()) {
         vocabularyList = [...dataCache.vocabularyList];
         skills = [...dataCache.skills];
         categories = [...dataCache.categories];
         portfolioEntries = [...dataCache.portfolioEntries];
+        if (typeof journalEntries !== 'undefined') {
+            journalEntries = [...dataCache.journalEntries];
+        }
         if (Array.isArray(dataCache.earnedBadges)) {
             earnedBadges = [...dataCache.earnedBadges];
         }
@@ -69,6 +74,9 @@ async function loadUserData() {
         renderVocabularyList();
         renderSkillsList();
         renderPortfolio();
+        if (typeof renderJournalList === 'function') {
+            renderJournalList();
+        }
         await renderBadges();
         await updateAchievementsVisibility();
         await updateProgressVisibility();
@@ -86,7 +94,8 @@ async function loadUserData() {
             loadCategories(),
             loadVocabulary(),
             loadSkills(),
-            loadPortfolio()
+            loadPortfolio(),
+            loadJournal()
         ]);
 
         // Render UI
@@ -94,6 +103,7 @@ async function loadUserData() {
         renderVocabularyList();
         renderSkillsList();
         renderPortfolio();
+        renderJournalList();
         await renderBadges();
         await updateAchievementsVisibility();
         await updateProgressVisibility();
@@ -114,6 +124,7 @@ async function loadUserData() {
         dataCache.skills = [...skills];
         dataCache.categories = [...categories];
         dataCache.portfolioEntries = [...portfolioEntries];
+        dataCache.journalEntries = typeof journalEntries !== 'undefined' ? [...journalEntries] : [];
         dataCache.earnedBadges = Array.isArray(earnedBadges) ? [...earnedBadges] : [];
 
         showLoadingSpinner(false);
@@ -214,6 +225,7 @@ function getOverallStats() {
         skillsStats: skillsStats,
         badgeProgress: getBadgeProgress(),
         portfolioCount: portfolioEntries.length,
+        journalCount: typeof journalEntries !== 'undefined' ? journalEntries.length : 0,
         categoryCount: categories.length
     };
 }

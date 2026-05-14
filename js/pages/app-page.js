@@ -156,6 +156,9 @@ if (searchInput) {
         filterVocabulary(query);
         filterSkills(query);
         filterPortfolio(query);
+        if (typeof filterJournal === 'function') {
+            filterJournal(query);
+        }
     }, 180);
 
     searchInput.addEventListener('input', runSearch);

@@ -60,6 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Ensure tab clicks always activate the TabController (fixes reload/capture edge cases)
+    tabButtons.forEach((btn) => {
+        if (btn.dataset.tabHandlerAttached) return;
+        btn.dataset.tabHandlerAttached = 'true';
+        btn.addEventListener('click', (e) => {
+            const tab = btn.getAttribute('data-tab-target')?.replace('#', '');
+            if (!tab) return;
+            if (window.tabController && typeof window.tabController.activateTab === 'function') {
+                window.tabController.activateTab(tab);
+            }
+        });
+    });
+
     // Set initial placeholder based on active tab
     const activeTab = document.querySelector('.tab-content.active');
     if (activeTab && searchInputBox) {

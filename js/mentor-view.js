@@ -128,10 +128,12 @@ async function loadUserDataForMentor(uid) {
         await loadVocabulary();
         await loadSkills();
         await loadPortfolio();
+        await loadJournal();
         await renderBadges();
         await renderVocabularyList();
         await renderSkillsList();
         await renderPortfolio();
+        renderJournalList();
         await updateProgressVisibility();
         renderProgressMetrics();
 

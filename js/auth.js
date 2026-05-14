@@ -214,12 +214,14 @@ async function deleteUserAccount() {
         const vocabSnapshot = await userDocRef.collection('vocabulary').get();
         const skillsSnapshot = await userDocRef.collection('skills').get();
         const portfolioSnapshot = await userDocRef.collection('portfolio').get();
+        const journalSnapshot = await userDocRef.collection('journal').get();
         const metadataSnapshot = await userDocRef.collection('metadata').get();
 
         const batch = db.batch();
         vocabSnapshot.forEach(doc => batch.delete(doc.ref));
         skillsSnapshot.forEach(doc => batch.delete(doc.ref));
         portfolioSnapshot.forEach(doc => batch.delete(doc.ref));
+        journalSnapshot.forEach(doc => batch.delete(doc.ref));
         metadataSnapshot.forEach(doc => batch.delete(doc.ref));
 
         await batch.commit();
