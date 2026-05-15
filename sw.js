@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `language-study-${CACHE_VERSION}`;
 
 // URLs to cache - add essential files for offline access
