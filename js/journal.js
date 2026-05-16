@@ -6,16 +6,16 @@
 let journalEntries = [];
 let journalEditingId = null;
 let journalSearchQuery = '';
-let journalDraftLocalTimer = null;
-let journalDraftRemoteTimer = null;
+let journalDraftAutosaveTimer = null;
 let journalDraftApplying = false;
 let journalDraftSavedSnapshot = null;
 let journalDraftLatestSnapshot = null;
+let journalDraftLocalSavedSnapshot = null;
+let journalDraftLastEditAtMs = 0;
 
 const JOURNAL_DRAFT_STORAGE_PREFIX = 'ls_journalDraft:';
 const JOURNAL_DRAFT_DOC_ID = 'current';
-const JOURNAL_DRAFT_LOCAL_INTERVAL_MS = 10000;
-const JOURNAL_DRAFT_REMOTE_INTERVAL_MS = 60000;
+const JOURNAL_DRAFT_AUTOSAVE_DELAY_MS = 10000;
 
 const JOURNAL_ACCESS_LEVELS = {
     VIEW: 'view',
@@ -82,6 +82,10 @@ function normalizeJournalEntry(doc) {
 function syncJournalCache() {
     if (typeof dataCache === 'undefined' || !dataCache) return;
     dataCache.journalEntries = [...journalEntries];
+}
+
+function isJournalOnline() {
+    return typeof navigator === 'undefined' ? true : navigator.onLine !== false;
 }
 
 function getJournalDraftStorageKey() {
@@ -177,6 +181,7 @@ function getJournalDraftStatusElements() {
 function updateJournalDraftUI(draft = journalDraftLatestSnapshot) {
     const { bar, status, saveBtn } = getJournalDraftStatusElements();
     const hasDraft = isJournalDraftMeaningful(draft);
+    const savedSnapshot = isJournalOnline() ? journalDraftSavedSnapshot : journalDraftLocalSavedSnapshot;
 
     if (bar) {
         bar.classList.toggle('hidden', !hasDraft);
@@ -185,8 +190,8 @@ function updateJournalDraftUI(draft = journalDraftLatestSnapshot) {
     if (status) {
         if (!hasDraft) {
             status.textContent = '';
-        } else if (journalDraftSavedSnapshot && areJournalDraftsEqual(draft, journalDraftSavedSnapshot)) {
-            status.textContent = `Draft saved${draft.updatedAtMs ? ` at ${new Date(draft.updatedAtMs).toLocaleString()}` : ''}`;
+        } else if (savedSnapshot && areJournalDraftsEqual(draft, savedSnapshot)) {
+            status.textContent = `${isJournalOnline() ? 'Draft saved' : 'Draft saved locally'}${draft.updatedAtMs ? ` at ${new Date(draft.updatedAtMs).toLocaleString()}` : ''}`;
         } else {
             status.textContent = 'Draft in progress';
         }
@@ -264,6 +269,8 @@ async function clearJournalDraftStorage() {
 
     journalDraftLatestSnapshot = null;
     journalDraftSavedSnapshot = null;
+    journalDraftLocalSavedSnapshot = null;
+    journalDraftLastEditAtMs = 0;
     updateJournalDraftUI();
 }
 
@@ -296,35 +303,34 @@ function captureJournalDraftFromForm() {
     return buildJournalDraftSnapshot();
 }
 
-function syncJournalDraftTimers() {
-    const hasDraft = isJournalDraftMeaningful(buildJournalDraftSnapshot());
+function syncJournalDraftTimers({ resetTimer = false } = {}) {
+    const draftSnapshot = buildJournalDraftSnapshot();
 
-    if (!hasDraft) {
-        if (journalDraftLocalTimer) {
-            clearInterval(journalDraftLocalTimer);
-            journalDraftLocalTimer = null;
-        }
-
-        if (journalDraftRemoteTimer) {
-            clearInterval(journalDraftRemoteTimer);
-            journalDraftRemoteTimer = null;
-        }
+    if (!isJournalDraftMeaningful(draftSnapshot)) {
+        stopJournalDraftTimers();
         return;
     }
 
-    if (!journalDraftLocalTimer) {
-        journalDraftLocalTimer = setInterval(() => {
-            saveJournalDraft({ source: 'local', silent: true });
-        }, JOURNAL_DRAFT_LOCAL_INTERVAL_MS);
+    const currentSavedSnapshot = isJournalOnline() ? journalDraftSavedSnapshot : journalDraftLocalSavedSnapshot;
+    if (currentSavedSnapshot && areJournalDraftsEqual(draftSnapshot, currentSavedSnapshot)) {
+        stopJournalDraftTimers();
+        return;
     }
 
-    // Reset remote timer to fire 60s from now (not from page load)
-    if (journalDraftRemoteTimer) {
-        clearInterval(journalDraftRemoteTimer);
+    const elapsedMs = journalDraftLastEditAtMs ? Date.now() - journalDraftLastEditAtMs : 0;
+    const delayMs = resetTimer ? JOURNAL_DRAFT_AUTOSAVE_DELAY_MS : Math.max(0, JOURNAL_DRAFT_AUTOSAVE_DELAY_MS - elapsedMs);
+
+    if (journalDraftAutosaveTimer) {
+        clearTimeout(journalDraftAutosaveTimer);
+        journalDraftAutosaveTimer = null;
     }
-    journalDraftRemoteTimer = setInterval(() => {
-        saveJournalDraft({ source: 'remote', silent: true });
-    }, JOURNAL_DRAFT_REMOTE_INTERVAL_MS);
+
+    journalDraftAutosaveTimer = setTimeout(() => {
+        journalDraftAutosaveTimer = null;
+        saveJournalDraft({ source: 'auto', silent: true }).catch((error) => {
+            console.warn('Unable to autosave journal draft:', error);
+        });
+    }, delayMs);
 }
 
 async function saveJournalDraft({ source = 'local', silent = false } = {}) {
@@ -339,7 +345,9 @@ async function saveJournalDraft({ source = 'local', silent = false } = {}) {
         return null;
     }
 
-    const hasUnchangedDraft = journalDraftSavedSnapshot && areJournalDraftsEqual(snapshot, journalDraftSavedSnapshot);
+    const isOnline = isJournalOnline();
+    const comparisonSnapshot = isOnline ? journalDraftSavedSnapshot : journalDraftLocalSavedSnapshot;
+    const hasUnchangedDraft = comparisonSnapshot && areJournalDraftsEqual(snapshot, comparisonSnapshot);
     if (hasUnchangedDraft) {
         journalDraftLatestSnapshot = snapshot;
         updateJournalDraftUI(snapshot);
@@ -357,10 +365,13 @@ async function saveJournalDraft({ source = 'local', silent = false } = {}) {
     };
 
     persistJournalDraftToLocalStorage(nextDraft);
+    journalDraftLocalSavedSnapshot = nextDraft;
 
-    if (source === 'remote' || source === 'manual') {
+    let remoteWriteSuccessful = false;
+    if (isOnline) {
         try {
             await persistJournalDraftToRemoteStorage(nextDraft);
+            remoteWriteSuccessful = true;
         } catch (error) {
             console.warn('Unable to save journal draft remotely:', error);
             if (!silent) {
@@ -370,12 +381,16 @@ async function saveJournalDraft({ source = 'local', silent = false } = {}) {
     }
 
     journalDraftLatestSnapshot = nextDraft;
-    journalDraftSavedSnapshot = nextDraft;
+    if (isOnline && remoteWriteSuccessful) {
+        journalDraftSavedSnapshot = nextDraft;
+    } else if (isOnline) {
+        journalDraftLastEditAtMs = Date.now();
+    }
     updateJournalDraftUI(nextDraft);
     syncJournalDraftTimers();
 
     if (!silent) {
-        showToast(source === 'remote' || source === 'manual' ? 'Draft saved.' : 'Draft saved locally.');
+        showToast(isOnline ? 'Draft saved.' : 'Draft saved locally.');
     }
 
     return nextDraft;
@@ -385,6 +400,8 @@ async function loadJournalDraft() {
     if (!currentUser || window.isMentorView) {
         journalDraftLatestSnapshot = null;
         journalDraftSavedSnapshot = null;
+        journalDraftLocalSavedSnapshot = null;
+        journalDraftLastEditAtMs = 0;
         updateJournalDraftUI();
         return;
     }
@@ -405,6 +422,8 @@ async function loadJournalDraft() {
     // Initialize both snapshots independently to avoid aliasing issues
     journalDraftLatestSnapshot = selectedDraft ? normalizeJournalDraft(selectedDraft) : null;
     journalDraftSavedSnapshot = selectedDraft ? normalizeJournalDraft(selectedDraft) : null;
+    journalDraftLocalSavedSnapshot = selectedDraft ? normalizeJournalDraft(selectedDraft) : null;
+    journalDraftLastEditAtMs = 0;
 
     if (selectedDraft) {
         setJournalDraftForm(selectedDraft);
@@ -433,7 +452,8 @@ function handleJournalDraftFieldChange() {
 
     journalDraftLatestSnapshot = captureJournalDraftFromForm();
     updateJournalDraftUI(journalDraftLatestSnapshot);
-    syncJournalDraftTimers();
+    journalDraftLastEditAtMs = Date.now();
+    syncJournalDraftTimers({ resetTimer: true });
 }
 
 function flushJournalDraftLocal() {
@@ -442,8 +462,7 @@ function flushJournalDraftLocal() {
     const snapshot = captureJournalDraftFromForm();
     if (!isJournalDraftMeaningful(snapshot)) return;
 
-    // Only save if text has changed since last capture
-    if (journalDraftLatestSnapshot && areJournalDraftsEqual(snapshot, journalDraftLatestSnapshot)) {
+    if (isJournalOnline()) {
         return;
     }
 
@@ -458,15 +477,17 @@ function flushJournalDraftLocal() {
 }
 
 function stopJournalDraftTimers() {
-    if (journalDraftLocalTimer) {
-        clearInterval(journalDraftLocalTimer);
-        journalDraftLocalTimer = null;
+    if (journalDraftAutosaveTimer) {
+        clearTimeout(journalDraftAutosaveTimer);
+        journalDraftAutosaveTimer = null;
     }
+}
 
-    if (journalDraftRemoteTimer) {
-        clearInterval(journalDraftRemoteTimer);
-        journalDraftRemoteTimer = null;
-    }
+function handleJournalConnectivityChange() {
+    if (!currentUser || window.isMentorView) return;
+
+    syncJournalDraftTimers();
+    updateJournalDraftUI();
 }
 
 function getJournalLanguageOptions() {
@@ -956,15 +977,23 @@ function initJournalModule() {
     window.addEventListener('tabChanged', () => {
         updateJournalEditorUI();
         if (document.getElementById('journal')?.classList.contains('hidden')) {
-            flushJournalDraftLocal();
+            saveJournalDraft({ source: 'manual', silent: true }).catch((error) => {
+                console.warn('Unable to save journal draft while hiding journal tab:', error);
+            });
         }
     });
 
-    window.addEventListener('beforeunload', flushJournalDraftLocal);
-    window.addEventListener('pagehide', flushJournalDraftLocal);
+    window.addEventListener('online', handleJournalConnectivityChange);
+    window.addEventListener('offline', handleJournalConnectivityChange);
+    window.addEventListener('beforeunload', () => {
+        saveJournalDraft({ source: 'manual', silent: true });
+    });
+    window.addEventListener('pagehide', () => {
+        saveJournalDraft({ source: 'manual', silent: true });
+    });
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-            flushJournalDraftLocal();
+            saveJournalDraft({ source: 'manual', silent: true });
         }
     });
 
