@@ -87,6 +87,18 @@ async function tryMentorView() {
 
         window.isMentorView = true;
         window.mentorUid = doc.data().uid;
+
+        // Create mentor session before loading data (required by Firestore rules)
+        const mentorSessionId = currentUser.uid + '_' + window.mentorUid;
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+        await db.collection('mentorSessions').doc(mentorSessionId).set({
+            mentorUid: currentUser.uid,
+            ownerUid: window.mentorUid,
+            mentorCode: mentorCode,
+            enabled: true,
+            expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt)
+        });
+
         window.mentorAccessLevelForView = await loadMentorAccessLevelForOwner(window.mentorUid);
 
         // Load data for mentor UID instead of current user
