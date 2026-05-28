@@ -340,6 +340,7 @@ const mentorCodeCache = {
     code: null,
     fetchedAt: 0
 };
+let mentorQrCodeInstance = null;
 
 function invalidateMentorCodeCache() {
     mentorCodeCache.uid = null;
@@ -351,6 +352,49 @@ function setMentorCodeCache(uid, code) {
     mentorCodeCache.uid = uid || null;
     mentorCodeCache.code = code || null;
     mentorCodeCache.fetchedAt = Date.now();
+}
+
+function clearMentorQrCode() {
+    const container = document.getElementById('mentorQrCodeContainer');
+    if (container) {
+        container.innerHTML = '';
+    }
+    mentorQrCodeInstance = null;
+}
+
+function getMentorShareUrl(code) {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('mentor', code);
+    return url.toString();
+}
+
+function renderMentorQrCode(code, shareUrl = getMentorShareUrl(code)) {
+    const container = document.getElementById('mentorQrCodeContainer');
+    if (!container) return false;
+
+    clearMentorQrCode();
+
+    if (typeof QRCode === 'undefined') {
+        container.innerHTML = '<p class="text-sm text-red-600">QR code library not available.</p>';
+        return false;
+    }
+
+    try {
+        mentorQrCodeInstance = new QRCode(container, {
+            text: shareUrl,
+            width: 160,
+            height: 160,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        return true;
+    } catch (error) {
+        console.error('Error generating mentor QR code:', error);
+        container.innerHTML = '<p class="text-sm text-red-600">Unable to generate QR code.</p>';
+        return false;
+    }
 }
 
 async function getMentorCodeIdForCurrentUser(forceRefresh = false) {
@@ -733,6 +777,7 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
 
     try {
         const code = await getOrCreateMentorCode(forceRegenerate);
+        const shareUrl = getMentorShareUrl(code);
         if (codeDiv) {
             codeDiv.innerHTML = `
                 <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
@@ -740,11 +785,24 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
                         <b>Mentor Share Code:</b>
                         <span class="font-mono text-lg select-all" role="textbox" aria-label="Your mentor code: ${code}">${code}</span>
                     </div>
-                    <button type="button" id="copyMentorCodeBtn"
-                        class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        aria-label="Copy mentor code">
-                        <i class="fa-solid fa-copy" aria-hidden="true"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="copyMentorCodeBtn"
+                            class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            aria-label="Copy mentor code" title="Copy mentor code">
+                            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                            <span>Copy</span>
+                        </button>
+                        <button type="button" id="showMentorQrBtn"
+                            class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            aria-label="Show QR code for mentor link" aria-expanded="false" title="Show QR code">
+                            <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                            <span>QR</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="mentorQrCodePanel" class="hidden mt-3 rounded border border-dashed border-blue-300 bg-blue-50 p-3 text-center">
+                    <p class="text-xs text-blue-700 mb-2">Scan to open the mentor link with ?mentor=${code}</p>
+                    <div id="mentorQrCodeContainer" class="flex justify-center"></div>
                 </div>`;
 
             const copyMentorCodeBtn = document.getElementById('copyMentorCodeBtn');
@@ -769,6 +827,23 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
                     } catch (error) {
                         console.error('Error copying mentor code:', error);
                         showToast('Failed to copy mentor code. Please copy it manually.');
+                    }
+                });
+            }
+
+            const qrButton = document.getElementById('showMentorQrBtn');
+            const qrPanel = document.getElementById('mentorQrCodePanel');
+            if (qrButton && qrPanel) {
+                qrButton.addEventListener('click', () => {
+                    const isHidden = qrPanel.classList.contains('hidden');
+                    if (isHidden) {
+                        qrPanel.classList.remove('hidden');
+                        qrButton.setAttribute('aria-expanded', 'true');
+                        renderMentorQrCode(code, shareUrl);
+                    } else {
+                        qrPanel.classList.add('hidden');
+                        qrButton.setAttribute('aria-expanded', 'false');
+                        clearMentorQrCode();
                     }
                 });
             }
