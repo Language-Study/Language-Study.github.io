@@ -734,7 +734,44 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
     try {
         const code = await getOrCreateMentorCode(forceRegenerate);
         if (codeDiv) {
-            codeDiv.innerHTML = `<b>Mentor Share Code:</b> <span class='font-mono text-lg select-all' role="textbox" aria-label="Your mentor code: ${code}">${code}</span>`;
+            codeDiv.innerHTML = `
+                <div class="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <b>Mentor Share Code:</b>
+                        <span class="font-mono text-lg select-all" role="textbox" aria-label="Your mentor code: ${code}">${code}</span>
+                    </div>
+                    <button type="button" id="copyMentorCodeBtn"
+                        class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        aria-label="Copy mentor code">
+                        <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                    </button>
+                </div>`;
+
+            const copyMentorCodeBtn = document.getElementById('copyMentorCodeBtn');
+            if (copyMentorCodeBtn) {
+                copyMentorCodeBtn.addEventListener('click', async () => {
+                    try {
+                        if (navigator.clipboard?.writeText) {
+                            await navigator.clipboard.writeText(code);
+                        } else {
+                            const tempInput = document.createElement('textarea');
+                            tempInput.value = code;
+                            tempInput.setAttribute('readonly', 'true');
+                            tempInput.style.position = 'absolute';
+                            tempInput.style.left = '-9999px';
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            tempInput.remove();
+                        }
+
+                        showToast('✓ Mentor code copied');
+                    } catch (error) {
+                        console.error('Error copying mentor code:', error);
+                        showToast('Failed to copy mentor code. Please copy it manually.');
+                    }
+                });
+            }
         }
         if (regenBtn) regenBtn.classList.remove('hidden');
         if (infoDiv) infoDiv.classList.remove('hidden');
