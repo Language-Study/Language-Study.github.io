@@ -790,13 +790,11 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
                             class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
                             aria-label="Copy mentor code" title="Copy mentor code">
                             <i class="fa-solid fa-copy" aria-hidden="true"></i>
-                            <span>Copy</span>
                         </button>
                         <button type="button" id="showMentorQrBtn"
                             class="inline-flex items-center gap-2 rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300"
                             aria-label="Show QR code for mentor link" aria-expanded="false" title="Show QR code">
                             <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                            <span>QR</span>
                         </button>
                     </div>
                 </div>
