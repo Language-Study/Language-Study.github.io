@@ -799,7 +799,7 @@ async function showMentorCode(forceRegenerate = false, options = {}) {
                     </div>
                 </div>
                 <div id="mentorQrCodePanel" class="hidden mt-3 rounded border border-dashed border-blue-300 bg-blue-50 p-3 text-center">
-                    <p class="text-xs text-blue-700 mb-2">Scan to open the mentor link with ?mentor=${code}</p>
+                    <p class="text-xs text-blue-700 mb-2">Scan code to open this profile as a mentor:</p>
                     <div id="mentorQrCodeContainer" class="flex justify-center"></div>
                 </div>`;
 
