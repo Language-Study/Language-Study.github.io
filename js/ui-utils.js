@@ -36,16 +36,17 @@ function showLoadingSpinner(show, message = 'Loading...') {
         if (!spinner) {
             spinner = document.createElement('div');
             spinner.id = 'loadingSpinner';
-            spinner.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            spinner.className = 'fixed inset-0 flex items-center justify-center z-50';
+            // Use CSS variables so panel adapts to light/dark theme
             spinner.innerHTML = `
-                <div class="bg-white rounded-lg p-6 flex flex-col items-center gap-4">
+                <div style="background:var(--color-bg-primary); color:var(--color-text-primary); border:1px solid var(--color-border); border-radius:0.75rem; padding:1.25rem; display:flex; flex-direction:column; align-items:center; gap:1rem;">
                     <div class="animate-spin">
                         <svg class="w-10 h-10" style="color:var(--color-primary)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
-                    <p class="text-gray-700">${message}</p>
+                    <p style="margin:0; color:var(--color-text-primary);">${message}</p>
                 </div>
             `;
             document.body.appendChild(spinner);
