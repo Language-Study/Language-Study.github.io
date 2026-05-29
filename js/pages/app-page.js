@@ -7,7 +7,7 @@ let currentUser = null;
 
 // Prevent initial page content from flashing before auth/redirect completes.
 const _appShellEl = document.querySelector('.app-shell');
-const _appLoadingSpinner = document.getElementById('appLoadingSpinner');
+const _appLoadingSpinner = document.getElementById('loadingSpinner');
 if (_appShellEl) {
     _appShellEl.style.visibility = 'hidden';
 }
