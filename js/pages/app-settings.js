@@ -296,7 +296,7 @@ deleteAccountBtn?.addEventListener('click', async () => {
         showLoadingSpinner(true, 'Deleting account...');
         await deleteUserAccount();
         alert('Your account has been deleted.');
-        window.location.href = 'login.html';
+        window.location.href = getLoginRedirectUrl();
     } catch (error) {
         showLoadingSpinner(false);
         showToast('Error: ' + error.message);

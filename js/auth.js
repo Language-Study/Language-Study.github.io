@@ -4,6 +4,27 @@
  */
 
 /**
+ * Build a login URL that preserves the current page as the post-login destination.
+ * @param {Object} [options]
+ * @param {boolean} [options.verifyRequired=false] - Include the verify-required notice.
+ * @returns {string}
+ */
+function getLoginRedirectUrl(options = {}) {
+    const { verifyRequired = false } = options;
+    const url = new URL('login.html', window.location.href);
+
+    if (!window.location.pathname.endsWith('/login.html') && !window.location.pathname.endsWith('login.html')) {
+        url.searchParams.set('returnTo', window.location.href);
+    }
+
+    if (verifyRequired) {
+        url.searchParams.set('verify', 'required');
+    }
+
+    return url.toString();
+}
+
+/**
  * Login user with email and password
  * @async
  * @param {string} email - User email

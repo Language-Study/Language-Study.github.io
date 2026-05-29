@@ -104,7 +104,7 @@ async function handleEmailVerification(oobCode, h1Element, titleElement, resetPa
         resetPasswordMsg.classList.remove('text-red-500');
 
         setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = getLoginRedirectUrl();
         }, 3000);
     } catch (error) {
         console.error('Error verifying and updating email:', error);
@@ -128,7 +128,7 @@ async function handleVerifyEmail(oobCode, h1Element, titleElement, resetPassword
         resetPasswordMsg.classList.remove('text-red-500');
 
         setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = getLoginRedirectUrl();
         }, 3000);
     } catch (error) {
         console.error('Error verifying email:', error);
@@ -155,7 +155,7 @@ async function handleEmailRecovery(oobCode, h1Element, titleElement, resetPasswo
         resetPasswordMsg.classList.remove('text-red-500');
 
         setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = getLoginRedirectUrl();
         }, 3000);
     } catch (error) {
         console.error('Error recovering email:', error);

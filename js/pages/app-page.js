@@ -5,6 +5,13 @@
 
 let currentUser = null;
 
+// Prevent initial page content from flashing before auth/redirect completes.
+const _appShellEl = document.querySelector('.app-shell');
+const _appLoadingSpinner = document.getElementById('appLoadingSpinner');
+if (_appShellEl) {
+    _appShellEl.style.visibility = 'hidden';
+}
+
 function launchQuickReviewFromShortcutIfRequested() {
     const params = new URLSearchParams(window.location.search);
     const shouldLaunchQuickReview = params.get('review') === 'quick';
@@ -48,6 +55,14 @@ function launchQuickReviewFromShortcutIfRequested() {
 
         // Load public portfolio immediately, bypassing auth
         await tryPublicPortfolioView();
+
+        // Reveal app content for public portfolio view and hide spinner
+        if (_appShellEl) {
+            _appShellEl.style.visibility = '';
+        }
+        if (_appLoadingSpinner) {
+            _appLoadingSpinner.style.display = 'none';
+        }
     }
 })();
 
@@ -68,7 +83,7 @@ onAuthStateChanged(async (user) => {
                 console.warn('Failed to resend verification email:', err);
             }
             await logoutUser();
-            window.location.href = 'login.html?verify=required';
+            window.location.href = getLoginRedirectUrl({ verifyRequired: true });
             return;
         }
 
@@ -100,6 +115,14 @@ onAuthStateChanged(async (user) => {
         // Load data after auth state confirmed
         await loadUserData();
 
+        // Reveal app content after user data loaded and hide spinner
+        if (_appShellEl) {
+            _appShellEl.style.visibility = '';
+        }
+        if (_appLoadingSpinner) {
+            _appLoadingSpinner.style.display = 'none';
+        }
+
         // Ensure settings reflect current link status
         const btn = document.getElementById('googleSignInToggleBtn');
         if (btn) {
@@ -119,7 +142,7 @@ onAuthStateChanged(async (user) => {
 
         launchQuickReviewFromShortcutIfRequested();
     } else {
-        window.location.href = 'login.html';
+        window.location.href = getLoginRedirectUrl();
     }
 });
 

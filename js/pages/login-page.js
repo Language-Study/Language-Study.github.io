@@ -45,7 +45,28 @@ if (params.get('verify') === 'required' && errorMessage) {
  * Resolve preferred landing tab and build post-login URL.
  * This is intentionally used only after an explicit login action.
  */
+function getRequestedReturnToUrl() {
+    const returnTo = params.get('returnTo');
+    if (!returnTo) return null;
+
+    try {
+        const target = new URL(returnTo, window.location.origin);
+        const isLoginPage = target.pathname.endsWith('/login.html') || target.pathname.endsWith('login.html');
+
+        if (target.origin === window.location.origin && !isLoginPage) {
+            return target.toString();
+        }
+    } catch (error) {
+        console.warn('Ignoring invalid returnTo redirect:', error);
+    }
+
+    return null;
+}
+
 async function getPostLoginRedirectUrl() {
+    const requestedReturnTo = getRequestedReturnToUrl();
+    if (requestedReturnTo) return requestedReturnTo;
+
     const user = loginAuth.currentUser;
     if (!user) return 'index.html?tab=vocabulary';
 
