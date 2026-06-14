@@ -562,7 +562,22 @@ async function disablePortfolioSharing(options = {}) {
                     await db.collection('publicShareLinks').doc(shareData.code).delete();
                 } catch (error) {
                     const isNotFound = error?.code === 'not-found';
-                    if (!isNotFound) {
+                    const isPermissionDenied = isPermissionDeniedError(error);
+
+                    if (isPermissionDenied) {
+                        try {
+                            await db.collection('publicShareLinks').doc(shareData.code).update({
+                                enabled: false,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        } catch (retireError) {
+                            const retireNotFound = retireError?.code === 'not-found';
+                            if (!retireNotFound) {
+                                console.warn('Unable to retire portfolio share code after delete was denied:', retireError);
+                                notifyPortfolioShareUser('Sharing was disabled, but we could not retire the previous link record.');
+                            }
+                        }
+                    } else if (!isNotFound) {
                         console.warn('Unable to delete portfolio share code during disable:', error);
                         notifyPortfolioShareUser('Sharing was disabled, but we could not delete the previous link record.');
                     }
