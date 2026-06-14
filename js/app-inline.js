@@ -82,4 +82,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Handle Progress Status Legend visibility
+    function updateProgressStatusLegendVisibility(tab) {
+        const legend = document.getElementById('progressStatusLegend');
+        if (legend) {
+            const showLegend = tab === 'vocabulary' || tab === 'skills';
+            legend.style.display = showLegend ? 'block' : 'none';
+        }
+    }
+
+    // Listen for tab changes and update legend visibility
+    window.addEventListener('tabChanged', (e) => {
+        const tab = e.detail?.tab;
+        if (tab) {
+            updateProgressStatusLegendVisibility(tab);
+        }
+    });
+
+    // Set initial visibility based on active tab on page load
+    if (activeTab) {
+        updateProgressStatusLegendVisibility(activeTab.id);
+    }
+
 });
