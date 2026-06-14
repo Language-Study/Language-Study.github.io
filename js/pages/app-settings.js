@@ -539,6 +539,9 @@ onAuthStateChanged?.(async (user) => {
         const settings = await getUserSettingsData(false, user.uid);
         if (settings?.languageLearning) {
             setSelectedLearningLanguage(settings.languageLearning);
+            if (typeof handleLanguageSelectionChange === 'function') {
+                await handleLanguageSelectionChange(settings.languageLearning);
+            }
         } else if (typeof handleLanguageSelectionChange === 'function') {
             setSelectedLearningLanguage('');
             await handleLanguageSelectionChange('');
