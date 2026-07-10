@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.langstudy",
+      "sha256_cert_fingerprints": [
+        "9B:6C:45:20:F9:1F:0B:CE:18:74:52:48:6E:4D:BC:F3:03:49:4C:3E:B4:C4:E0:CF:8C:57:C9:AD:16:D5:6B:D9"
+      ]
+    }
+  }
+]
