@@ -1949,6 +1949,13 @@ a:visited {
     height: auto;
 }
 
+#mentorQrCodeContainer canvas,
+#mentorQrCodeContainer img {
+    display: block;
+    border: 6px solid #ffffff;
+    border-radius: 0.5rem;
+}
+
 #copyFeedback {
     animation: fadeIn 0.3s ease-in;
 }
